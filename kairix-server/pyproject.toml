@@ -1,0 +1,23 @@
+[project]
+name = "kairix-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mark Lubin", email = "melubin@pm.me" }
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+kairix-server = "kairix_server:main"
+
+[build-system]
+requires = ["uv_build>=0.7.8,<0.8"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "kairix_server"
+
+[tool.uv]
+package = true

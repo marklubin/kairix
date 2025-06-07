@@ -1,0 +1,32 @@
+
+.data/**
+**/.data/**
+**/neo4j/**
+kairix-offline/.env
+dist/**
+**/dist/**
+.env/**
+**/.env*/**
+**/**__pycache__**/**
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+neo4j/*
+data/*
+output/*
+.vscode
+
+
+.idea/*
+input/*
+output/*
+env/secrets/*

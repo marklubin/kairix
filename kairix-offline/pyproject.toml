@@ -1,0 +1,59 @@
+[build-system]
+requires = ["uv_build>=0.7.11,<0.8.0", ]
+build-backend = "uv_build"
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "ruff>=0.11.12",
+    "setuptools>=80.9.0",
+    "wheel>=0.45.1",
+    "uv_build>=0.7.11"
+]
+
+[tool.uv.build-backend]
+module-name = "kairix"
+[tool.ruff.lint]
+exclude = [
+    "scripts/*", # Exclude any directory named .mypy_cache
+    "tests/*",    # Exclude all files and directories inside the tests folders
+]
+
+
+[project]
+name = "kairix-offline"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mark Lubin", email = "melubin@pm.me" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "kairix-core",
+    "gradio>=5.33.0",
+    "neo4j>=5.28.1",
+    "neomodel>=5.5.0",
+    "numpy>=2.2.6",
+    "openai>=1.84.0",
+    "pydantic>=2.11.5",
+    "python-dotenv>=1.1.0",
+    "rich>=14.0.0",
+    "semchunk>=3.2.1",
+    "sentence-transformers>=4.1.0",
+    "tiktoken>=0.9.0",
+    "torch>=2.7.1",
+    "transformers>=4.52.4",
+    "accelerate>=1.7.0",
+]
+
+[project.scripts]
+mem-ui = "kairix.ui.memory_pipeline:main"
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+kairix = {workspace = true}
+kairix-core = { workspace = true }
