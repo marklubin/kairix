@@ -1,5 +1,6 @@
 
 .data/**
+data/**
 **/.data/**
 **/neo4j/**
 kairix-offline/.env

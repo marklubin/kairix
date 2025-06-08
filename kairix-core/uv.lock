@@ -1,0 +1,47 @@
+version = 1
+revision = 2
+requires-python = ">=3.11"
+
+[[package]]
+name = "kairix-core"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "neomodel" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "neomodel", specifier = ">=5.5.0" }]
+
+[[package]]
+name = "neo4j"
+version = "5.28.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4b/20/733dac16f7cedc80b23093415822c9763302519cba0e7c8bcdb5c01fc512/neo4j-5.28.1.tar.gz", hash = "sha256:ae8e37a1d895099062c75bc359b2cce62099baac7be768d0eba7180c1298e214", size = 231094, upload-time = "2025-02-10T08:36:22.566Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/57/94225fe5e9dabdc0ff60c88cbfcedf11277f4b34e7ab1373d3e62dbdd207/neo4j-5.28.1-py3-none-any.whl", hash = "sha256:6755ef9e5f4e14b403aef1138fb6315b120631a0075c138b5ddb2a06b87b09fd", size = 312258, upload-time = "2025-02-10T08:36:16.209Z" },
+]
+
+[[package]]
+name = "neomodel"
+version = "5.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "neo4j" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d0/3a/02088c615a7bbbcbbf0ae77ab1fbcc7b39d81abc3f2e95d88f571fa92667/neomodel-5.5.0.tar.gz", hash = "sha256:b324b9ff46140d1efcff488584a87ddf3d9f2e991cb0b1e5810d6223a3f5b09e", size = 194227, upload-time = "2025-06-05T11:35:58.834Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/9c/21ad0829eb2a996f4a1c476f1dca5c7ff069ecc14112cc017da43f23ef6b/neomodel-5.5.0-py3-none-any.whl", hash = "sha256:47eadac6767c1db826bd3a3674e56e203c70142a70907239a56ee141a1bd42b6", size = 229154, upload-time = "2025-06-05T11:35:57.094Z" },
+]
+
+[[package]]
+name = "pytz"
+version = "2025.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/bf/abbd3cdfb8fbc7fb3d4d38d320f2441b1e7cbe29be4f23797b4a2b5d8aac/pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3", size = 320884, upload-time = "2025-03-25T02:25:00.538Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00", size = 509225, upload-time = "2025-03-25T02:24:58.468Z" },
+]

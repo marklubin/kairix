@@ -2,6 +2,7 @@
 """Verify integration test setup is ready"""
 import os
 import sys
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,9 +21,10 @@ else:
 
 # Check if Neo4j is accessible
 try:
-    from neomodel import config as neomodel_config, db
+    from neomodel import config as neomodel_config
+    from neomodel import db
     neomodel_config.DATABASE_URL = neo4j_url
-    
+
     # Try to connect
     result = db.cypher_query("RETURN 1 as test")[0]
     if result and result[0]['test'] == 1:

@@ -1,23 +1,28 @@
+[build-system]
+requires = ["uv_build>=0.7.8"]
+build-backend = "uv_build"
+
 [project]
 name = "kairix-server"
 version = "0.1.0"
-description = "Add your description here"
+description = "Server component for Kairix"
 readme = "README.md"
 authors = [
     { name = "Mark Lubin", email = "melubin@pm.me" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "kairix-core",
+    "fastapi",
+    "uvicorn"
+]
 
 [project.scripts]
 kairix-server = "kairix_server:main"
 
-[build-system]
-requires = ["uv_build>=0.7.8,<0.8"]
-build-backend = "uv_build"
-
-[tool.uv.build-backend]
-module-name = "kairix_server"
 
 [tool.uv]
 package = true
+
+[tool.uv.sources]
+kairix-core = { workspace = true }

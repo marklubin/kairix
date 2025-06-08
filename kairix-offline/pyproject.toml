@@ -1,30 +1,11 @@
 [build-system]
-requires = ["uv_build>=0.7.11,<0.8.0", ]
+requires = ["uv_build>=0.7.8"]
 build-backend = "uv_build"
-
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.0",
-    "ruff>=0.11.12",
-    "setuptools>=80.9.0",
-    "wheel>=0.45.1",
-    "uv_build>=0.7.11"
-]
-
-[tool.uv.build-backend]
-module-name = "kairix"
-[tool.ruff.lint]
-exclude = [
-    "scripts/*", # Exclude any directory named .mypy_cache
-    "tests/*",    # Exclude all files and directories inside the tests folders
-]
-
 
 [project]
 name = "kairix-offline"
 version = "0.1.0"
-description = "Add your description here"
+description = "Offline functionality for Kairix"
 readme = "README.md"
 authors = [
     { name = "Mark Lubin", email = "melubin@pm.me" }
@@ -46,14 +27,38 @@ dependencies = [
     "torch>=2.7.1",
     "transformers>=4.52.4",
     "accelerate>=1.7.0",
+    "testcontainers>=4.10.0",
+    "chatformat>=1.2",
 ]
 
 [project.scripts]
-mem-ui = "kairix.ui.memory_pipeline:main"
+mem-ui = "kairix_offline.ui.memory_pipeline:main"
+test-unit = "scripts.test_unit:main"
+test-integration = "scripts.test_integration:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "ruff>=0.11.12",
+    "setuptools>=80.9.0",
+    "wheel>=0.45.1"
+]
 
 [tool.uv]
 package = true
 
 [tool.uv.sources]
-kairix = {workspace = true}
 kairix-core = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "skip: skip test",
+    "xfail: mark test as expected to fail",
+]

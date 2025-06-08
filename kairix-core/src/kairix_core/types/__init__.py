@@ -1,17 +1,18 @@
 from neomodel import (
-    StructuredNode,
-    StringProperty,
     ArrayProperty,
     FloatProperty,
-    VectorIndex,
-    Relationship,
     One,
+    Relationship,
+    StringProperty,
+    StructuredNode,
+    VectorIndex,
 )
 
 
 class Agent(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    
+
+
 class IdempotentNode(StructuredNode):
     uid = StringProperty(unique_index=True, required=True)
 
@@ -34,6 +35,7 @@ class Embedding(IdempotentNode):
     vector = ArrayProperty(
         FloatProperty(), required=True, index=True, vector_index=VectorIndex()
     )
+
 
 class Summary(IdempotentNode):
     uid = StringProperty(unique_index=True, required=True)

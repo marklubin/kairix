@@ -1,12 +1,15 @@
 import gradio as gr
 
-from kairix.ui.gpt_loader import load_from_file
-from kairix.ui.summary_memory_synth import SummaryMemorySynth
-
-
+from kairix_offline.processing import (
+    initialize_processing,
+    load_sources_from_gpt_export,
+    synth_memories,
+)
 
 file_import_output = gr.Textbox(
-    label="Results", placeholder="This is where the import will be displayed.", lines=20
+    label="Results",
+    placeholder="This is where the import output will be displayed.",
+    lines=20,
 )
 summarizer_output = gr.Textbox(
     label="Results",
@@ -25,7 +28,9 @@ with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
                 max_height=400,
             )
             gr.Button("Start").click(
-                fn=load_from_file, inputs=[file], outputs=[file_import_output]
+                fn=load_sources_from_gpt_export,
+                inputs=[file],
+                outputs=[file_import_output],
             )
         with gr.Column():
             gr.Markdown("#### Processing Result")
@@ -35,23 +40,8 @@ with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
         gr.Markdown("### Chunked Summary Memory Synth")
     with gr.Row():
         with gr.Column():
-        with gr.Column():
-            prompt = gr.FileExplorer(
-                label="Select System Prompt File",
-                value="./prompts",
-            )
-        with gr.Column():
             gr.Button("Start").click(
-                fn= SummaryMemorySynth
-                inputs=[
-                    summarizer_model,
-                    embedder_model,
-                    prompt,
-                    max_tokens,
-                    temp,
-                    chunk_size,
-                    overlap,
-                ],
+                fn=synth_memories,
                 outputs=summarizer_output,
             )
         with gr.Column():
@@ -59,7 +49,9 @@ with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
 
 
 def main():
-    history_importer.launch(server_name='0.0.0.0')
+    # Initialize the processing environment before launching UI
+    initialize_processing()
+    history_importer.launch(server_name="0.0.0.0")
 
 
 if __name__ == "__main__":

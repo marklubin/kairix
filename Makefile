@@ -5,7 +5,17 @@ install: ## Install the virtual environment and install the pre-commit hooks
 	@uv run pre-commit install
 
 .PHONY: check
-check: ## Run code quality tools.
+check: ## Run code quality tools (ruff + mypy).
+	@echo "🚀 Running all code quality checks"
+	@uv run python scripts/check.py
+
+.PHONY: fix
+fix: ## Auto-fix code style issues with ruff.
+	@echo "🔧 Fixing code style issues"
+	@uv run python scripts/fix.py
+
+.PHONY: check-old
+check-old: ## Run code quality tools (old version).
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
 	@uv lock --locked
 	@echo "🚀 Linting code: Running pre-commit"
