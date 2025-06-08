@@ -29,19 +29,18 @@ dependencies = [
     "accelerate>=1.7.0",
     "testcontainers>=4.10.0",
     "chatformat>=1.2",
+    "bitsandbytes>=0.46.0",
+    "protobuf>=6.31.1",
+    "sentencepiece>=0.2.0",
 ]
 
-[project.scripts]
-mem-ui = "kairix_offline.ui.memory_pipeline:main"
-test-unit = "scripts.test_unit:main"
-test-integration = "scripts.test_integration:main"
 
 [dependency-groups]
 dev = [
     "pytest>=8.4.0",
     "ruff>=0.11.12",
     "setuptools>=80.9.0",
-    "wheel>=0.45.1"
+    "wheel>=0.45.1",
 ]
 
 [tool.uv]

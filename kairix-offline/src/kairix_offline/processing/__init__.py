@@ -31,7 +31,7 @@ def load_llm(model, device):
         device_map=device,
         torch_dtype="auto",
         pad_token_id=2,
-    )
+        model_kwargs={"load_in_4bit": True})
 
 
 def initialize_processing():

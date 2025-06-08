@@ -4,13 +4,12 @@ import os
 from dotenv import load_dotenv
 from kairix_core.util.logging import InMemoryLogStreamHandler
 from rich.logging import RichHandler
-
+from os import getenv
 from kairix_offline.processing import initialize_processing
 
 # Only load dotenv if not in test environment
 if "PYTEST_CURRENT_TEST" not in os.environ:
     load_dotenv(verbose=True)
-
     initialize_processing()
 
 FORMAT = "%(message)s"
