@@ -13,7 +13,6 @@ from transformers import Pipeline
 logger = logging.getLogger(__name__)
 PROMPT_TEMPLATE_FORMAT = "chatml"
 
-
 class Chunk:
     def __init__(self, *, idempotency_key: str, text: str, source: SourceDocument):
         self.idempotency_key = idempotency_key
@@ -44,9 +43,14 @@ class SummaryMemorySynth:
                 ),
             ],
         )
+        
+        logger.info(f"\nPrompt: {prompt}")  
 
-        summary_result = self.generator.predict(prompt)["summary_text"]
+        raw_result = self.generator(prompt)
+        logger.info(f"\nRaw result: {raw_result}")
+        exit(0);
 
+        
         logger.info(
             f"\nSummary finished. Got {len(summary_result)} characters summary."
         )
@@ -87,6 +91,7 @@ class SummaryMemorySynth:
                 key = self.__get_idempotency_key(key_prefix, doc_chunk)
                 chunk = Chunk(idempotency_key=key, text=doc_chunk, source=document)
                 chunks.append(chunk)
+                logger.info(f"Chunk: {chunk}")
         return chunks
 
     def _process(self, chunk) -> MemoryShard:
@@ -153,7 +158,9 @@ class SummaryMemorySynth:
             try:
                 shards.append(self._process(chunk))
             except Exception as e:
-                logger.error(f"Failed to process chunk {chunk.text}: {e}")
+                logger.error(
+                    f"Failed to process chunk {chunk.idempotency_key}: {e}", exc_info=e
+                )
                 failed.append((chunk, e))
 
         logger.info(

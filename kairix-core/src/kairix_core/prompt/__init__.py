@@ -6,4 +6,5 @@ def as_message(role: str, content: str) -> dict:
 
 
 def as_prompt(template: str, messages: list[dict]):
-    chatformat.format_chat_prompt(template=template, messages=messages)
+    prompt, stop = chatformat.format_chat_prompt(template=template, messages=messages)
+    return prompt

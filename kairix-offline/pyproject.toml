@@ -29,7 +29,7 @@ dependencies = [
     "accelerate>=1.7.0",
     "testcontainers>=4.10.0",
     "chatformat>=1.2",
-    "bitsandbytes>=0.46.0",
+    "bitsandbytes>=0.46.0; sys_platform != 'darwin'",
     "protobuf>=6.31.1",
     "sentencepiece>=0.2.0",
 ]
@@ -41,6 +41,11 @@ dev = [
     "ruff>=0.11.12",
     "setuptools>=80.9.0",
     "wheel>=0.45.1",
+    "pytest-playwright>=0.4.3",
+    "pydantic-settings>=2.1.0",
+    "pytest-html>=4.1.0",
+    "requests>=2.31.0",
+    "click>=8.1.0",
 ]
 
 [tool.uv]
@@ -60,4 +65,5 @@ markers = [
     "unit: marks tests as unit tests",
     "skip: skip test",
     "xfail: mark test as expected to fail",
+    "ui: UI tests that require browser automation",
 ]

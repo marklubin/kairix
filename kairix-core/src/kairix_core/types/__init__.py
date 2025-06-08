@@ -1,6 +1,8 @@
 from neomodel import (
     ArrayProperty,
+    DateTimeProperty,
     FloatProperty,
+    JSONProperty,
     One,
     Relationship,
     StringProperty,
@@ -9,9 +11,17 @@ from neomodel import (
 )
 
 
+class StoredLog(StructuredNode):
+    uid = StringProperty(unique_index=True, required=True)     # Unique ID for the log entry
+    timestamp = DateTimeProperty(required=True)                # When the log occurred
+    level = StringProperty(required=True)                      # Log level: e.g., 'INFO', 'ERROR'
+    source = StringProperty()                                  # Optional: what script/module/logger
+    message = StringProperty()                                 # Raw log message (short)
+    details = JSONProperty()
+
+
 class Agent(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-
 
 class IdempotentNode(StructuredNode):
     uid = StringProperty(unique_index=True, required=True)

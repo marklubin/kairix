@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any
 
 from kairix_core.types import SourceDocument
@@ -24,14 +25,15 @@ summarizer_max_length: int | None = None
 _initialized = False
 
 
-def load_llm(model, device):
+def load_llm(model, device, quantize):
     return pipeline(
         "summarization",
         model=model,
         device_map=device,
         torch_dtype="auto",
         pad_token_id=2,
-        model_kwargs={"load_in_4bit": True})
+        model_kwargs={"load_in_4bit": quantize},
+    )
 
 
 def initialize_processing():
@@ -63,8 +65,10 @@ def initialize_processing():
     summarizer_batch_size = int(get_or_raise("KAIRIX_SUMMARIZER_BATCH_SIZE"))
     summarizer_max_length = int(get_or_raise("KAIRIX_SUMMARIZER_MAX_LENGTH"))
 
+    quantize = os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION")
+
     # Initialize LLM
-    summarizer_llm = load_llm(summarizer_model, summarizer_device)
+    summarizer_llm = load_llm(summarizer_model, summarizer_device, quantize is not None)
 
     if summarizer_llm.tokenizer is None:
         raise Exception(f"No tokenizer found for model - {summarizer_model}")

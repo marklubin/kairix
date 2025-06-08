@@ -13,9 +13,17 @@ include ../make/common.mk
 test-ui: ## Run UI automation tests
 	@echo "Running UI automation tests..."
 	@echo "Installing Playwright browsers if needed..."
-	@uv run playwright install chromium --with-deps
+	@uv run playwright install firefox --with-deps
 	@echo "Starting UI automation tests..."
-	@uv run pytest tests/ui_automation/ -v -m "ui_automation" -k ""
+	@uv run pytest tests/ui -v -m "ui"
+
+.PHONY: test-ui-headless
+test-ui-headless: ## Run UI tests in headless mode
+	@uv run pytest tests/ui -m ui --ui-headless -v
+
+.PHONY: test-ui-debug
+test-ui-debug: ## Run UI tests in debug mode
+	PWDEBUG=1 uv run pytest tests/ui -m ui -s
 
 .PHONY: start-gradio
 start-gradio: ## Start Gradio UI with docker services

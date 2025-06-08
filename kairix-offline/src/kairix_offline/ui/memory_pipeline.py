@@ -6,6 +6,23 @@ from kairix_offline.processing import (
     synth_memories,
 )
 
+theme = gr.themes.Citrus(
+    primary_hue="orange",
+    secondary_hue="lime",
+    neutral_hue="cyan",
+    text_size="lg",
+    radius_size="lg",
+).set(
+    body_background_fill="*neutral_100",
+    body_text_color="*neutral_950",
+    body_text_color_dark="*neutral_950",
+    body_text_color_subdued="*secondary_800",
+    body_text_weight="600",
+    background_fill_secondary="*primary_300",
+    border_color_accent="*secondary_200",
+    border_color_primary="*neutral_500",
+)
+
 file_import_output = gr.Textbox(
     label="Results",
     placeholder="This is where the import output will be displayed.",
@@ -16,16 +33,15 @@ summarizer_output = gr.Textbox(
     placeholder="This is where the summarizer output will be displayed.",
     lines=20,
 )
-with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
+with gr.Blocks(theme=theme) as history_importer:
     gr.Markdown("# Kairix Memory Architecture Pipline")
     with gr.Row():
         gr.Markdown("### ChatGPT History Importer")
     with gr.Row():
-        with gr.Column():
+        with gr.Column(min_width=400):
             file = gr.FileExplorer(
                 label="Select ChatGPT export file",
-                root_dir="../data",
-                value="test-convos.json",
+                root_dir="../",
                 max_height=400,
             )
             gr.Button("Start").click(
@@ -40,7 +56,7 @@ with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
     with gr.Row():
         gr.Markdown("### Chunked Summary Memory Synth")
     with gr.Row():
-        with gr.Column():
+        with gr.Column(min_width=400):
             agent_name = gr.Textbox("Agent Name")
             run_id = gr.Textbox("Run ID")
             gr.Button("Start").click(

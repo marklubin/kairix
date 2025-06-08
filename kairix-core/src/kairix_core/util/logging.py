@@ -1,4 +1,8 @@
 import logging
+import uuid
+from datetime import UTC, datetime
+
+from kairix_core.types import StoredLog
 
 kairix_logger_format_str = "%(message)s"
 
@@ -16,3 +20,28 @@ class InMemoryLogStreamHandler(logging.Handler):
 
     def stream_logs(self):
         yield self.buffer
+
+
+class Neo4jLogHandler(logging.Handler):
+    def __init__(self, level=logging.NOTSET):
+        super().__init__(level)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            uid = str(uuid.uuid4())
+            timestamp = datetime.fromtimestamp(record.created, UTC)
+            StoredLog(
+                uid=uid,
+                timestamp=timestamp,
+                level=record.levelname,
+                source=f"{record.filename}::{record.funcName}::L{record.lineno}",
+                message=record.getMessage(),
+                details={
+                    "pathname": record.pathname,
+                    "module": record.module,
+                    "thread": record.threadName,
+                    "process": record.processName,
+                },
+            ).save()
+        except Exception:
+            self.handleError(record)

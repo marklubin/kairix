@@ -2,7 +2,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from kairix_core.util.logging import InMemoryLogStreamHandler
+from kairix_core.util.logging import InMemoryLogStreamHandler, Neo4jLogHandler
 from rich.logging import RichHandler
 from os import getenv
 from kairix_offline.processing import initialize_processing
@@ -19,7 +19,7 @@ logging.basicConfig(
     level="INFO",
     format=FORMAT,
     datefmt="[%X]",
-    handlers=[RichHandler(), kairirx_log_stream],
+    handlers=[RichHandler(), Neo4jLogHandler(), kairirx_log_stream],
 )
 logger = logging.getLogger("kairix_offline")
 
