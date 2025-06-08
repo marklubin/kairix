@@ -1,0 +1,18 @@
+{
+  "name": "kairix-offline",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "mem-ui": "uv run python -m kairix_offline.ui.memory_pipeline",
+    "mem-ui-mac": "dotenv -e .env.mac -- npm run mem-ui" 
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "dotenv-cli": "^8.0.0"
+  }
+}
