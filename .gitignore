@@ -3,6 +3,8 @@
 data/**
 **/.data/**
 **/neo4j/**
+**/.neo4j/**
+
 kairix-offline/.env
 dist/**
 **/dist/**

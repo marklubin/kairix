@@ -5,8 +5,8 @@ services:
     image: neo4j:5-community
     container_name: kairix-neo4j
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
+      - "0.0.0.0:7474:7474"  # HTTP
+      - "0.0.0.0:7687:7687"  # Bolt
     volumes:
       - .neo4j/data:/data
       - .neo4j/logs:/logs
