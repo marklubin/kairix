@@ -1,0 +1,1 @@
+"""UI test cases that can be imported and run in target packages."""

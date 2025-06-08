@@ -1,0 +1,49 @@
+[project]
+name = "kairix-ui-testing"
+version = "0.1.0"
+description = "Black-box browser automation testing suite for Kairix project interfaces"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "playwright>=1.40.0",
+    "pytest>=7.4.0",
+    "pytest-playwright>=0.4.3",
+    "pytest-xdist>=3.5.0",
+    "pytest-html>=4.1.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "allure-pytest>=2.13.0",
+    "click>=8.1.0",
+    "gradio>=4.0.0",
+    "requests>=2.31.0",
+    # kairix-offline is imported via sys.path manipulation
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+[project.scripts]
+kairix-mock-ui = "kairix_ui_testing.test_runner.mock_server:run_mock_server"
+
+
+# UI testing framework - tests are run in the target package
+[tool.pytest.ini_options]
+testpaths = []  # No tests in this package
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

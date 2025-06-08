@@ -1,0 +1,24 @@
+{
+  "conversations": [
+    {
+      "id": "test-1",
+      "title": "Test Conversation",
+      "create_time": 1704067200,
+      "mapping": {
+        "msg1": {
+          "message": {
+            "author": {
+              "role": "user"
+            },
+            "content": {
+              "parts": [
+                "Test message"
+              ]
+            },
+            "create_time": 1704067200
+          }
+        }
+      }
+    }
+  ]
+}
