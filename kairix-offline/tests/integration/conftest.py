@@ -1,4 +1,12 @@
 from unittest.mock import MagicMock
+import os
+import sys
+
+# Prevent any imports that might connect to database
+os.environ['TESTING'] = '1'
+os.environ.pop('NEO4J_URL', None)
+os.environ.pop('KAIRIX_DATABASE_URL', None)
+os.environ.pop('DATABASE_URL', None)
 
 import numpy as np
 import pytest
@@ -14,6 +22,13 @@ _neo4j_container = None
 def pytest_sessionstart(session):
     """Start Neo4j container before any tests or imports."""
     global _neo4j_container
+    
+    import os
+    
+    # Clear any existing database URLs
+    for var in ['NEO4J_URL', 'KAIRIX_DATABASE_URL', 'DATABASE_URL']:
+        if var in os.environ:
+            del os.environ[var]
 
     from testcontainers.neo4j import Neo4jContainer
 
@@ -32,10 +47,6 @@ def pytest_sessionstart(session):
     )
     _neo4j_container.start()
 
-    # Configure neomodel immediately
-    from neomodel import config as neomodel_config
-    from neomodel import db
-
     # Get connection URL and add credentials manually
     base_url = _neo4j_container.get_connection_url()
     # Extract host:port from the URL
@@ -47,7 +58,31 @@ def pytest_sessionstart(session):
         host_port = base_url.replace('bolt://', '')
     
     # Build URL with our credentials
-    neomodel_config.DATABASE_URL = f"bolt://neo4j:password@{host_port}"
+    test_db_url = f"bolt://neo4j:password@{host_port}"
+    
+    # Set environment variables BEFORE importing neomodel
+    os.environ['NEO4J_URL'] = test_db_url
+    os.environ['KAIRIX_DATABASE_URL'] = test_db_url
+    os.environ['DATABASE_URL'] = test_db_url
+    
+    # NOW import and configure neomodel
+    from neomodel import config as neomodel_config
+    from neomodel import db
+    
+    neomodel_config.DATABASE_URL = test_db_url
+    
+    # Wait for database to be ready
+    import time
+    max_retries = 30
+    for i in range(max_retries):
+        try:
+            db.cypher_query("RETURN 1")
+            print(f"Neo4j container ready at {test_db_url}")
+            break
+        except Exception as e:
+            if i == max_retries - 1:
+                raise
+            time.sleep(1)
     
     db.install_all_labels()
 
@@ -59,15 +94,34 @@ def pytest_sessionfinish(session, exitstatus):
         _neo4j_container.stop()
 
 
-@pytest.fixture(autouse=True)
-def clean_database():
-    """Clean the database before each test"""
+@pytest.fixture(scope="session")
+def neo4j_db():
+    """Ensure Neo4j is connected for tests"""
+    # The connection is already configured in pytest_sessionstart
     from neomodel import db
-    # Clear all nodes before each test
-    db.cypher_query("MATCH (n) DETACH DELETE n")
+    return db
+
+
+@pytest.fixture(autouse=True, scope="function")
+def clean_database(request, neo4j_db):
+    """Clean the database before each test"""
+    # Only run for integration tests
+    if "integration" not in [m.name for m in request.node.iter_markers()]:
+        yield
+        return
+        
+    try:
+        # Clear all nodes before each test
+        neo4j_db.cypher_query("MATCH (n) DETACH DELETE n")
+    except Exception as e:
+        # If database is not ready, it will fail but that's ok
+        pass
     yield
-    # Optionally clean after test as well
-    db.cypher_query("MATCH (n) DETACH DELETE n")
+    try:
+        # Optionally clean after test as well
+        neo4j_db.cypher_query("MATCH (n) DETACH DELETE n")
+    except Exception:
+        pass
 
 
 @pytest.fixture

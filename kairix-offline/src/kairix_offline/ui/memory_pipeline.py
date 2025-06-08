@@ -24,6 +24,7 @@ with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
         with gr.Column():
             file = gr.FileExplorer(
                 label="Select ChatGPT export file",
+                root_dir="../data",
                 value="test-convos.json",
                 max_height=400,
             )
@@ -40,8 +41,11 @@ with gr.Blocks(theme="shivi/calm_seafoam") as history_importer:
         gr.Markdown("### Chunked Summary Memory Synth")
     with gr.Row():
         with gr.Column():
+            agent_name = gr.Textbox("Agent Name")
+            run_id = gr.Textbox("Run ID")
             gr.Button("Start").click(
                 fn=synth_memories,
+                inputs=[agent_name, run_id],
                 outputs=summarizer_output,
             )
         with gr.Column():

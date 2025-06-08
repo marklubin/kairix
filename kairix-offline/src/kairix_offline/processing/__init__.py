@@ -1,9 +1,9 @@
 import logging
 from typing import Any
 
-from kairix_core.prompt import system_instructions
 from kairix_core.types import SourceDocument
 from kairix_core.util.environment import get_or_raise
+from neomodel import config as neomodel_config
 from neomodel import db
 from semchunk import chunkerify
 from sentence_transformers import SentenceTransformer
@@ -13,7 +13,6 @@ from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
 from kairix_offline.processing.summary_memory_synth import SummaryMemorySynth
 
 __all__ = ["initialize_processing", "load_sources_from_gpt_export", "synth_memories"]
-
 
 logger = logging.getLogger("kairix_offline")
 
@@ -27,7 +26,7 @@ _initialized = False
 
 def load_llm(model, device):
     return pipeline(
-        "summary_text",
+        "summarization",
         model=model,
         device_map=device,
         torch_dtype="auto",
@@ -52,6 +51,7 @@ def initialize_processing():
         return
 
     logger.info("Initializing Neo4J database.")
+    neomodel_config.DATABASE_URL = get_or_raise("NEO4J_URL")
     SourceDocument(
         uid="1", source_label="smoke-test", source_type="none", content="test"
     ).create_or_update()

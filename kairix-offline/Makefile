@@ -1,51 +1,35 @@
-# Makefile for managing Ollama models with external system prompts
+# Makefile for kairix-offline module
 
-# Testing targets
-.PHONY: test
-test:
-	@echo "Running unit tests..."
-	@uv run pytest
+# Module-specific variables
+MODULE_NAME := kairix-offline
+MODULE_PATH := $(shell pwd)
 
-.PHONY: test-integ
-test-integ:
-	@echo "Running integration tests..."
-	@uv run pytest -v -k "integration" --ignore=scripts/
+# Include common targets
+include ../make/common.mk
+
+# Module-specific targets (override or extend common ones)
 
 .PHONY: test-ui
-test-ui:
+test-ui: ## Run UI automation tests
 	@echo "Running UI automation tests..."
 	@echo "Installing Playwright browsers if needed..."
 	@uv run playwright install chromium --with-deps
 	@echo "Starting UI automation tests..."
 	@uv run pytest tests/ui_automation/ -v -m "ui_automation" -k ""
 
-.PHONY: test-all
-test-all:
-	@echo "Running all tests..."
-	@uv run pytest -v --ignore=scripts/ -k ""
-
 .PHONY: start-gradio
-start-gradio:
+start-gradio: ## Start Gradio UI with docker services
 	@docker compose up -d
 	@uv run ruff check --fix
 	@uv run mem-ui
 
-.PHONY: install
-install:
-	@mkdir -p neo4j
-	@uv sync
-	@uv run ruff check --fix
-
 .PHONY: create-env
-create-env:
+create-env: ## Create .env file from template
 	@cp default.env .env
+	@echo "Created .env file from default.env"
 
-.PHONY: lint
-lint:
-	@uv run ruff check --fix
+# Override the help target to use module-help
+.PHONY: help
+help: module-help
 
-.PHONY: clean
-clean:
-	@echo "Cleaning generated Modelfiles..."
-	@rm -rf .venv dist
-	@echo "✓ Cleanup complete"
+.DEFAULT_GOAL := help
