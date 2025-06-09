@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 # Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../src"))
 
 # Import directly to avoid the processing module __init__.py
 import kairix_offline.processing.summary_memory_synth
@@ -35,17 +35,20 @@ class TestSummaryMemorySynth:
         return embedder
 
     @pytest.fixture
-    def mock_generator(self):
-        """Mock generator that returns predictable summaries."""
-        generator = Mock()
-        generator.predict.return_value = {"summary_text": "Generated summary text"}
-        return generator
+    def mock_inference_provider(self):
+        """Mock inference_provider that returns predictable summaries."""
+        inference_provider = Mock()
+        # predict method returns a string directly
+        inference_provider.predict.return_value = "Generated summary text"
+        return inference_provider
 
     @pytest.fixture
-    def synth(self, mock_chunker, mock_embedder, mock_generator):
+    def synth(self, mock_chunker, mock_embedder, mock_inference_provider):
         """Create SummaryMemorySynth instance with mocked dependencies."""
         return SummaryMemorySynth(
-            chunker=mock_chunker, embedder=mock_embedder, generator=mock_generator
+            chunker=mock_chunker,
+            embedder=mock_embedder,
+            inference_provider=mock_inference_provider,
         )
 
     @pytest.fixture
@@ -63,14 +66,16 @@ class TestSummaryMemorySynth:
         agent.name = "test-agent"
         return agent
 
-    def test_initialization(self, mock_chunker, mock_embedder, mock_generator):
+    def test_initialization(self, mock_chunker, mock_embedder, mock_inference_provider):
         """Test that SummaryMemorySynth initializes with correct dependencies."""
         synth = SummaryMemorySynth(
-            chunker=mock_chunker, embedder=mock_embedder, generator=mock_generator
+            chunker=mock_chunker,
+            embedder=mock_embedder,
+            inference_provider=mock_inference_provider,
         )
         assert synth.chunker == mock_chunker
         assert synth.embedder == mock_embedder
-        assert synth.generator == mock_generator
+        assert synth.inference_provider == mock_inference_provider
 
     @patch("kairix_offline.processing.summary_memory_synth.Summary")
     def test_get_summary_creates_new(self, mock_summary_class, synth):
@@ -89,7 +94,7 @@ class TestSummaryMemorySynth:
 
         # Verify
         mock_summary_class.get_or_none.assert_called_once_with("test-key")
-        synth.generator.predict.assert_called_once()
+        synth.inference_provider.predict.assert_called_once()
         # We don't need to check the exact prompt format, just that predict was called
         mock_summary_class.assert_called_once_with(
             uid="test-key", summary_text="Generated summary text"
@@ -112,7 +117,7 @@ class TestSummaryMemorySynth:
 
         # Verify
         mock_summary_class.get_or_none.assert_called_once_with("test-key")
-        synth.generator.predict.assert_not_called()
+        synth.inference_provider.predict.assert_not_called()
         assert result == existing_summary
 
     @patch("kairix_offline.processing.summary_memory_synth.Embedding")
@@ -177,7 +182,7 @@ class TestSummaryMemorySynth:
 
         # Check each chunk
         for i, chunk in enumerate(chunks):
-            expected_text = f"chunk{i+1}"
+            expected_text = f"chunk{i + 1}"
             expected_hash = hashlib.sha256(expected_text.encode()).hexdigest()
             expected_key = f"test-prefix-{expected_hash}"
 
@@ -212,15 +217,19 @@ class TestSummaryMemorySynth:
         mock_summary = Mock(summary_text="test summary")
         mock_embedding = Mock(vector=[0.1, 0.2, 0.3])
 
-        with patch.object(synth, "_get_summary", return_value=mock_summary):
-            with patch.object(synth, "_get_embedding", return_value=mock_embedding):
-                # Execute
-                result = synth._process(chunk)
+        with (
+            patch.object(synth, "_get_summary", return_value=mock_summary),
+            patch.object(synth, "_get_embedding", return_value=mock_embedding),
+        ):
+            # Execute
+            result = synth._process(chunk)
 
         # Verify shard creation
         mock_shard_class.get_or_none.assert_called_once_with("test-key")
         mock_shard_class.assert_called_once_with(
-            uid="test-key", shard_contents="test summary", vector_address=[0.1, 0.2, 0.3]
+            uid="test-key",
+            shard_contents="test summary",
+            vector_address=[0.1, 0.2, 0.3],
         )
         mock_shard_instance.save.assert_called_once()
 
@@ -238,7 +247,13 @@ class TestSummaryMemorySynth:
     @patch("kairix_offline.processing.summary_memory_synth.Embedding")
     @patch("kairix_offline.processing.summary_memory_synth.MemoryShard")
     def test_process_reuses_existing_shard(
-        self, mock_shard_class, mock_embedding_class, mock_summary_class, synth, mock_agent, mock_source_document
+        self,
+        mock_shard_class,
+        mock_embedding_class,
+        mock_summary_class,
+        synth,
+        mock_agent,
+        mock_source_document,
     ):
         """Test _process reuses existing MemoryShard (idempotency)."""
         # Setup

@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Any
 
 from kairix_core.types import SourceDocument
 from kairix_core.util.environment import get_or_raise
@@ -8,7 +7,7 @@ from neomodel import config as neomodel_config
 from neomodel import db
 from semchunk import chunkerify
 from sentence_transformers import SentenceTransformer
-from transformers import pipeline
+from transformers import AutoTokenizer
 
 from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
 from kairix_offline.processing.summary_memory_synth import SummaryMemorySynth
@@ -19,21 +18,38 @@ logger = logging.getLogger("kairix_offline")
 
 # Global variables that will be initialized
 summary_memory_synthezier: SummaryMemorySynth | None = None
-summarizer_llm: Any | None = None
 summarizer_batch_size: int | None = None
 summarizer_max_length: int | None = None
 _initialized = False
 
 
-def load_llm(model, device, quantize):
-    return pipeline(
-        "summarization",
-        model=model,
-        device_map=device,
-        torch_dtype="auto",
-        pad_token_id=2,
-        model_kwargs={"load_in_4bit": quantize},
+def get_summary_inference_provider():
+    summarizer_model = get_or_raise("KAIRIX_SUMMARIZER_MODEL")
+    quantize = os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION")
+    from kairix_core.inference.vllm import VLLMInferenceProvider
+
+    return VLLMInferenceProvider(
+        model_parameters={
+            "model": summarizer_model,
+            "use_quantization": quantize,
+        }
     )
+
+
+def get_inference_parameters():
+    tokens = get_or_raise("KAIRIX_SUMMARIZER_MAX_TOKENS")
+    temp = get_or_raise("KAIRIX_SUMMARIZER_TEMPERATURE")
+    template = get_or_raise("KAIRIX_SUMMARIZER_TEMPLATE")
+    instruction = get_or_raise("KAIRIX_SUMMARIZER_INSTRUCTION")
+    user_prompt = get_or_raise("KAIRIX_SUMMARIZER_USER_PROMPT")
+
+    return {
+        "requested_tokens": tokens,
+        "temperature": temp,
+        "chat_template": template,
+        "system_instruction": instruction,
+        "user_prompt": user_prompt,
+    }
 
 
 def initialize_processing():
@@ -43,7 +59,6 @@ def initialize_processing():
     """
     global \
         summary_memory_synthezier, \
-        summarizer_llm, \
         summarizer_batch_size, \
         summarizer_max_length, \
         _initialized
@@ -59,23 +74,11 @@ def initialize_processing():
     ).create_or_update()
     db.install_all_labels()
 
-    # Load configuration
-    summarizer_model = get_or_raise("KAIRIX_SUMMARIZER_MODEL")
-    summarizer_device = get_or_raise("KAIRIX_SUMMARIZER_MODEL_DEVICE")
-    summarizer_batch_size = int(get_or_raise("KAIRIX_SUMMARIZER_BATCH_SIZE"))
-    summarizer_max_length = int(get_or_raise("KAIRIX_SUMMARIZER_MAX_LENGTH"))
-
-    quantize = os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION")
-
-    # Initialize LLM
-    summarizer_llm = load_llm(summarizer_model, summarizer_device, quantize is not None)
-
-    if summarizer_llm.tokenizer is None:
-        raise Exception(f"No tokenizer found for model - {summarizer_model}")
+    inference_provider = get_summary_inference_provider()
 
     # Initialize chunker
     chunk_size = int(get_or_raise("KAIRIX_CHUNK_SIZE"))
-    chunker = chunkerify(summarizer_llm.tokenizer, chunk_size)
+    chunker = chunkerify(AutoTokenizer.from_pretrained("gpt2"), chunk_size)
 
     # Initialize embedder
     embedding_model = get_or_raise("KAIRIX_EMBEDDER_MODEL")
@@ -98,25 +101,13 @@ def initialize_processing():
 
     # Initialize synthesizer
     summary_memory_synthezier = SummaryMemorySynth(
-        chunker=chunker, embedder=embedding_transformer, generator=summarizer_llm
+        chunker=chunker,
+        embedder=embedding_transformer,
+        inference_provider=inference_provider,
     )
 
     _initialized = True
     logger.info("Processing environment initialized successfully.")
-
-
-def llm_gen_factory(user_prompt):
-    """Factory function for LLM generation. Requires initialize_processing() to be called first."""
-    if not _initialized:
-        raise RuntimeError(
-            "Processing environment not initialized. Call initialize_processing() first."
-        )
-    assert summarizer_llm is not None
-    assert summarizer_batch_size is not None
-    assert summarizer_max_length is not None
-    return summarizer_llm(
-        user_prompt, batch_size=summarizer_batch_size, max_length=summarizer_max_length
-    )
 
 
 def synth_memories(agent_name, run_id):

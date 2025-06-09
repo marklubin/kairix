@@ -1,12 +1,11 @@
-from unittest.mock import MagicMock
 import os
-import sys
+from unittest.mock import MagicMock
 
 # Prevent any imports that might connect to database
-os.environ['TESTING'] = '1'
-os.environ.pop('NEO4J_URL', None)
-os.environ.pop('KAIRIX_DATABASE_URL', None)
-os.environ.pop('DATABASE_URL', None)
+os.environ["TESTING"] = "1"
+os.environ.pop("NEO4J_URL", None)
+os.environ.pop("KAIRIX_DATABASE_URL", None)
+os.environ.pop("DATABASE_URL", None)
 
 import numpy as np
 import pytest
@@ -22,14 +21,14 @@ _neo4j_container = None
 def pytest_sessionstart(session):
     """Start Neo4j container before any tests or imports."""
     global _neo4j_container
-    
+
     import os
-    
+
     # Clear any existing database URLs
-    for var in ['NEO4J_URL', 'KAIRIX_DATABASE_URL', 'DATABASE_URL']:
+    for var in ["NEO4J_URL", "KAIRIX_DATABASE_URL", "DATABASE_URL"]:
         if var in os.environ:
             del os.environ[var]
-
+ls
     from testcontainers.neo4j import Neo4jContainer
 
     _neo4j_container = (
@@ -51,39 +50,38 @@ def pytest_sessionstart(session):
     base_url = _neo4j_container.get_connection_url()
     # Extract host:port from the URL
     import re
-    match = re.search(r'bolt://(?:[^@]+@)?(.+)', base_url)
-    if match:
-        host_port = match.group(1)
-    else:
-        host_port = base_url.replace('bolt://', '')
-    
+
+    match = re.search(r"bolt://(?:[^@]+@)?(.+)", base_url)
+    host_port = match.group(1) if match else base_url.replace("bolt://", "")
+
     # Build URL with our credentials
     test_db_url = f"bolt://neo4j:password@{host_port}"
-    
+
     # Set environment variables BEFORE importing neomodel
-    os.environ['NEO4J_URL'] = test_db_url
-    os.environ['KAIRIX_DATABASE_URL'] = test_db_url
-    os.environ['DATABASE_URL'] = test_db_url
-    
+    os.environ["NEO4J_URL"] = test_db_url
+    os.environ["KAIRIX_DATABASE_URL"] = test_db_url
+    os.environ["DATABASE_URL"] = test_db_url
+
     # NOW import and configure neomodel
     from neomodel import config as neomodel_config
     from neomodel import db
-    
+
     neomodel_config.DATABASE_URL = test_db_url
-    
+
     # Wait for database to be ready
     import time
+
     max_retries = 30
     for i in range(max_retries):
         try:
             db.cypher_query("RETURN 1")
             print(f"Neo4j container ready at {test_db_url}")
             break
-        except Exception as e:
+        except Exception:
             if i == max_retries - 1:
                 raise
             time.sleep(1)
-    
+
     db.install_all_labels()
 
 
@@ -99,6 +97,7 @@ def neo4j_db():
     """Ensure Neo4j is connected for tests"""
     # The connection is already configured in pytest_sessionstart
     from neomodel import db
+
     return db
 
 
@@ -109,39 +108,34 @@ def clean_database(request, neo4j_db):
     if "integration" not in [m.name for m in request.node.iter_markers()]:
         yield
         return
-        
+
     try:
         # Clear all nodes before each test
         neo4j_db.cypher_query("MATCH (n) DETACH DELETE n")
-    except Exception as e:
-        # If database is not ready, it will fail but that's ok
-        pass
+    except Exception:
+        print("okay")
     yield
     try:
         # Optionally clean after test as well
         neo4j_db.cypher_query("MATCH (n) DETACH DELETE n")
     except Exception:
-        pass
+        print("okay")
 
 
 @pytest.fixture
-def mock_llm():
-    """Mock LLM that returns predictable summaries"""
-    mock = MagicMock()
-
-    def predict(user_prompt, batch_size=1, max_length=512):
-        # Return a simple summary based on the prompt
-        return {"summary_text": SUMMARY_TEXT}
-
-    mock.predict = predict
-    return mock
+def mock_inference_provider():
+    """Mock inference_provider that returns predictable summaries."""
+    inference_provider = MagicMock()
+    # predict method returns a string directly
+    inference_provider.predict.return_value = SUMMARY_TEXT
+    return inference_provider
 
 
 @pytest.fixture
 def mock_embedder():
     """Mock embedder that returns predictable embeddings"""
     mock = MagicMock()
-    
+
     # Add model_card_data attribute
     mock.model_card_data = MagicMock()
     mock.model_card_data.model_name = "test-embedder-model"
@@ -156,7 +150,7 @@ def mock_embedder():
 @pytest.fixture
 def mock_chunker():
     """Mock chunker that splits text into simple chunks"""
-    
+
     call_count = 0
 
     def chunker(text):
@@ -164,6 +158,12 @@ def mock_chunker():
         # Return unique chunks for each document to avoid idempotency collisions
         base = call_count * 5
         call_count += 1
-        return [f"chunk_{base+1}", f"chunk_{base+2}", f"chunk_{base+3}", f"chunk_{base+4}", f"chunk_{base+5}"]
+        return [
+            f"chunk_{base + 1}",
+            f"chunk_{base + 2}",
+            f"chunk_{base + 3}",
+            f"chunk_{base + 4}",
+            f"chunk_{base + 5}",
+        ]
 
     return chunker

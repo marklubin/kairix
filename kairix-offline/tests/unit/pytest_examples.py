@@ -21,7 +21,7 @@ class TestConditionalSkip:
 @pytest.mark.xfail(reason="Known bug")
 class TestExpectedFailure:
     def test_something(self):
-        assert False  # This will be marked as XFAIL, not FAILED
+        raise AssertionError()  # This will be marked as XFAIL, not FAILED
 
 
 # Example 4: Custom markers
@@ -42,7 +42,7 @@ class TestPartialSkip:
 
     @pytest.mark.skip(reason="Not ready")
     def test_skipped(self):
-        assert False
+        raise AssertionError()
 
     @pytest.mark.skipif(not hasattr(str, "removeprefix"), reason="Requires Python 3.9+")
     def test_conditional(self):

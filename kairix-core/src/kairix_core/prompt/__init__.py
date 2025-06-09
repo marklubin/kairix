@@ -1,7 +1,9 @@
 import chatformat
 
 
-def as_message(role: str, content: str) -> dict:
+def as_message(role: str, content: str, **kwargs) -> dict:
+    if kwargs is not None:
+        content = content.format(**kwargs)
     return {"role": role, "content": content}
 
 

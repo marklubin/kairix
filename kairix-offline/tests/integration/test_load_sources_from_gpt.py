@@ -63,7 +63,7 @@ class TestGPTLoaderIntegration:
     def test_parse_mapping_valid(self):
         """Test parsing valid message mapping"""
         from kairix_offline.processing.gpt_loader import parse_mapping
-        
+
         mapping = {
             "message": {
                 "content": {"parts": ["Test message content"]},
@@ -81,7 +81,7 @@ class TestGPTLoaderIntegration:
     def test_parse_mapping_invalid(self):
         """Test parsing invalid message mappings"""
         from kairix_offline.processing.gpt_loader import parse_mapping
-        
+
         # Test with non-dict
         assert parse_mapping("not a dict") is None
 
@@ -98,9 +98,9 @@ class TestGPTLoaderIntegration:
         self, sample_conversation_data
     ):
         """Test loading a single conversation from file"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         # Create a temporary file with one conversation
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump([sample_conversation_data[0]], f)
@@ -108,7 +108,7 @@ class TestGPTLoaderIntegration:
 
         try:
             # Load the file
-            messages = list(load_sources_from_gpt_export(temp_file))
+            list(load_sources_from_gpt_export(temp_file))
 
             # Verify source documents were created
             docs = SourceDocument.nodes.filter(source_type="chatgpt")
@@ -127,9 +127,9 @@ class TestGPTLoaderIntegration:
         self, sample_conversation_data
     ):
         """Test loading multiple conversations from file"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         # Create a temporary file with all conversations
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_conversation_data, f)
@@ -137,7 +137,7 @@ class TestGPTLoaderIntegration:
 
         try:
             # Load the file
-            messages = list(load_sources_from_gpt_export(temp_file))
+            list(load_sources_from_gpt_export(temp_file))
 
             # Verify source documents were created
             docs = SourceDocument.nodes.filter(source_type="chatgpt")
@@ -153,9 +153,9 @@ class TestGPTLoaderIntegration:
 
     def test_load_sources_from_gpt_export_with_empty_title(self):
         """Test handling conversations with empty titles"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         data = [
             {
                 "title": "",
@@ -177,7 +177,7 @@ class TestGPTLoaderIntegration:
 
         try:
             # Load the file - should skip conversation with no title
-            messages = list(load_sources_from_gpt_export(temp_file))
+            list(load_sources_from_gpt_export(temp_file))
 
             # Verify no documents were created
             docs = SourceDocument.nodes.filter(source_type="chatgpt")
@@ -188,9 +188,9 @@ class TestGPTLoaderIntegration:
 
     def test_load_sources_from_gpt_export_with_no_mappings(self):
         """Test handling conversations with no mappings"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         data = [{"title": "Empty Conversation", "mapping": None}]
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -199,7 +199,7 @@ class TestGPTLoaderIntegration:
 
         try:
             # Load the file - should skip conversation with no mappings
-            messages = list(load_sources_from_gpt_export(temp_file))
+            list(load_sources_from_gpt_export(temp_file))
 
             # Verify no documents were created
             docs = SourceDocument.nodes.filter(source_type="chatgpt")
@@ -210,16 +210,16 @@ class TestGPTLoaderIntegration:
 
     def test_load_sources_from_gpt_export_list_input(self, sample_conversation_data):
         """Test loading file when input is a list"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump([sample_conversation_data[0]], f)
             temp_file = f.name
 
         try:
             # Load the file with list input
-            messages = list(load_sources_from_gpt_export([temp_file]))
+            list(load_sources_from_gpt_export([temp_file]))
 
             # Verify document was created
             docs = SourceDocument.nodes.filter(source_type="chatgpt")
@@ -231,7 +231,7 @@ class TestGPTLoaderIntegration:
     def test_load_sources_from_gpt_export_empty_list(self):
         """Test handling empty file list"""
         from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
-        
+
         messages = list(load_sources_from_gpt_export([]))
 
         # Should yield info message about no file selected
@@ -239,16 +239,16 @@ class TestGPTLoaderIntegration:
 
     def test_document_content_formatting(self, sample_conversation_data):
         """Test that document content is properly formatted"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump([sample_conversation_data[0]], f)
             temp_file = f.name
 
         try:
             # Load the file
-            messages = list(load_sources_from_gpt_export(temp_file))
+            list(load_sources_from_gpt_export(temp_file))
 
             # Get the created document
             doc = SourceDocument.nodes.get(source_type="chatgpt")
@@ -264,16 +264,16 @@ class TestGPTLoaderIntegration:
 
     def test_unique_document_ids(self, sample_conversation_data):
         """Test that each document gets a unique ID"""
-        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
         from kairix_core.types import SourceDocument
-        
+        from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_conversation_data, f)
             temp_file = f.name
 
         try:
             # Load the file
-            messages = list(load_sources_from_gpt_export(temp_file))
+            list(load_sources_from_gpt_export(temp_file))
 
             # Get all created documents
             docs = SourceDocument.nodes.filter(source_type="chatgpt")

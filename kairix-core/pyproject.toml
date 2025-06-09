@@ -16,6 +16,10 @@ dependencies = [
     "neomodel>=5.5.0",
     "chatformat>=1.2",
 ]
+[project.optional-dependencies]
+linux = [
+    "vllm==0.9.0"
+]
 
 [tool.uv]
 package = true

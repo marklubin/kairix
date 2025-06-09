@@ -13,3 +13,10 @@ Remember:
 CONVERSATION_TO_REFLECT_ON:
 =============================================================================
 """
+
+
+self_reflective_minimal_user_prompt = """
+[BEGIN_CONVERSATION_TO_REFLECT_ON]
+{content}
+[END_CONVERSATION_TO_REFLECT_ON]
+"""

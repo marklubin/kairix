@@ -2,16 +2,13 @@ import hashlib
 import logging
 from typing import Any
 
-import kairix_core.prompt as prompts
-import kairix_core.prompt.prompt_messages as prompt_messages
-import kairix_core.prompt.system_instructions as instructions
+from kairix_core.inference_provider import InferenceParams, InferenceProvider
 from kairix_core.types import Agent, Embedding, MemoryShard, SourceDocument, Summary
 from semchunk import Chunker
 from sentence_transformers import SentenceTransformer
-from transformers import Pipeline
 
 logger = logging.getLogger(__name__)
-PROMPT_TEMPLATE_FORMAT = "chatml"
+
 
 class Chunk:
     def __init__(self, *, idempotency_key: str, text: str, source: SourceDocument):
@@ -21,10 +18,18 @@ class Chunk:
 
 
 class SummaryMemorySynth:
-    def __init__(self, *, chunker, embedder, generator):
+    def __init__(
+        self,
+        *,
+        chunker,
+        embedder,
+        inference_provider: InferenceProvider,
+        **kwargs,
+    ):
         self.chunker: Chunker = chunker
         self.embedder: SentenceTransformer = embedder
-        self.generator: Pipeline = generator
+        self.inference_provider: InferenceProvider = inference_provider
+        self.inference_parameters: InferenceParams = InferenceParams(kwargs)
 
     def _get_summary(self, chunk):
         summary = Summary.get_or_none(chunk.idempotency_key)
@@ -32,30 +37,15 @@ class SummaryMemorySynth:
             logger.info("\nFound existing summary reusing.")
             return summary
 
-        logger.info("\nCalling Model to generate summary.")
+        logger.info("\nStartig to call provider for summary..")
 
-        prompt = prompts.as_prompt(
-            PROMPT_TEMPLATE_FORMAT,
-            [
-                prompts.as_message("system", instructions.self_reflective_summary),
-                prompts.as_message(
-                    "user", f"{prompt_messages.self_reflective_summary}\n\n{chunk.text}"
-                ),
-            ],
+        summary_text = self.inference_provider.predict(
+            chunk.text, self.inference_parameters
         )
-        
-        logger.info(f"\nPrompt: {prompt}")  
+        logger.info(f"Summary received got {len(summary_text)} characters back.")
 
-        raw_result = self.generator(prompt)
-        logger.info(f"\nRaw result: {raw_result}")
-        exit(0);
-
-        
-        logger.info(
-            f"\nSummary finished. Got {len(summary_result)} characters summary."
-        )
-
-        summary = Summary(uid=chunk.idempotency_key, summary_text=summary_result)
+        # Create and save Summary object
+        summary = Summary(uid=chunk.idempotency_key, summary_text=summary_text)
         summary.save()
         return summary
 

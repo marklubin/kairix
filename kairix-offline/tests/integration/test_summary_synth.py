@@ -25,9 +25,11 @@ class TestSummaryMemorySynthIntegration:
     """Integration tests for summary memory synthesis with real Neo4j database"""
 
     @pytest.fixture
-    def synthezier(self, mock_llm, mock_embedder, mock_chunker):
+    def synthezier(self, mock_inference_provider, mock_embedder, mock_chunker):
         return SummaryMemorySynth(
-            chunker=mock_chunker, embedder=mock_embedder, generator=mock_llm
+            chunker=mock_chunker,
+            embedder=mock_embedder,
+            inference_provider=mock_inference_provider,
         )
 
     @pytest.mark.parametrize(
