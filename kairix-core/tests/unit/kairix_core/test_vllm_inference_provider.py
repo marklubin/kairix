@@ -9,12 +9,15 @@ vllm_module = ModuleType("vllm")
 
 class MockLLM:
     def __init__(
-        self, model, trust_remote_code=True, quantization=None, cpu_offload_gb=32
+        self, model, trust_remote_code=True, quantization=None, cpu_offload_gb=32,
+        kv_cache_dtype=None, calculate_kv_scales=None
     ):
         self.model = model
         self.trust_remote_code = trust_remote_code
         self.quantization = quantization
         self.cpu_offload_gb = cpu_offload_gb
+        self.kv_cache_dtype = kv_cache_dtype
+        self.calculate_kv_scales = calculate_kv_scales
 
     def generate(self, prompt, sampling_params):
         # Return mock results matching expected structure
@@ -65,8 +68,8 @@ prompt_module.as_prompt = Mock(
 )
 sys.modules["kairix_core.prompt"] = prompt_module
 
-from kairix_core.inference.vllm import VLLMInferenceProvider
-from kairix_core.inference_provider import (
+from kairix_core.inference.vllm import VLLMInferenceProvider  # noqa E402
+from kairix_core.inference_provider import (  # noqa E402
     InferenceParams,
     InferenceProvider,
     ModelParams,
@@ -90,7 +93,6 @@ class TestVLLMInferenceProvider(unittest.TestCase):
     def test_init_without_quantization(self):
         provider = VLLMInferenceProvider(
             model_parameters=self.model_params,
-            interence_parameters=self.inference_params,
         )
 
         # Verify the LLM instance was created with correct parameters
@@ -100,7 +102,6 @@ class TestVLLMInferenceProvider(unittest.TestCase):
         self.assertEqual(provider.llm.cpu_offload_gb, 32)
 
         self.assertEqual(provider.model_parameters, self.model_params)
-        self.assertEqual(provider.inference_parameters, self.inference_params)
 
     def test_init_with_quantization(self):
         model_params_with_quant = self.model_params.copy()
@@ -108,7 +109,6 @@ class TestVLLMInferenceProvider(unittest.TestCase):
 
         provider = VLLMInferenceProvider(
             model_parameters=model_params_with_quant,
-            interence_parameters=self.inference_params,
         )
 
         # Verify the LLM instance was created with quantization
@@ -117,17 +117,28 @@ class TestVLLMInferenceProvider(unittest.TestCase):
         self.assertEqual(provider.llm.quantization, "awq")
         self.assertEqual(provider.llm.cpu_offload_gb, 32)
 
-    def test_predict(self):
+    def test_predict_happy_path(self):
+        # Setup mock output
+        mock_output = Mock()
+        mock_output.text = "This is the generated response"
+        mock_request_output = Mock()
+        mock_request_output.outputs = [mock_output]
+
         # Create provider
         provider = VLLMInferenceProvider(
             model_parameters=self.model_params,
-            interence_parameters=self.inference_params,
         )
+        provider.llm.generate = Mock(return_value=[mock_request_output])
+
+        # Reset mocks from setUp
+        chatformat_module.format_chat_prompt.reset_mock()
+        prompt_module.as_message.reset_mock()
+        prompt_module.as_prompt.reset_mock()
 
         # Call predict
-        content = "Test content"
+        user_input = "What is 2+2?"
         params = self.inference_params.copy()
-        result = provider.predict(content, params)
+        result = provider.predict(user_input, params)
 
         # Verify chatformat.format_chat_prompt() was called
         chatformat_module.format_chat_prompt.assert_called_once()
@@ -135,22 +146,56 @@ class TestVLLMInferenceProvider(unittest.TestCase):
         # Verify message creation with prompt module
         self.assertEqual(prompt_module.as_message.call_count, 2)
         prompt_module.as_message.assert_any_call(
-            role="system", text="You are a helpful assistant"
+            role="system",
+            content="You are a helpful assistant"
         )
         prompt_module.as_message.assert_any_call(
-            role="user", text="Test prompt", content="Test content"
+            role="user",
+            content="Test prompt",
+            input=user_input
         )
 
         # Verify prompt formatting
-        prompt_module.as_prompt.assert_called_once()
+        prompt_module.as_prompt.assert_called_once_with(
+            "Test prompt",
+            [{'role': 'system', 'content': 'You are a helpful assistant'},
+             {'role': 'user', 'content': 'Test prompt', 'input': user_input}]
+        )
 
-        # Verify result is the mock output from generate
-        self.assertIsNotNone(result)
+        # Verify result
+        self.assertEqual(result, "This is the generated response")
+
+    def test_predict_bad_input(self):
+        provider = VLLMInferenceProvider(
+            model_parameters=self.model_params,
+        )
+
+        # Test with missing inference parameters
+        with self.assertRaises(KeyError):
+            provider.predict("test", {})
+
+        # Test with incomplete inference parameters
+        incomplete_params = {"temperature": 0.7}  # Missing required fields
+        with self.assertRaises(KeyError):
+            provider.predict("test", incomplete_params)
+
+    def test_predict_service_failure(self):
+        provider = VLLMInferenceProvider(
+            model_parameters=self.model_params,
+        )
+
+        # Mock LLM to raise exception
+        provider.llm.generate = Mock(side_effect=RuntimeError("VLLM generation failed"))
+
+        # Should raise the exception from VLLM
+        with self.assertRaises(RuntimeError) as context:
+            provider.predict("Test input", self.inference_params)
+
+        self.assertEqual(str(context.exception), "VLLM generation failed")
 
     def test_inheritance(self):
         provider = VLLMInferenceProvider(
             model_parameters=self.model_params,
-            interence_parameters=self.inference_params,
         )
         self.assertIsInstance(provider, InferenceProvider)
 
@@ -162,28 +207,11 @@ class TestVLLMInferenceProvider(unittest.TestCase):
 
         provider = VLLMInferenceProvider(
             model_parameters=custom_model_params,
-            interence_parameters=self.inference_params,
         )
 
         # Verify custom model parameters
         self.assertEqual(provider.llm.model, "custom-model-path")
         self.assertEqual(provider.llm.quantization, "awq")
-
-    def test_different_inference_params(self):
-        custom_inference_params: InferenceParams = {
-            "requested_tokens": 200,
-            "temperature": 0.9,
-            "chat_template": "custom",
-            "system_instruction": "Custom system instruction",
-            "user_prompt": "Custom user prompt",
-        }
-
-        provider = VLLMInferenceProvider(
-            model_parameters=self.model_params,
-            interence_parameters=custom_inference_params,
-        )
-
-        self.assertEqual(provider.inference_parameters, custom_inference_params)
 
 
 if __name__ == "__main__":

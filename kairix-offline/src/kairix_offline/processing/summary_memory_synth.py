@@ -63,10 +63,9 @@ class SummaryMemorySynth:
         vector = numpy_array.tolist()
         embedding = Embedding(
             uid=chunk.idempotency_key,
-            embedding_model=self.embedder.model_card_data.model_name,
+            embedding_model=self.embedder.model_card_data.base_model,
             vector=vector,
         )
-
         embedding.save()
         return embedding
 
@@ -157,4 +156,4 @@ class SummaryMemorySynth:
             f"Chunk processing completed. Processed {len(shards)} chunks succesfully.Failed Chunks: {len(failed)}"
         )
 
-        return shards
+        return shards, failed

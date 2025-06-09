@@ -7,9 +7,12 @@
   },
   "scripts": {
     "mem-ui": "uv run python -m kairix_offline.ui.memory_pipeline",
-    "mem-ui-mac": "dotenv -e .env.mac -- npm run mem-ui" 
+    "mem-ui-mock-reload": "KAIRIX_MOCK_INFERENCE=1 uv run gradio src/kairix_offline/ui/memory_pipeline.py",
+    "mem-ui-mac": "dotenv -e .env.mac -- npm run mem-ui",
+    "gradio": "KAIRIX_MOCK_INFERENCE=1 uv run gradio src/kairix_offline/ui/memory_pipeline.py --demo-name history_importer",
+    "mem-ui-mac-mock-reload": "dotenv -e .env.mac -- npm run gradio"
   },
-  "author": "",
+  "author": "Mark Lubin",
   "license": "ISC",
   "description": "",
   "devDependencies": {

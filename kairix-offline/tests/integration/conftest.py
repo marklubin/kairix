@@ -28,7 +28,6 @@ def pytest_sessionstart(session):
     for var in ["NEO4J_URL", "KAIRIX_DATABASE_URL", "DATABASE_URL"]:
         if var in os.environ:
             del os.environ[var]
-ls
     from testcontainers.neo4j import Neo4jContainer
 
     _neo4j_container = (

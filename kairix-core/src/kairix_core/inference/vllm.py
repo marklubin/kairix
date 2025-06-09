@@ -14,35 +14,36 @@ class VLLMInferenceProvider(InferenceProvider):
         self,
         *args,
         model_parameters: ModelParams,
-        interence_parameters: InferenceParams,
     ):
-        self.inference_parameters = interence_parameters
         self.model_parameters = model_parameters
         self.llm = LLM(
             model=model_parameters["model"],
             trust_remote_code=True,
+            kv_cache_dtype="fp8",
+            calculate_kv_scales=True,
             quantization="awq" if model_parameters["use_quantization"] else None,
             cpu_offload_gb=32,
         )
 
-    def predict(self, content: str, params: InferenceParams):
+    def predict(self, user_input: str, params: InferenceParams) -> str:
         sampling_params = SamplingParams(
-            max_tokens=self.inference_parameters["requested_tokens"],
-            min_tokens=self.inference_parameters["requested_tokens"],
-            temperature=self.inference_parameters["temperature"],
+            max_tokens=params["requested_tokens"],
+            min_tokens=params["requested_tokens"],
+            temperature=params["temperature"],
         )
         chatformat.format_chat_prompt()
 
         prompt = as_prompt(
-            self.inference_parameters["user_prompt"],
+            params["user_prompt"],
             [
                 as_message(
-                    role="system", text=self.inference_parameters["system_instruction"]
+                    role="system",
+                    content=params["system_instruction"],
                 ),
                 as_message(
                     role="user",
-                    text=self.inference_parameters["user_prompt"],
-                    content=content,
+                    content=params["user_prompt"],
+                    input=user_input,
                 ),
             ],
         )
@@ -51,4 +52,5 @@ class VLLMInferenceProvider(InferenceProvider):
         assert len(results) == 1
         output: RequestOutput = results[0]
         assert len(output.outputs) == 1
-        return output.outputs[0]
+        assert hasattr(output.outputs[0], "text")
+        return output.outputs[0].text

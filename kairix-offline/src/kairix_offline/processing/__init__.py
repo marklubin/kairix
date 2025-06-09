@@ -1,6 +1,11 @@
 import logging
 import os
 
+import kairix_core.prompt.system_instructions
+from kairix_core.inference_provider import (
+    ModelParams,
+    get_inference_provider_for_environement,
+)
 from kairix_core.types import SourceDocument
 from kairix_core.util.environment import get_or_raise
 from neomodel import config as neomodel_config
@@ -25,30 +30,26 @@ _initialized = False
 
 def get_summary_inference_provider():
     summarizer_model = get_or_raise("KAIRIX_SUMMARIZER_MODEL")
-    quantize = os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION")
-    from kairix_core.inference.vllm import VLLMInferenceProvider
+    quantize = os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION") is not None
 
-    return VLLMInferenceProvider(
-        model_parameters={
-            "model": summarizer_model,
-            "use_quantization": quantize,
-        }
-    )
+    model_parameters: ModelParams = {
+        "model": summarizer_model,
+        "use_quantization": quantize,
+    }
+
+    return get_inference_provider_for_environement(model_parameters=model_parameters)
 
 
 def get_inference_parameters():
-    tokens = get_or_raise("KAIRIX_SUMMARIZER_MAX_TOKENS")
-    temp = get_or_raise("KAIRIX_SUMMARIZER_TEMPERATURE")
-    template = get_or_raise("KAIRIX_SUMMARIZER_TEMPLATE")
-    instruction = get_or_raise("KAIRIX_SUMMARIZER_INSTRUCTION")
-    user_prompt = get_or_raise("KAIRIX_SUMMARIZER_USER_PROMPT")
+    tokens = int(get_or_raise("KAIRIX_SUMMARIZER_MAX_TOKENS"))
+    temp = float(get_or_raise("KAIRIX_SUMMARIZER_TEMPERATURE"))
 
     return {
         "requested_tokens": tokens,
         "temperature": temp,
-        "chat_template": template,
-        "system_instruction": instruction,
-        "user_prompt": user_prompt,
+        "chat_template": "chatml",
+        "system_instruction": kairix_core.prompt.summary_system_instruction,
+        "user_prompt": kairix_core.prompt.summary_user_prompt,
     }
 
 
@@ -69,10 +70,10 @@ def initialize_processing():
 
     logger.info("Initializing Neo4J database.")
     neomodel_config.DATABASE_URL = get_or_raise("NEO4J_URL")
+    db.install_all_labels()
     SourceDocument(
         uid="1", source_label="smoke-test", source_type="none", content="test"
     ).create_or_update()
-    db.install_all_labels()
 
     inference_provider = get_summary_inference_provider()
 
@@ -100,10 +101,12 @@ def initialize_processing():
     embedding_transformer.encode = encode_with_params  # type: ignore[method-assign]
 
     # Initialize synthesizer
+    inference_params = get_inference_parameters()
     summary_memory_synthezier = SummaryMemorySynth(
         chunker=chunker,
         embedder=embedding_transformer,
         inference_provider=inference_provider,
+        **inference_params,
     )
 
     _initialized = True
@@ -117,4 +120,13 @@ def synth_memories(agent_name, run_id):
             "Processing environment not initialized. Call initialize_processing() first."
         )
     assert summary_memory_synthezier is not None
-    return summary_memory_synthezier.synthesize_memories(agent_name, run_id)
+    shards, failed = summary_memory_synthezier.synthesize_memories(agent_name, run_id)
+
+    return f"""\
+    Memory Synthesis Completed!
+    ----------------------------
+    Agent: {agent_name}
+    Run ID: {run_id}
+    New Memory Shards Generated: {len(shards)}
+    Errors: {len(failed)}
+    """

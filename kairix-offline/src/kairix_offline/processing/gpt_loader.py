@@ -1,10 +1,13 @@
 import json
 import logging
-import uuid
 
 from kairix_core.types import SourceDocument
 
 logger = logging.getLogger(__name__)
+
+
+def clean_title(title):
+    return title.replace(" ", "_")
 
 
 def parse_mapping(mapping: dict) -> str | None:
@@ -49,6 +52,7 @@ def load_sources_from_gpt_export(file_name: str | list[str]):
             logger.info("No file selected")
             return
         file_name = file_name[0]
+
     yield (f"Loading {file_name}")
     with open(file_name) as f:
         data = json.load(f)
@@ -66,10 +70,15 @@ def load_sources_from_gpt_export(file_name: str | list[str]):
                 yield f"Skipping convo {title} with no messages."
                 continue
 
-            logger.info(f"Processing conversation: {title}")
-            yield f"Processing conversation: {title}"
+            uid = f"{file_name}::{clean_title(title)}"
+            logger.info(f"Checking for existing source with id {uid}")
+
+            if SourceDocument.nodes.first_or_none(uid=uid) is not None:
+                logger.info(f"Skipping existing source with id {uid}")
+                continue
+
+            logger.info(f"Processing conversation: {id}- Original:{title}")
             logger.info(f"# of mappings: {len(id_to_mapping)}")
-            yield f"# of mappings: {len(id_to_mapping)}"
 
             messages = []
             for _key, mapping in id_to_mapping.items():
@@ -80,10 +89,8 @@ def load_sources_from_gpt_export(file_name: str | list[str]):
             logger.info(
                 f"Writing graph db record for {title}, # of messages: {len(messages)}"
             )
-            yield f"Writing graph db record for {title}, # of messages: {len(messages)}"
-
             doc = SourceDocument(
-                uid=uuid.uuid4().urn,
+                uid=uid,
                 source_label=title,
                 source_type="chatgpt",
                 content="\n".join(messages),
@@ -96,9 +103,14 @@ def load_sources_from_gpt_export(file_name: str | list[str]):
                 raise RuntimeError(
                     f"Failed to save SourceDocument for {title}: {e}"
                 ) from e
-
-        msg = "finished! Wrote Source Documents:" + "\n".join(
-            [d.source_label for d in documents]
-        )
-        logger.info(msg)
-        yield msg
+        if len(documents) == 0:
+            logger.info("Done. Nothing to do.")
+        else:
+            msg = "Finished! Wrote Source Documents:" + "\n".join(
+                [
+                    f"SourceDocument - UID={d.uid} LABEL={d.source_label}."
+                    for d in documents
+                ]
+            )
+            logger.info(msg)
+        return "done!"

@@ -13,6 +13,12 @@ if "PYTEST_CURRENT_TEST" not in os.environ:
     load_dotenv(verbose=True)
     initialize_processing()
 
+
+if os.getenv("KAIRIX_DEBUG") is not None:
+    import pdb
+
+    pdb.set_trace()
+
 FORMAT = "%(message)s"
 
 kairirx_log_stream = InMemoryLogStreamHandler()

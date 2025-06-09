@@ -3,7 +3,7 @@ name = "kairix-ui-testing"
 version = "0.1.0"
 description = "Black-box browser automation testing suite for Kairix project interfaces"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.11"
 
 dependencies = [
     "playwright>=1.40.0",

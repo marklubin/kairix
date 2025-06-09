@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     { name = "Mark Lubin", email = "melubin@pm.me" }
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.11"
 dependencies = [
     "kairix-core",
     "gradio>=5.33.0",
@@ -23,17 +23,10 @@ dependencies = [
     "rich>=14.0.0",
     "semchunk>=3.2.1",
     "sentence-transformers>=4.1.0",
-    "tiktoken>=0.9.0",
     "torch>=2.7.0",
-    "transformers>=4.52.4",
     "testcontainers>=4.10.0",
     "chatformat>=1.2",
 
-]
-
-[project.optional-dependencies]
-linux = [
-    "vllm==0.9.0"
 ]
 
 [dependency-groups]
@@ -47,6 +40,7 @@ dev = [
     "pytest-html>=4.1.0",
     "requests>=2.31.0",
     "click>=8.1.0",
+    "mypy>=1.16.0",
 ]
 
 [tool.uv]
