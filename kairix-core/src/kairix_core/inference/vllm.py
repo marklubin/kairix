@@ -19,6 +19,7 @@ class VLLMInferenceProvider(InferenceProvider):
             model=model_parameters["model"],
             trust_remote_code=True,
             kv_cache_dtype="fp8",
+            max_model_len=8192,
             calculate_kv_scales=True,
             quantization="awq" if model_parameters["use_quantization"] else None,
             cpu_offload_gb=32,

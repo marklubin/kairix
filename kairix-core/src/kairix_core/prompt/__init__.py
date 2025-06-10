@@ -11,7 +11,7 @@ def as_message(*args, role: str, content: str, **kwargs) -> dict[str, str]:
 
 
 def as_prompt(template: str, messages: list[dict]) -> str:
-    prompt, stop = chatformat.format_chat_prompt(template=template, messages=messages)
+    prompt, stop = chatformat.format_chat_prompt(template="chatml", messages=messages)
     return prompt
 
 

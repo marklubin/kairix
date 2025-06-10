@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 import rich.logging as richlogging
+import time
 from openai import OpenAI
 from openai.types.chat import (
     ChatCompletionMessageParam,
@@ -47,6 +48,8 @@ class OpenAIInferenceProvider(InferenceProvider):
         # Build messages for OpenAI API
         messages: list[ChatCompletionMessageParam] = []
 
+        time.sleep(1.0)  # Sleep to avoid rate limiting issues
+
         # System instruction is optional but must be string if provided
         if params["system_instruction"] is not None:
             assert isinstance(params["system_instruction"], str), (
@@ -73,6 +76,8 @@ class OpenAIInferenceProvider(InferenceProvider):
                 "content": user_messsage_content,
             }
         )
+        
+        
 
         wirelog.info(f"<REQUEST>\n {dump_obj(messages)}\n</REQUEST>")
 

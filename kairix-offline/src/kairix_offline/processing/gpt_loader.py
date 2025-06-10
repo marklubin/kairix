@@ -83,11 +83,9 @@ def load_sources_from_gpt_export(agent_name: str, file: str | list[str]):
         id_to_mapping = d["mapping"]
         if title is None or title == "":
             logger.info("Skipping conversation with no title.")
-            yield "Skipping conversation with no title."
             continue
         if id_to_mapping is None:
             logger.info(f"Skipping convo {title} with no messages.")
-            yield f"Skipping convo {title} with no messages."
             continue
 
         uid = f"{agent_name}-{title}"

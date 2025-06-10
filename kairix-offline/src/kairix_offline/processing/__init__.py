@@ -49,7 +49,7 @@ def get_inference_parameters():
         "requested_tokens": tokens,
         "temperature": temp,
         "chat_template": "chatml",
-        "system_instruction": summary_system_instruction if use_system_prompt else None,
+        "system_instruction": summary_system_instruction,
         "user_prompt": summary_user_prompt,
     }
 

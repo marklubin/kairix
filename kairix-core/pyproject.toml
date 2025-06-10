@@ -17,6 +17,7 @@ dependencies = [
     "chatformat>=1.2",
     "openai>=1.84.0",
     "rich>=14.0.0",
+    "llama-index-llms-vllm>=0.5.1",
 ]
 
 [project.optional-dependencies]
