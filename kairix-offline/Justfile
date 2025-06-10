@@ -1,0 +1,9 @@
+import "../Justfile"
+set dotenv-load
+set dotenv-required
+
+mem-ui:
+    uv run python -m kairix_offline.ui.mem_ui
+
+gradio:
+    uv run gradio src/kairix_offline/ui/mem_ui.py --demo-name history_importer

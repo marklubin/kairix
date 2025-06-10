@@ -14,7 +14,7 @@ if "PYTEST_CURRENT_TEST" not in os.environ:
     initialize_processing()
 
 
-if os.getenv("KAIRIX_DEBUG") is not None:
+if os.getenv("KAIRIX_DEBUG"):
     import pdb
 
     pdb.set_trace()

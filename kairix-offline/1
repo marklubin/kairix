@@ -1,348 +1,0 @@
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 76, in load_sources_from_gpt_export
-    data = _get_data(file)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 65, in _get_data
-    return cast(dict, json.load(f))
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 353, in raw_decode
-    obj, end = self.scan_once(s, idx)
-json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 508492 column 6 (char 24776756)
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 76, in load_sources_from_gpt_export
-    data = _get_data(file)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 65, in _get_data
-    return cast(dict, json.load(f))
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 353, in raw_decode
-    obj, end = self.scan_once(s, idx)
-json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 508492 column 6 (char 24776756)
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 76, in load_sources_from_gpt_export
-    data = _get_data(file)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 65, in _get_data
-    return cast(dict, json.load(f))
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 353, in raw_decode
-    obj, end = self.scan_once(s, idx)
-json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 508492 column 6 (char 24776756)
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 76, in load_sources_from_gpt_export
-    data = _get_data(file)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 65, in _get_data
-    return cast(dict, json.load(f))
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/home/mark/.local/share/uv/python/cpython-3.10.17-linux-x86_64-gnu/lib/python3.10/json/decoder.py", line 353, in raw_decode
-    obj, end = self.scan_once(s, idx)
-json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 508492 column 6 (char 24776756)
-Token indices sequence length is longer than the specified maximum sequence length for this model (5231 > 1024). Running this sequence through the model will result in indexing errors
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  6.95it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  6.94it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 40.54it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 54.87it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 55.17it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 55.00it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 52.34it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 52.91it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 52.43it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 41.96it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 52.59it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 53.40it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 52.37it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 42.45it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 41.08it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 42.40it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 40.92it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 54.26it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 53.07it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 41.00it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 53.84it/s]
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 53.61it/s]
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers
-Traceback (most recent call last):
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/queueing.py", line 625, in process_events
-    response = await route_utils.call_process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/route_utils.py", line 322, in call_process_api
-    output = await app.get_blocks().process_api(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 2218, in process_api
-    result = await self.call_function(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/blocks.py", line 1741, in call_function
-    prediction = await utils.async_iteration(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 739, in async_iteration
-    return await anext(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 733, in __anext__
-    return await anyio.to_thread.run_sync(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
-    return await get_async_backend().run_sync_in_worker_thread(
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2470, in run_sync_in_worker_thread
-    return await future
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 967, in run
-    result = context.run(func, *args)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 716, in run_sync_iterator_async
-    return next(iterator)
-  File "/home/mark/kairix/.venv/lib/python3.10/site-packages/gradio/utils.py", line 877, in gen_wrapper
-    response = next(iterator)
-  File "/home/mark/kairix/kairix-offline/src/kairix_offline/processing/gpt_loader.py", line 80, in load_sources_from_gpt_export
-    label = d["title"]
-TypeError: string indices must be integers

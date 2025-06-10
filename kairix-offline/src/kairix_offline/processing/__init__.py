@@ -30,7 +30,7 @@ _initialized = False
 
 def get_summary_inference_provider():
     summarizer_model = get_or_raise("KAIRIX_SUMMARIZER_MODEL")
-    quantize = os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION") is not None
+    quantize = bool(os.getenv("KAIRIX_SUMMARIZER_ENABLE_QUANTIZATION"))
 
     model_parameters: ModelParams = {
         "model": summarizer_model,
@@ -43,7 +43,7 @@ def get_summary_inference_provider():
 def get_inference_parameters():
     tokens = int(get_or_raise("KAIRIX_SUMMARIZER_MAX_TOKENS"))
     temp = float(get_or_raise("KAIRIX_SUMMARIZER_TEMPERATURE"))
-    use_system_prompt = os.getenv("KAIRIX_SUMMARIZER_USE_SYSTEM_PROMPT")
+    # os.getenv("KAIRIX_SUMMARIZER_USE_SYSTEM_PROMPT")
 
     return {
         "requested_tokens": tokens,

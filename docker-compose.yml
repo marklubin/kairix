@@ -8,10 +8,10 @@ services:
       - "0.0.0.0:7474:7474"  # HTTP
       - "0.0.0.0:7687:7687"  # Bolt
     volumes:
-      - .neo4j/data:/data
-      - .neo4j/logs:/logs
-      - .neo4j/import:/var/lib/neo4j/import
-      - .neo4j/plugins:/plugins
+      - ./neo4j/data:/data
+      - ./neo4j/logs:/logs
+      - ./neo4j/import:/var/lib/neo4j/import
+      - ./neo4j/plugins:/plugins
     environment:
       # Authentication
       - NEO4J_AUTH=neo4j/password

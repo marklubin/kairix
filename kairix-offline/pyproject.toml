@@ -28,6 +28,7 @@ dependencies = [
     "chatformat>=1.2",
     "vllm>=0.9.0.1",
     "ty>=0.0.1a8",
+    "burr>=0.40.2",
 ]
 
 [dependency-groups]
