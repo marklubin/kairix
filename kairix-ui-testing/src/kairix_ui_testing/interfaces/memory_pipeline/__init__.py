@@ -1,1 +1,0 @@
-"""Memory pipeline UI test components."""

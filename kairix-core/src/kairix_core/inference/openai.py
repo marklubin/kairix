@@ -1,9 +1,9 @@
 import json
 import logging
+import time
 from typing import Any
 
 import rich.logging as richlogging
-import time
 from openai import OpenAI
 from openai.types.chat import (
     ChatCompletionMessageParam,
@@ -76,8 +76,8 @@ class OpenAIInferenceProvider(InferenceProvider):
                 "content": user_messsage_content,
             }
         )
-        
-        
+
+
 
         wirelog.info(f"<REQUEST>\n {dump_obj(messages)}\n</REQUEST>")
 

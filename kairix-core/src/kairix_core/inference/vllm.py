@@ -1,3 +1,4 @@
+import torch
 from vllm import LLM, RequestOutput, SamplingParams
 
 from kairix_core.inference_provider import (
@@ -15,15 +16,22 @@ class VLLMInferenceProvider(InferenceProvider):
         model_parameters: ModelParams,
     ):
         self.model_parameters = model_parameters
+        model_id = "unsloth/tinyllama-bnb-4bit"
         self.llm = LLM(
-            model=model_parameters["model"],
+            model=model_id,
+            dtype=torch.bfloat16,
             trust_remote_code=True,
-            kv_cache_dtype="fp8",
-            max_model_len=8192,
-            calculate_kv_scales=True,
-            quantization="awq" if model_parameters["use_quantization"] else None,
-            cpu_offload_gb=32,
+            quantization="bitsandbytes",
+            load_format="bitsandbytes",
         )
+        # self.llm = LLM(
+        #     model=model_parameters["model"],
+        #     # trust_remote_code=True,
+        #     # kv_cache_dtype="fp8",
+        #     max_model_len=4096,
+        #     # calculate_kv_scales=True,
+        #     quantization="awq" if model_parameters["use_quantization"] else None,
+        # )
 
     def predict(self, user_input: str, params: InferenceParams) -> str:
         sampling_params = SamplingParams(

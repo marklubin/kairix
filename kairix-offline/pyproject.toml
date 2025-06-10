@@ -27,6 +27,7 @@ dependencies = [
     "testcontainers>=4.10.0",
     "chatformat>=1.2",
     "vllm>=0.9.0.1",
+    "ty>=0.0.1a8",
 ]
 
 [dependency-groups]

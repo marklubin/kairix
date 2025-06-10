@@ -1,0 +1,24 @@
+{
+  "name": "kairix-core",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "compile": "uv run ruff check --fix && uv run ruff check && uv run mypy src --pretty",
+    "clear-entities": "echo \"MATCH (n:$ENTITY_TYPE) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-source-documents": "echo \"MATCH (n:SourceDocument) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-agents": "echo \"MATCH (n:Agent) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-memory-shards": "echo \"MATCH (n:MemoryShard) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-summaries": "echo \"MATCH (n:Summary) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-embeddings": "echo \"MATCH (n:Embedding) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password"
+    },
+  "author": "Mark Lubin",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "dotenv-cli": "^8.0.0"
+  }
+}
