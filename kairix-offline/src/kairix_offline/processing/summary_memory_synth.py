@@ -117,7 +117,7 @@ class SummaryMemorySynth:
         self,
         agent_name: str,
         key_prefix: str,
-    ) -> list[MemoryShard]:
+    ) -> tuple[list[MemoryShard], list[tuple[Chunk, Exception]]]:
         # Get or create agent
         agent = Agent.nodes.first_or_none(name=agent_name)
         if agent is None:

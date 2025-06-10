@@ -138,9 +138,9 @@ Input Length: <span class="blink">{len(input_text)}</span> characters
 Output Length: <span class="blink">{len(result)}</span> characters
 
 Inference Parameters:
-- Max Tokens: <span class="blink">{inference_params.get('requested_tokens', 'N/A')}</span>
-- Temperature: {inference_params.get('temperature', 'N/A')}
-- Template: {inference_params.get('chat_template', 'N/A')}
+- Max Tokens: <span class="blink">{inference_params.get("requested_tokens", "N/A")}</span>
+- Temperature: {inference_params.get("temperature", "N/A")}
+- Template: {inference_params.get("chat_template", "N/A")}
 
 Result:
 ---
@@ -164,21 +164,17 @@ theme = gr.themes.Base(
     # Pale green background
     body_background_fill="#e8f5e9",
     body_background_fill_dark="#e8f5e9",
-
     # Dark saturated text colors
     body_text_color="#1a237e",  # Deep indigo
     body_text_color_dark="#1a237e",
     body_text_color_subdued="#4527a0",  # Deep purple
     body_text_weight="300",  # Thin font weight
-
     # Vibrant background colors for components
     background_fill_secondary="#bbdefb",  # Light blue
     background_fill_primary="#c5e1a5",  # Light green
-
     # Saturated vibrant borders
     border_color_accent="#ff6f00",  # Deep orange
     border_color_primary="#00897b",  # Teal
-
     # Vibrant saturated buttons
     button_primary_background_fill="#d32f2f",  # Deep red
     button_primary_background_fill_hover="#c62828",  # Darker red
@@ -186,17 +182,14 @@ theme = gr.themes.Base(
     button_secondary_background_fill="#7b1fa2",  # Deep purple
     button_secondary_background_fill_hover="#6a1b9a",  # Darker purple
     button_secondary_text_color="#ffffff",
-
     # Component backgrounds
     block_background_fill="#f3e5f5",  # Light purple
     block_border_color="#4a148c",  # Deep purple border
     block_label_text_color="#1a237e",  # Deep indigo
-
     # Input fields
     input_background_fill="#fff9c4",  # Pale yellow
     input_border_color="#f57c00",  # Orange
     input_border_color_focus="#d84315",  # Deep orange focus
-
     # Additional retro colors
     table_border_color="#00695c",
     table_odd_background_fill="#e1f5fe",  # Light cyan
@@ -342,7 +335,7 @@ with gr.Blocks(
 """,
 ) as history_importer:
     with gr.Column():
-        gr.Markdown("# 🧠 Kairix Memory Architecture Pipeline")
+        gr.Markdown("## 🧠 Kairix Memory Architecture Pipeline")
         gr.Markdown(
             "Advanced memory synthesis and management system", elem_classes=["subtitle"]
         )
@@ -350,7 +343,7 @@ with gr.Blocks(
     with gr.Tabs() as tabs:
         # Tab 1: Manual Memory Entry
         with gr.Tab("📝 Manual Memory Entry", id=0):
-            gr.Markdown("## Direct Memory Shard Creation")
+            gr.Markdown("### Direct Memory Shard Creation")
             gr.Markdown(
                 "Create memory shards directly from text input without chunking."
             )
@@ -385,12 +378,16 @@ with gr.Blocks(
 
         # Tab 2: ChatGPT Import
         with gr.Tab("📥 ChatGPT Import", id=1):
-            gr.Markdown("## Import ChatGPT Conversations")
+            gr.Markdown("### Import ChatGPT Conversations")
             gr.Markdown("Process exported ChatGPT conversations into source documents.")
 
             with gr.Row():
                 with gr.Column(scale=1):
-                    file = gr.FileExplorer(
+                    import_agent_name = gr.Textbox(
+                        label="Agent Name",
+                        placeholder="Enter agent name",
+                    )
+                    file = gr.File(
                         label="Select ChatGPT Export File",
                     )
                     import_btn = gr.Button(
@@ -409,7 +406,7 @@ with gr.Blocks(
 
         # Tab 3: Memory Synthesis
         with gr.Tab("⚡ Memory Synthesis", id=2):
-            gr.Markdown("## Synthesize Memories from Documents")
+            gr.Markdown("### Synthesize Memories from Documents")
             gr.Markdown(
                 "Process source documents into chunked, summarized memory shards."
             )
@@ -440,7 +437,7 @@ with gr.Blocks(
 
         # Tab 4: Direct Inference
         with gr.Tab("🤖 Direct Inference", id=3):
-            gr.Markdown("## Direct Inference Query")
+            gr.Markdown("### Direct Inference Query")
             gr.Markdown(
                 "Submit queries directly to the configured inference provider using the same parameters as the synthesizer."
             )
@@ -473,7 +470,7 @@ with gr.Blocks(
     # Wire up the import functionality
     import_btn.click(
         fn=load_sources_from_gpt_export,
-        inputs=[file],
+        inputs=[import_agent_name, file],
         outputs=[file_import_output],
     )
 

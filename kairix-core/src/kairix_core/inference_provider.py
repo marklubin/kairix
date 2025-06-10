@@ -19,8 +19,8 @@ class InferenceParams(TypedDict):
     requested_tokens: int
     temperature: float
     chat_template: str
-    system_instruction: str
-    user_prompt: str
+    system_instruction: str | None
+    user_prompt: str | None
 
 
 class InferenceProvider(ABC):

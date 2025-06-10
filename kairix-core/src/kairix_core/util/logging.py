@@ -1,6 +1,5 @@
 import logging
 import uuid
-from datetime import datetime, timezone
 
 from kairix_core.types import StoredLog
 
@@ -34,10 +33,8 @@ class Neo4jLogHandler(logging.Handler):
             return
         try:
             uid = str(uuid.uuid4())
-            timestamp = datetime.fromtimestamp(record.created, timezone.UTC)
             StoredLog(
                 uid=uid,
-                timestamp=timestamp,
                 level=record.levelname,
                 source=f"{record.filename}::{record.funcName}::L{record.lineno}",
                 message=record.getMessage(),

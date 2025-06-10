@@ -6,11 +6,18 @@
     "test": "tests"
   },
   "scripts": {
-    "mem-ui": "uv run python -m kairix_offline.ui.memory_pipeline",
-    "mem-ui-mock-reload": "KAIRIX_MOCK_INFERENCE=1 uv run gradio src/kairix_offline/ui/memory_pipeline.py",
+    "clean": "rm -rf dist",
+    "compile": "uv run ruff check --fix && uv run ruff check && uv run mypy src --pretty",
+    "mem-ui": "uv run python -m kairix_offline.ui.mem_ui",
+    "gradio": "KAIRIX_MOCK_INFERENCE=1 uv run gradio src/kairix_offline/ui/mem_ui.py --demo-name history_importer",
     "mem-ui-mac": "dotenv -e .env.mac -- npm run mem-ui",
-    "gradio": "KAIRIX_MOCK_INFERENCE=1 uv run gradio src/kairix_offline/ui/memory_pipeline.py --demo-name history_importer",
-    "mem-ui-mac-mock-reload": "dotenv -e .env.mac -- npm run gradio"
+    "clear-entities": "echo \"MATCH (n:$ENTITY_TYPE) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-source-documents": "echo \"MATCH (n:SourceDocument) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-agents": "echo \"MATCH (n:Agent) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-memory-shards": "echo \"MATCH (n:MemoryShard) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-summaries": "echo \"MATCH (n:Summary) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "clear-embeddings": "echo \"MATCH (n:Embedding) DETACH DELETE n\" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password",
+    "chunker-test": "uv run python -m kairix_offline.ui.chunker_test"
   },
   "author": "Mark Lubin",
   "license": "ISC",

@@ -1,11 +1,11 @@
 import logging
 import os
 
-import kairix_core.prompt.system_instructions
 from kairix_core.inference_provider import (
     ModelParams,
     get_inference_provider_for_environement,
 )
+from kairix_core.prompt import summary_system_instruction, summary_user_prompt
 from kairix_core.types import SourceDocument
 from kairix_core.util.environment import get_or_raise
 from neomodel import config as neomodel_config
@@ -43,13 +43,14 @@ def get_summary_inference_provider():
 def get_inference_parameters():
     tokens = int(get_or_raise("KAIRIX_SUMMARIZER_MAX_TOKENS"))
     temp = float(get_or_raise("KAIRIX_SUMMARIZER_TEMPERATURE"))
+    use_system_prompt = os.getenv("KAIRIX_SUMMARIZER_USE_SYSTEM_PROMPT")
 
     return {
         "requested_tokens": tokens,
         "temperature": temp,
         "chat_template": "chatml",
-        "system_instruction": kairix_core.prompt.summary_system_instruction,
-        "user_prompt": kairix_core.prompt.summary_user_prompt,
+        "system_instruction": summary_system_instruction if use_system_prompt else None,
+        "user_prompt": summary_user_prompt,
     }
 
 
@@ -76,6 +77,10 @@ def initialize_processing():
     ).create_or_update()
 
     inference_provider = get_summary_inference_provider()
+
+    logger.info(
+        "Inference provider initialized of type {}. ", inference_provider.__class__
+    )
 
     # Initialize chunker
     chunk_size = int(get_or_raise("KAIRIX_CHUNK_SIZE"))

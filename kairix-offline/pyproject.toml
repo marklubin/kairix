@@ -26,7 +26,6 @@ dependencies = [
     "torch>=2.7.0",
     "testcontainers>=4.10.0",
     "chatformat>=1.2",
-
 ]
 
 [dependency-groups]

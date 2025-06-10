@@ -1,4 +1,3 @@
-import chatformat
 from vllm import LLM, RequestOutput, SamplingParams
 
 from kairix_core.inference_provider import (
@@ -31,10 +30,18 @@ class VLLMInferenceProvider(InferenceProvider):
             min_tokens=params["requested_tokens"],
             temperature=params["temperature"],
         )
-        chatformat.format_chat_prompt()
+        # Assert that required parameters are provided and are strings
+        assert params["system_instruction"] is not None, (
+            "system_instruction is required"
+        )
+        assert params["user_prompt"] is not None, "user_prompt is required"
+        assert isinstance(params["system_instruction"], str), (
+            "system_instruction must be a string"
+        )
+        assert isinstance(params["user_prompt"], str), "user_prompt must be a string"
 
         prompt = as_prompt(
-            params["user_prompt"],
+            params["chat_template"],
             [
                 as_message(
                     role="system",
@@ -53,4 +60,4 @@ class VLLMInferenceProvider(InferenceProvider):
         output: RequestOutput = results[0]
         assert len(output.outputs) == 1
         assert hasattr(output.outputs[0], "text")
-        return output.outputs[0].text
+        return str(output.outputs[0].text)

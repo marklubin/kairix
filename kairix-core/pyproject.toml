@@ -16,6 +16,7 @@ dependencies = [
     "neomodel>=5.5.0",
     "chatformat>=1.2",
     "openai>=1.84.0",
+    "rich>=14.0.0",
 ]
 
 [project.optional-dependencies]

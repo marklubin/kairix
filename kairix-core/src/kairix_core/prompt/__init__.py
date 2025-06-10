@@ -1,15 +1,29 @@
 import chatformat
 
 
-def as_message(*args, role: str, content: str, **kwargs) -> dict:
-    if kwargs is not None:
+def as_message(*args, role: str, content: str, **kwargs) -> dict[str, str]:
+    content.replace("{", "")
+    content.replace("}", "")
+
+    if kwargs is not None and len(kwargs) > 0:
         content = content.format(**kwargs)
     return {"role": role, "content": content}
 
 
-def as_prompt(template: str, messages: list[dict]):
+def as_prompt(template: str, messages: list[dict]) -> str:
     prompt, stop = chatformat.format_chat_prompt(template=template, messages=messages)
     return prompt
+
+
+def as_historical_convo(messages: list[dict]) -> str:
+    result = "[BEGIN_CONVERSATION_TO_REFLECT_ON]"
+    for message in messages:
+        if message["role"] is not None:
+            result = result + message["role"] + ":"
+        if message["content"] is not None:
+            result = result + message["content"]
+        result = result + "\n"
+    return result + "[END_CONVERSATION_TO_REFLECT_ON]"
 
 
 summary_user_prompt = """
