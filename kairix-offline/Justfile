@@ -2,6 +2,9 @@ import "../Justfile"
 set dotenv-load
 set dotenv-required
 
+prep-for-test: clear-neo4j
+    rm -rf logs.log
+    
 mem-ui:
     uv run python -m kairix_offline.ui.mem_ui
 

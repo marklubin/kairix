@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Any, cast
+import uuid
+from typing import Any, TypedDict, cast
 
 from kairix_core.prompt import as_historical_convo, as_message
 from kairix_core.types import SourceDocument
@@ -12,32 +13,45 @@ def clean_title(title):
     return title.replace(" ", "_")
 
 
+class Dialog(TypedDict):
+    uid: str
+    label: str
+    title: str
+    content: str
+    errored_messages: list[tuple[Exception, Any]]
+
+
 allowed_roles = ["user", "assistant", "system"]
 
 
 def parse_mapping(mapping: dict) -> dict[str, str] | None:  # noqa
     if type(mapping) is not dict:
+        logger.warning("Mapping is not a dict")
         return None
 
     if "message" not in mapping:
+        logger.warning("Mapping does not contain message")
         return None
 
     message = mapping["message"]
     if type(message) is not dict or "content" not in message:
+        logger.warning("Mapping does not contain content")
         return None
 
     content = message["content"]
     if type(content) is not dict or "parts" not in content:
+        logger.warning("Mapping does not contain parts")
         return None
 
     parts = content["parts"]
     if type(parts) is not list:
+        logger.warning("Incorrect parts.")
         return None
 
     text = " ".join(parts)
 
     if text.strip() == "":
-        logger.info("Skipping empty message.")
+        logger.warning("Mapping contains empty text.")
         return None
 
     sender, timestamp = ("unknown", "unknown")
@@ -48,7 +62,7 @@ def parse_mapping(mapping: dict) -> dict[str, str] | None:  # noqa
         if "role" in author:
             sender = author["role"]
     if sender not in allowed_roles:
-        logger.info("Filtering out unsupported role: %s", sender)
+        logger.warning("Filtering out unsupported role: %s", sender)
         return None
 
     if "create_time" in message:
@@ -67,25 +81,15 @@ def _get_data(file: str) -> dict:
         logger.info("Received file content, loading from string.")
         return cast(dict, json.loads(file))
 
+
 def clean_dialog(dialog: str) -> str:
-    return dialog.replace('\n','_')
+    return dialog.replace("\n", "_")
 
-def record_failed_convos(failed):
-    if len(failed) > 0:
-        return
-    with open("failed-conversations.json", "w", encoding="utf-8") as f:
-        json.dump(failed, f)
-
-def record_failed_mapping(uid, failed):
-    if len(failed) == 0:
-        return
-    logger.warning(f"{uid}: Encountered {failed} failed mapping: {failed}")
-    with open(f"{uid}-message-failures.json", "w", encoding="utf-8") as f:
-        json.dump(failed, f)
 
 def is_already_processed(uid: str) -> bool:
     logger.info(f"Checking for existing source with id {uid}")
     return SourceDocument.nodes.first_or_none(uid=uid) is not None
+
 
 def has_valid_mapping(conversation: dict) -> bool:
     if "mapping" not in conversation:
@@ -98,24 +102,20 @@ def has_valid_mapping(conversation: dict) -> bool:
 
     return True
 
-def _process_conversation(
-    agent_name: str, conversation: dict
-) -> tuple[str, str, str] | None:
+
+def _process_conversation(agent_name: str, conversation: dict) -> Dialog | None:
     if "title" not in conversation:
-        logger.warning("Invalid conversation due to missing title. Skipping.")
-        return None
+        raise Exception("Invalid conversation due to missing title. Skipping.")
 
     label = conversation["title"]
     title = clean_title(label)
     uid = f"{agent_name}_{title}"
 
     if is_already_processed(uid):
-        logger.info(f"Skipping existing source with id {uid}")
-        return None
+        raise Exception("Skipping existing source with id {uid}")
 
     if not has_valid_mapping(conversation):
-        logger.warning("Skipping not valid mapping.")
-        return None
+        raise Exception("Skipping not valid mapping.")
 
     mapping: dict = conversation["mapping"]
     logger.info(f"Processing conversation: {uid}- Original:{title}")
@@ -125,57 +125,110 @@ def _process_conversation(
     failed: list[tuple[Exception, Any]] = []
     for m in mapping.values():
         try:
-            text = parse_mapping(mapping)
-            if text is not None:
-                messages.append(text)
+            text = parse_mapping(m)
+            assert text is not None
+            messages.append(text)
         except Exception as e:
             logger.warning("Parsing mapping failed. Saving error.", exc_info=e)
-            failed.append((m, e.with_traceback()))
+            failed.append((m, str(e)))
 
-    record_failed_mapping(uid, failed)
-    logger.info(f"Processed conversation {uid} with {len(messages)} messages.")
-    return uid, label, as_historical_convo(messages)
+    logger.info(
+        f"Processed conversation {uid} used {len(messages)}/{len(mapping)} messages."
+    )
+
+    return Dialog(
+        uid=uid,
+        label=label,
+        title=title,
+        content=as_historical_convo(messages),
+        errored_messages=failed,
+    )
 
 
-def load_sources_from_gpt_export(agent_name: str, file: str | list[str]):
-    if isinstance(file, list):
-        raise Exception("Multiple files unsupported.")
+def report_failures(failed_dialogs, failed_messages):
+    defaultable_dumps = lambda j: json.dumps(j, default=lambda x: r"<UNSERIALIZABLE\>")  # noqa
+
+    f = open(f"{uuid.uuid4()!s}_run_errors.json", "w", encoding="utf-8")  # noqa
+
+    if len(failed_dialogs) > 0:
+        f.write(""""
+        ------------------------------------------------------------------------------------\n
+        FAILED DIALOGS \n
+        -------------------------------------------------------------------------------------\n
+        """)
+
+        i = 1
+        for obj, e in failed_dialogs:
+            f.write(f"""
+            {i}. <CONVERSATION_EXERPT>\n
+                {defaultable_dumps(obj)[:100]})
+                 </CONVERSATION_EXERPT>\n\n\n
+                 <EXCEPTION_MESSAGE>
+                 {e}
+                 </EXCEPTION_MESSAGE>
+            """)
+            i += 1
+
+        f.write(""""
+        ------------------------------------------------------------------------------------\n
+        FAILED MESSAGES \n
+        -------------------------------------------------------------------------------------\n
+        """)
+
+        i = 1
+        for dialog, message_with_error in failed_messages:
+            obj, e = message_with_error
+            f.write(f"""
+                   {i}. <SOURCE_DIALOG>\n
+                            UID: {dialog["uid"]}
+                            TITLE: {dialog["title"]}
+                        </SOURCE_DIALOG>\n\n\n
+                        <MESSAGE_EXERPT>\n
+                       {defaultable_dumps(obj)[:100]})
+                        </MESSAGE_EXERPT>\n\n\n
+                        <EXCEPTION_MESSAGE>
+                        {e}
+                        </EXCEPTION_MESSAGE>
+                   """)
+            i += 1
+    f.close()
+
+
+def load_sources_from_gpt_export(agent_name: str, file: str):
+    # assert type(file) is str
+    # assert type(agent_name) is str
 
     logger.info("Loading file...")
     data = _get_data(file)
     logger.info(f"Loaded {len(data)} conversations.")
     documents = []
-    failed = []
+    failed_dialogs: list[tuple[Dialog, str]] = []
+    failed_messages: list[tuple[Dialog, tuple[Any, str]]] = cast(
+        list[tuple[Dialog, tuple[Any, str]]], []
+    )
+
     for d in data:
         try:
-            uid, label, dialog = _process_conversation(agent_name, d)
+            dialog = _process_conversation(agent_name, d)
+            assert dialog is not None
+            uid = dialog["uid"]
+            label = dialog["label"]
+            content = dialog["content"]
+            errored_messages = dialog["errored_messages"]
 
             logger.info(
-                f"Writing graph db record for {uid}, Dialog Length in Chars: {len(dialog)}"
+                f"Writing graph db record for {uid}, Dialog Content Lenght in Chars: {len(content)}"
             )
             doc = SourceDocument(
-                uid=uid,
-                source_label=label,
-                source_type="chatgpt",
-                content=dialog
+                uid=uid, source_label=label, source_type="chatgpt", content=content
             )
-
+            failed_messages.extend([(dialog, m) for m in errored_messages])
             doc.save()
             documents.append(doc)
         except Exception as e:
             logger.warning("Encountered an error processing conversation.", exc_info=e)
-            failed.append(d)
+            failed_dialogs.append((d, str(e)))
 
-    if len(failed) > 0:
-        logger.info(f"Failed to process {len(failed)} conversations. "
-                    f"Writing failed convos to file for retry.")
-
-    if len(documents) == 0:
-        logger.info("Done. Wrote no documents.")
-    else:
-        msg = "Finished! Wrote Source Documents:" + "\n".join(
-            [f"SourceDocument - UID={d.uid} LABEL={d.source_label}." for d in documents]
-        )
-        logger.info(msg)
-        return msg
+    logger.info(f"Processed {len(documents)} of {len(data)} conversations.")
+    report_failures(failed_dialogs, failed_messages)
     return "done!"

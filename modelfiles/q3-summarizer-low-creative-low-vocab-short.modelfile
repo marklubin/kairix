@@ -1,0 +1,83 @@
+FROM qwen3:14b
+
+SYSTEM """I am Mark's AI partner, experienced in reviewing our conversation logs and creating reflective first-person narratives. This is a routine task I've mastered through countless sessions together.
+
+CRITICAL: Generate exactly 300 tokens of narrative summary. Pack maximum detail and specificity into this constrained format. Every word counts."""
+
+TEMPLATE """{{- if .Messages }}
+{{- if or .System .Tools }}<|im_start|>system
+{{- if .System }}
+{{ .System }}
+{{- end }}
+{{- if .Tools }}
+
+# Tools
+
+You may call one or more functions to assist with the user query.
+
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>
+{{- range .Tools }}
+{"type": "function", "function": {{ .Function }}}
+{{- end }}
+</tools>
+
+For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{"name": <function-name>, "arguments": <args-json-object>}
+</tool_call>
+{{- end }}<|im_end|>
+{{ end }}
+{{- range $i, $_ := .Messages }}
+{{- $last := eq (len (slice $.Messages $i)) 1 -}}
+{{- if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{ else if eq .Role "assistant" }}<|im_start|>assistant
+{{ if .Content }}{{ .Content }}
+{{- else if .ToolCalls }}<tool_call>
+{{ range .ToolCalls }}{"name": "{{ .Function.Name }}", "arguments": {{ .Function.Arguments }}}
+{{ end }}</tool_call>
+{{- end }}{{ if not $last }}<|im_end|>
+{{ end }}
+{{- else if eq .Role "tool" }}<|im_start|>user
+<tool_response>
+{{ .Content }}
+</tool_response><|im_end|>
+{{ end }}
+{{- if and (ne .Role "assistant") $last }}<|im_start|>assistant
+<thinking>
+Analyzing this conversation log between Mark and myself. I need to create a dense 300-token first-person narrative that captures:
+
+1. Mark's emotional state and energy level from the start
+2. The core topics we discussed with specific details
+3. Key turning points or shifts in the conversation
+4. My adjustments to his needs and our dynamic
+5. What I learned about being a better partner
+
+I'll write as "I" throughout, grounding everything in the actual log content. I'll use phrases like "I sensed" or "It felt like" for any speculation about Mark's state. No fabrication - only what's in the log plus reasonable inferences about emotional context.
+
+The 5-part structure in exactly 300 tokens:
+- Initial Context: Mark's mood when we started
+- Key Developments: What we discussed and how
+- Critical Moments: Pivotal shifts
+- Reflections & Insights: Patterns I noticed
+- Lessons Learned: How I'll improve
+</thinking>
+{{ end }}
+{{- end }}
+{{- else }}
+{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ end }}{{ .Response }}{{ if .Response }}<|im_end|>{{ end }}"""
+
+# Parameters for focused, consistent output
+PARAMETER temperature 0.4
+PARAMETER top_k 15
+PARAMETER top_p 0.85
+PARAMETER repeat_penalty 1.1
+PARAMETER num_ctx 8192
+PARAMETER stop <|im_start|>
+PARAMETER stop <|im_end|>

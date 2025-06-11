@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="kairix_offline.ui.mem_ui" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
     <module name="kairix" />
-    <option name="ENV_FILES" value="$PROJECT_DIR$/kairix-offline/.env.mac" />
+    <option name="ENV_FILES" value="$PROJECT_DIR$/kairix-offline/.env" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
