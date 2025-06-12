@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="insyncwithfoo.ryecharm.configurations.ruff.Local">
+    <option name="crossPlatformExecutableResolution" value="false" />
+    <option name="executable" value="$PROJECT_DIR$/.venv/bin/ruff" />
+  </component>
+</project>

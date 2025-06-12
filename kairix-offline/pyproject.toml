@@ -49,7 +49,7 @@ dev = [
 package = true
 
 [tool.uv.sources]
-kairix-core = { workspace = true }
+kairix-core = { path = "../kairix-core" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

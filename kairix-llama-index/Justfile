@@ -1,0 +1,80 @@
+# Modern Python project with uv, ruff, ty, and typeguard
+
+# Default - show available commands
+default:
+    @just --list
+
+# Install dependencies with Python 3.10
+install:
+    uv venv --python 3.10
+    uv sync
+
+# Type check with ty
+check: 
+    uv run ruff check
+    uv run ty check 
+
+
+# Fix lint issues
+fix:
+    uv run ruff check --fix src/ tests/
+    uv run ruff format src/ tests/
+
+
+# Test with pytest and typeguard
+test:
+    uv run pytest tests/ -v --typeguard-packages=src
+
+# Test with runtime type checking explicitly
+test-typed:
+    TYPEGUARD_PACKAGES=src uv run pytest tests/ -v
+
+# Watch mode - auto run checks on changes
+watch:
+    watchexec -e py -- just check lint
+
+# Clean all caches
+clean:
+    rm -rf .pytest_cache/
+    rm -rf .ruff_cache/
+    rm -rf .ty_cache/
+    rm -rf __pycache__/
+    rm -rf .coverage
+    rm -rf htmlcov/
+    find . -type d -name "__pycache__" -exec rm -rf {} +
+
+# Update all dependencies
+update:
+    uv lock --upgrade
+
+# Quick check during development
+q:
+    uv run ty check && uv run ruff check src/
+
+
+# Initialize project with Python 3.10
+init:
+    uv venv --python 3.10
+    uv pip install -e .
+    uv sync
+    @echo "✨ Project initialized with Python 3.10!"
+
+# Run the app with runtime type checking
+run *ARGS:
+    TYPEGUARD_PACKAGES=src uv run python -m src {{ARGS}}
+
+# Open REPL with typeguard
+repl:
+    TYPEGUARD_PACKAGES=src uv run ipython
+
+# Generate requirements.txt (if needed)
+requirements:
+    uv pip compile pyproject.toml -o requirements.txt
+
+# Start LSP servers for development
+lsp:
+    @echo "Starting LSP servers..."
+    @echo "Ruff LSP on port 5033"
+    uv run ruff-lsp &
+    @echo "Pyright LSP on stdio"
+    uv run pyright --languageserver --stdio

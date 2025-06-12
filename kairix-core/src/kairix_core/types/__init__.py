@@ -47,7 +47,10 @@ class Embedding(IdempotentNode):
     uid = StringProperty(unique_index=True, required=True)
     embedding_model = StringProperty(index=True, required=True)
     vector = ArrayProperty(
-        FloatProperty(), required=True, index=True, vector_index=VectorIndex()
+        FloatProperty(),
+        required=True,
+        index=True,
+        vector_index=VectorIndex(dimensions=768),
     )
 
 
@@ -60,7 +63,10 @@ class MemoryShard(IdempotentNode):
     uid = StringProperty(unique_index=True, required=True)
     shard_contents = StringProperty(required=True)
     vector_address = ArrayProperty(
-        FloatProperty(), required=True, index=True, vector_index=VectorIndex()
+        FloatProperty(),
+        required=True,
+        index=True,
+        vector_index=VectorIndex(dimensions=768),
     )
 
     # Relationships
