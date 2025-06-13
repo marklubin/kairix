@@ -12,6 +12,13 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.7,<1.0.0",
+    "ty>=0.0.1a8,<1.0.0",
+    "pytest>=8.4.0,<9.0.0",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
 
@@ -19,6 +26,6 @@ packages = ["src"]
 line-length = 88
 target-version = "py310"
 
-[tool.pyright]
-pythonVersion = "3.10"
-typeCheckingMode = "strict"
+[tool.ty]
+python-version = "3.10"
+strict = true

@@ -1,31 +1,26 @@
+from abc import ABC, abstractmethod
 from typing import List
-from rich.console import Console
-from .types import Stimulus, Perception, Source, Sink
-
-console = Console()
+from .types import Stimulus, Perception
 
 
-class Perceptor:
-    def __init__(self, sources: List[Source] = None, sinks: List[Sink] = None):
-        self.sources = sources or []
-        self.sinks = sinks or []
-
+class Perceptor(ABC):
+    """
+    Abstract base class for perceptors.
+    
+    A Perceptor processes stimuli and produces perceptions. It may use internal
+    sources and sinks for information storage and retrieval, but these are
+    implementation details not exposed in the interface.
+    """
+    
+    @abstractmethod
     def perceive(self, stimulus: Stimulus) -> List[Perception]:
-        console.print(f"[bold green]Perceptor processing stimulus: {stimulus.type.value}[/bold green]")
+        """
+        Process a stimulus and generate perceptions.
         
-        perceptions = []
-        
-        # Placeholder implementation
-        if stimulus.type.name == "USER_MESSAGE":
-            perceptions.append(
-                Perception(
-                    content={"message": stimulus.content.get("text", ""), "intent": "unknown"},
-                    source="user_input_perceptor",
-                    confidence=0.8
-                )
-            )
-        
-        for perception in perceptions:
-            console.print(perception)
-        
-        return perceptions
+        Args:
+            stimulus: The stimulus to process
+            
+        Returns:
+            List of perceptions generated from the stimulus
+        """
+        pass

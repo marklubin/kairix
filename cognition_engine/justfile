@@ -8,9 +8,9 @@ default:
 install:
     uv sync
 
-# Run the main application
-run:
-    uv run python main.py
+# Run example demo
+demo:
+    uv run python -m examples.demo
 
 # Run all tests
 test:
@@ -22,11 +22,15 @@ test-file FILE:
 
 # Run linting with ruff
 lint:
-    uv run ruff check --fix src/ tests/ main.py
+    uv run ruff check --fix src/ tests/ examples/
 
-# Run type checking with pyright
+# Run linting with unsafe fixes
+lint-unsafe:
+    uv run ruff check --fix --unsafe-fixes src/ tests/ examples/
+
+# Run type checking with ty
 typecheck:
-    uv run pyright src/ tests/ main.py
+    uv run ty check src/ tests/ examples/
 
 # Run both linting and type checking
 check: lint typecheck
@@ -40,9 +44,9 @@ clean:
     find . -type d -name "*.egg-info" -exec rm -rf {} +
     find . -type d -name ".pytest_cache" -exec rm -rf {} +
 
-# Development mode - run with auto-reload
+# Development mode - run demo with auto-reload
 dev:
-    uv run python -m src.main
+    uv run python -m examples.demo
 
 # Show project structure
 tree:

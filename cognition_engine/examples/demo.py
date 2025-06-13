@@ -3,14 +3,13 @@ from rich.prompt import Prompt
 from rich.panel import Panel
 from src import (
     Persona, 
-    Perceptor, 
-    Proposer, 
-    InlineExecutionScheduler,
-    HesitatingExecutionScheduler,
     StimulusBus,
     Stimulus,
     StimulusType
 )
+from .perceptors import UserMessagePerceptor
+from .proposers import PerceptionSpeakingProposer
+from .schedulers import InlineExecutionScheduler, HesitatingExecutionScheduler
 
 console = Console()
 
@@ -24,8 +23,8 @@ def main():
     
     # Initialize components
     stimulus_bus = StimulusBus()
-    perceptors = [Perceptor()]
-    proposers = [Proposer()]
+    perceptors = [UserMessagePerceptor()]
+    proposers = [PerceptionSpeakingProposer()]
     
     # Choose scheduler type
     scheduler_type = Prompt.ask(
@@ -35,15 +34,15 @@ def main():
     )
     
     if scheduler_type == "inline":
-        scheduler = InlineExecutionScheduler(stimulus_bus)
+        schedulers = [InlineExecutionScheduler(stimulus_bus)]
     else:
-        scheduler = HesitatingExecutionScheduler(stimulus_bus)
+        schedulers = [HesitatingExecutionScheduler(stimulus_bus)]
     
     # Create persona
     persona = Persona(
         perceptors=perceptors,
         proposers=proposers,
-        scheduler=scheduler
+        schedulers=schedulers
     )
     
     # Subscribe persona to stimulus bus for self-perception

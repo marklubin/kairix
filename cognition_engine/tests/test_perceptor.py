@@ -1,9 +1,9 @@
-from src.perceptor import Perceptor
+from examples.perceptors import UserMessagePerceptor
 from src.types import Stimulus, StimulusType
 
 
 def test_perceptor_perceive():
-    perceptor = Perceptor()
+    perceptor = UserMessagePerceptor()
     
     stimulus = Stimulus(
         content={"text": "Hello world"},
@@ -18,7 +18,7 @@ def test_perceptor_perceive():
 
 
 def test_perceptor_with_empty_stimulus():
-    perceptor = Perceptor()
+    perceptor = UserMessagePerceptor()
     
     stimulus = Stimulus(
         content={},

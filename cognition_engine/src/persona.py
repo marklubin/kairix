@@ -4,17 +4,30 @@ from rich.panel import Panel
 from .types import Stimulus, Perception, Action
 from .perceptor import Perceptor
 from .proposer import Proposer
+from .scheduler import Scheduler
 
 console = Console()
 
 
 class Persona:
-    def __init__(self, perceptors: List[Perceptor] = None, proposers: List[Proposer] = None, scheduler = None):
-        self.perceptors = perceptors or [Perceptor()]
-        self.proposers = proposers or [Proposer()]
-        self.scheduler = scheduler
+    """
+    The main orchestrator of the cognition cycle.
+    
+    A Persona coordinates perceptors, proposers, and schedulers to process
+    stimuli and generate responses. It supports multiple schedulers in a
+    prioritized list where the first scheduler to accept an action handles it.
+    """
+    
+    def __init__(self, 
+                 perceptors: List[Perceptor] = None, 
+                 proposers: List[Proposer] = None, 
+                 schedulers: List[Scheduler] = None):
+        self.perceptors = perceptors or []
+        self.proposers = proposers or []
+        self.schedulers = schedulers or []
 
     def react(self, stimulus: Stimulus) -> None:
+        """Process a stimulus through the perception-proposal-execution cycle."""
         console.print(Panel(
             f"[bold cyan]Persona reacting to stimulus: {stimulus.type.value}[/bold cyan]",
             title="Reaction Cycle",
@@ -33,8 +46,15 @@ class Persona:
             results = proposer.consider(stimulus, perceptions)
             proposed_actions.extend(results)
         
-        # Scheduling phase
-        if self.scheduler and proposed_actions:
-            self.scheduler.schedule(proposed_actions)
+        # Scheduling phase - first scheduler to accept wins
+        if proposed_actions:
+            scheduled = False
+            for scheduler in self.schedulers:
+                if scheduler.schedule(proposed_actions):
+                    scheduled = True
+                    break
+            
+            if not scheduled:
+                raise RuntimeError(f"No scheduler accepted actions: {[a.type for a in proposed_actions]}")
         else:
-            console.print("[yellow]No scheduler configured or no actions to schedule[/yellow]")
+            console.print("[yellow]No actions proposed[/yellow]")

@@ -1,28 +1,27 @@
+from abc import ABC, abstractmethod
 from typing import List
-from rich.console import Console
 from .types import Stimulus, Perception, Action
 
-console = Console()
 
-
-class Proposer:
+class Proposer(ABC):
+    """
+    Abstract base class for action proposers.
+    
+    A Proposer considers the current stimulus and perceptions to generate
+    a list of proposed actions. The proposer may use any strategy to
+    determine which actions to propose.
+    """
+    
+    @abstractmethod
     def consider(self, stimulus: Stimulus, perceptions: List[Perception]) -> List[Action]:
-        console.print("[bold magenta]Proposer considering actions...[/bold magenta]")
+        """
+        Consider the stimulus and perceptions to propose actions.
         
-        actions = []
-        
-        # Placeholder implementation
-        for perception in perceptions:
-            if perception.source == "user_input_perceptor":
-                actions.append(
-                    Action(
-                        type="say",
-                        parameters={"text": f"I perceived: {perception.content.get('message', '')}"},
-                        priority=1
-                    )
-                )
-        
-        for action in actions:
-            console.print(action)
-        
-        return actions
+        Args:
+            stimulus: The current stimulus being processed
+            perceptions: List of perceptions generated from the stimulus
+            
+        Returns:
+            List of proposed actions
+        """
+        pass

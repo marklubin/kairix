@@ -1,9 +1,9 @@
-from src.executor import Executor
+from examples.executors import SayDoExecutor
 from src.types import Action
 
 
 def test_executor_say_action():
-    executor = Executor()
+    executor = SayDoExecutor()
     
     action = Action(
         type="say",
@@ -17,7 +17,7 @@ def test_executor_say_action():
 
 
 def test_executor_do_action():
-    executor = Executor()
+    executor = SayDoExecutor()
     
     action = Action(
         type="do",
@@ -31,7 +31,7 @@ def test_executor_do_action():
 
 
 def test_executor_unknown_action():
-    executor = Executor()
+    executor = SayDoExecutor()
     
     action = Action(
         type="unknown_action",

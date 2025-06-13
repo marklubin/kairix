@@ -4,12 +4,14 @@ from .types import (
     Perception,
     Action,
     ActionResult,
-    StimulusBus
+    StimulusBus,
+    Source,
+    Sink
 )
 from .perceptor import Perceptor
 from .proposer import Proposer
 from .executor import Executor
-from .scheduler import InlineExecutionScheduler, HesitatingExecutionScheduler, Hesitator
+from .scheduler import Scheduler
 from .persona import Persona
 
 __all__ = [
@@ -21,9 +23,9 @@ __all__ = [
     "Perceptor",
     "Proposer", 
     "Executor",
-    "InlineExecutionScheduler",
-    "HesitatingExecutionScheduler",
-    "Hesitator",
+    "Scheduler",
     "Persona",
-    "StimulusBus"
+    "StimulusBus",
+    "Source",
+    "Sink"
 ]

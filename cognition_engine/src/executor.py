@@ -1,25 +1,26 @@
-from typing import Optional
-from rich.console import Console
+from abc import ABC, abstractmethod
+from typing import Optional, Any
 from .types import Action
 
-console = Console()
 
-
-class Executor:
-    def attempt(self, action: Action) -> Optional[dict]:
-        console.print(f"[bold red]Executor attempting: {action.type}[/bold red]")
+class Executor(ABC):
+    """
+    Abstract base class for action executors.
+    
+    An Executor is responsible for attempting to execute actions and returning
+    the result of the execution attempt. Executors should handle errors gracefully
+    and return None if execution fails.
+    """
+    
+    @abstractmethod
+    def attempt(self, action: Action) -> Optional[Any]:
+        """
+        Attempt to execute the given action.
         
-        try:
-            if action.type == "say":
-                text = action.parameters.get("text", "")
-                console.print(f"[bold blue]>> {text}[/bold blue]")
-                return {"said": text}
-            elif action.type == "do":
-                console.print(f"[yellow]Doing: {action.parameters}[/yellow]")
-                return {"done": action.parameters}
-            else:
-                console.print(f"[red]Unknown action type: {action.type}[/red]")
-                return None
-        except Exception as e:
-            console.print(f"[bold red]Execution failed: {e}[/bold red]")
-            return None
+        Args:
+            action: The action to execute
+            
+        Returns:
+            Result of the execution if successful, None if failed
+        """
+        pass

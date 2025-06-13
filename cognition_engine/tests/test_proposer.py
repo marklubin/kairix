@@ -1,9 +1,9 @@
-from src.proposer import Proposer
+from examples.proposers import PerceptionSpeakingProposer
 from src.types import Stimulus, StimulusType, Perception
 
 
 def test_proposer_consider():
-    proposer = Proposer()
+    proposer = PerceptionSpeakingProposer()
     
     stimulus = Stimulus(
         content={"text": "Hello"},
@@ -26,7 +26,7 @@ def test_proposer_consider():
 
 
 def test_proposer_no_perceptions():
-    proposer = Proposer()
+    proposer = PerceptionSpeakingProposer()
     
     stimulus = Stimulus(
         content={},

@@ -1,5 +1,5 @@
 from unittest.mock import Mock
-from src.scheduler import InlineExecutionScheduler, HesitatingExecutionScheduler, Hesitator
+from examples.schedulers import InlineExecutionScheduler, HesitatingExecutionScheduler, Hesitator
 from src.executor import Executor
 from src.types import Action, StimulusBus
 
@@ -15,8 +15,9 @@ def test_inline_scheduler():
         Action(type="say", parameters={"text": "Test"})
     ]
     
-    scheduler.schedule(actions)
+    result = scheduler.schedule(actions)
     
+    assert result is True
     assert len(emitted) == 1
     assert emitted[0].type.name == "EXECUTION_ATTEMPT"
 
@@ -33,8 +34,9 @@ def test_hesitating_scheduler():
         Action(type="say", parameters={"text": "Test"}, priority=1)
     ]
     
-    scheduler.schedule(actions)
+    result = scheduler.schedule(actions)
     
+    assert result is True
     assert len(emitted) == 1
 
 
