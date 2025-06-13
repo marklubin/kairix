@@ -1,0 +1,24 @@
+[project]
+name = "cognition-engine"
+version = "0.1.0"
+description = "Kairix Psyche Engine - Agent-based cognition architecture"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "openai>=1.0.0,<2.0.0",
+    "rich>=14.0.0,<15.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"

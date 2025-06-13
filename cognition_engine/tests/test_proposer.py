@@ -1,0 +1,38 @@
+from src.proposer import Proposer
+from src.types import Stimulus, StimulusType, Perception
+
+
+def test_proposer_consider():
+    proposer = Proposer()
+    
+    stimulus = Stimulus(
+        content={"text": "Hello"},
+        type=StimulusType.USER_MESSAGE
+    )
+    
+    perceptions = [
+        Perception(
+            content={"message": "Hello"},
+            source="user_input_perceptor",
+            confidence=0.8
+        )
+    ]
+    
+    actions = proposer.consider(stimulus, perceptions)
+    
+    assert len(actions) == 1
+    assert actions[0].type == "say"
+    assert "I perceived" in actions[0].parameters["text"]
+
+
+def test_proposer_no_perceptions():
+    proposer = Proposer()
+    
+    stimulus = Stimulus(
+        content={},
+        type=StimulusType.TIME_TICK
+    )
+    
+    actions = proposer.consider(stimulus, [])
+    
+    assert len(actions) == 0

@@ -1,0 +1,49 @@
+# Kairix Cognition Engine Justfile
+
+# Default recipe to display help
+default:
+    @just --list
+
+# Install dependencies using uv
+install:
+    uv sync
+
+# Run the main application
+run:
+    uv run python main.py
+
+# Run all tests
+test:
+    uv run pytest tests/
+
+# Run specific test file
+test-file FILE:
+    uv run pytest tests/{{FILE}}
+
+# Run linting with ruff
+lint:
+    uv run ruff check --fix src/ tests/ main.py
+
+# Run type checking with pyright
+typecheck:
+    uv run pyright src/ tests/ main.py
+
+# Run both linting and type checking
+check: lint typecheck
+
+# Clean Python cache files
+clean:
+    find . -type d -name "__pycache__" -exec rm -rf {} +
+    find . -type f -name "*.pyc" -delete
+    find . -type f -name "*.pyo" -delete
+    find . -type f -name ".coverage" -delete
+    find . -type d -name "*.egg-info" -exec rm -rf {} +
+    find . -type d -name ".pytest_cache" -exec rm -rf {} +
+
+# Development mode - run with auto-reload
+dev:
+    uv run python -m src.main
+
+# Show project structure
+tree:
+    tree -I '__pycache__|*.pyc|.git'
