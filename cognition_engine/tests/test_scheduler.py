@@ -1,4 +1,6 @@
+from unittest.mock import Mock
 from src.scheduler import InlineExecutionScheduler, HesitatingExecutionScheduler, Hesitator
+from src.executor import Executor
 from src.types import Action, StimulusBus
 
 
@@ -46,3 +48,25 @@ def test_hesitator():
     # Normal priority action should not be hesitated
     normal_priority = Action(type="test", parameters={}, priority=0)
     assert not hesitator.hesitates(normal_priority)
+
+
+def test_inline_scheduler_exception_handling():
+    """Test that InlineExecutionScheduler handles exceptions correctly."""
+    bus = StimulusBus()
+    
+    # Create a mock executor that raises an exception
+    failing_executor = Mock(spec=Executor)
+    failing_executor.attempt.side_effect = Exception("Test exception")
+    
+    scheduler = InlineExecutionScheduler(bus, executors=[failing_executor])
+    
+    emitted = []
+    bus.subscribe(lambda s: emitted.append(s))
+    
+    action = Action(type="test", parameters={})
+    result = scheduler.do_now(action)
+    
+    # Verify the result indicates failure
+    assert result.success is False
+    assert result.result is None
+    assert result.action == action
