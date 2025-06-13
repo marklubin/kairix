@@ -17,8 +17,8 @@ check:
 
 # Fix lint issues
 fix:
-    uv run ruff check --fix src/ tests/
-    uv run ruff format src/ tests/
+    uv run ruff check --fix --unsafe-fixes .
+    uv run ruff format .
 
 
 # Test with pytest and typeguard

@@ -2,8 +2,13 @@ import "../Justfile"
 set dotenv-load
 set dotenv-required
 
-prep-for-test: clear-neo4j
+run-for-test:
+    sudo systemctl disable ollama
+    sudo systemctl stop ollama
     rm -rf logs.log
+
+    CUDA_VISIBIBLE_DEVICES=0 ollama serve
+
     
 mem-ui:
     uv run python -m kairix_offline.ui.mem_ui

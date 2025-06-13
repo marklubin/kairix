@@ -1,3 +1,4 @@
+*.logs
 references/*
 **/node_modules/**
 node_modules/**
@@ -7,6 +8,7 @@ data/**
 **/neo4j/**
 **/.neo4j/**
 
+**/data/**
 kairix-offline/.env
 dist/**
 **/dist/**

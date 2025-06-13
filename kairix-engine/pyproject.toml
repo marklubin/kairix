@@ -8,10 +8,9 @@ dependencies = [
     "gradio>=5.33.2",
     "kairix-core",
     "neomodel>=5.5.0",
-    "ollama-python>=0.1.2",
-    "rich>=14.0.0",
+    "ollama>=0.5.1",
+    "openai-swarm>=0.1.1",
     "sentence-transformers>=4.1.0",
-    "textual>=3.3.0",
     "ty>=0.0.1a9",
 ]
 
@@ -38,6 +37,13 @@ target-version = "py310"
 line-length = 88
 fix = true
 src = ["src"]
+
+[tool.uv]
+override-dependencies = [
+    "openai>=1.33.0",  # Force newer openai
+    "instructor>=1.0.0",  # Force newer instructor that works with newer openai
+    "rich>=14.0.0"
+]
 
 [tool.ruff.lint]
 select = [
