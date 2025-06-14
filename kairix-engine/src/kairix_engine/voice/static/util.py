@@ -1,5 +1,6 @@
 import curses
 import time
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -10,14 +11,20 @@ def _record_audio(screen: curses.window) -> npt.NDArray[np.float32]:
     screen.nodelay(True)  # Non-blocking input
     screen.clear()
     screen.addstr(
-        "Press <spacebar> to start recording. Press <spacebar> again to stop recording.\n"
+        "Press <spacebar> to start recording. "
+        "Press <spacebar> again to stop recording.\n"
     )
     screen.refresh()
 
     recording = False
     audio_buffer: list[npt.NDArray[np.float32]] = []
 
-    def _audio_callback(indata, frames, time_info, status):
+    def _audio_callback(
+        indata: npt.NDArray[np.float32],
+        frames: int,
+        time_info: Any,
+        status: sd.CallbackFlags | None
+    ) -> None:
         if status:
             screen.addstr(f"Status: {status}\n")
             screen.refresh()
@@ -25,7 +32,9 @@ def _record_audio(screen: curses.window) -> npt.NDArray[np.float32]:
             audio_buffer.append(indata.copy())
 
     # Open the audio stream with the callback.
-    with sd.InputStream(samplerate=24000, channels=1, dtype=np.float32, callback=_audio_callback):
+    with sd.InputStream(
+        samplerate=24000, channels=1, dtype=np.float32, callback=_audio_callback
+    ):
         while True:
             key = screen.getch()
             if key == ord(" "):
@@ -47,7 +56,7 @@ def _record_audio(screen: curses.window) -> npt.NDArray[np.float32]:
     return audio_data
 
 
-def record_audio():
+def record_audio() -> npt.NDArray[np.float32]:
     # Using curses to record audio in a way that:
     # - doesn't require accessibility permissions on macos
     # - doesn't block the terminal
@@ -56,14 +65,19 @@ def record_audio():
 
 
 class AudioPlayer:
-    def __enter__(self):
+    def __enter__(self) -> "AudioPlayer":
         self.stream = sd.OutputStream(samplerate=24000, channels=1, dtype=np.int16)
         self.stream.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: Any
+    ) -> None:
         self.stream.stop()  # wait for the stream to finish
         self.stream.close()
 
-    def add_audio(self, audio_data: npt.NDArray[np.int16]):
+    def add_audio(self, audio_data: npt.NDArray[np.int16]) -> None:
         self.stream.write(audio_data)

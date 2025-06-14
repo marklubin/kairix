@@ -1,4 +1,3 @@
-import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -25,7 +24,33 @@ class MockStoreDB(StoreDB):
         return self.cypher_query_mock(query, params)
 
 
-class TestDefaultStoreDB(unittest.TestCase):
+@pytest.fixture
+def mock_store():
+    """Fixture providing a mock store"""
+    return MockStoreDB()
+
+
+@pytest.fixture
+def mock_transformer():
+    """Fixture providing a mock sentence transformer"""
+    transformer = Mock()
+    # Create a mock numpy array with proper length and tolist method
+    mock_array = MagicMock()
+    mock_array.__len__.return_value = 3
+    mock_array.tolist.return_value = [0.1, 0.2, 0.3]
+    transformer.encode.return_value = mock_array
+    return transformer
+
+
+@pytest.fixture
+def summary_store(mock_store, mock_transformer):
+    """Fixture providing a SummaryStore with mocked dependencies"""
+    with patch("kairix_engine.summary_store.SentenceTransformer") as mock_st:
+        mock_st.return_value = mock_transformer
+        return SummaryStore(override_store=mock_store)
+
+
+class TestDefaultStoreDB:
     """Test cases for DefaultStoreDB class"""
 
     @patch("kairix_engine.summary_store.db")
@@ -54,13 +79,12 @@ class TestDefaultStoreDB(unittest.TestCase):
         assert result == (["result"], ["meta"])
 
 
-class TestSummaryStoreInitialization(unittest.TestCase):
+class TestSummaryStoreInitialization:
     """Test cases for SummaryStore initialization"""
 
     @patch("kairix_engine.summary_store.SentenceTransformer")
-    def test_init_with_override_store(self, mock_transformer):
+    def test_init_with_override_store(self, mock_transformer, mock_store):
         """Test initialization with override_store"""
-        mock_store = MockStoreDB()
         store = SummaryStore(override_store=mock_store)
 
         assert store.store == mock_store
@@ -81,10 +105,9 @@ class TestSummaryStoreInitialization(unittest.TestCase):
         assert store.store == mock_store_instance
 
     @patch("kairix_engine.summary_store.SentenceTransformer")
-    def test_init_with_custom_embedding_model(self, mock_transformer):
+    def test_init_with_custom_embedding_model(self, mock_transformer, mock_store):
         """Test initialization with custom embedding model"""
         custom_model = "custom/model"
-        mock_store = MockStoreDB()
 
         SummaryStore(override_store=mock_store, embedding_model=custom_model)
 
@@ -98,36 +121,22 @@ class TestSummaryStoreInitialization(unittest.TestCase):
         assert str(exc_info.value) == "Must provide store_url or override_store"
 
 
-class TestSummaryStoreFunctionality(unittest.TestCase):
+class TestSummaryStoreFunctionality:
     """Test cases for SummaryStore functionality"""
 
-    def setUp(self):
-        """Set up test fixtures"""
-        self.mock_store = MockStoreDB()
-        self.mock_transformer = Mock()
-        # Create a mock numpy array with proper length and tolist method
-        mock_array = MagicMock()
-        mock_array.__len__.return_value = 3
-        mock_array.tolist.return_value = [0.1, 0.2, 0.3]
-        self.mock_transformer.encode.return_value = mock_array
-
-        with patch("kairix_engine.summary_store.SentenceTransformer") as mock_st:
-            mock_st.return_value = self.mock_transformer
-            self.summary_store = SummaryStore(override_store=self.mock_store)
-
-    def test_get_embedding(self):
+    def test_get_embedding(self, summary_store, mock_transformer):
         """Test _get_embedding method"""
         test_text = "test text"
-        result = self.summary_store._get_embedding(test_text)
+        result = summary_store._get_embedding(test_text)
 
-        self.mock_transformer.encode.assert_called_once_with(test_text)
+        mock_transformer.encode.assert_called_once_with(test_text)
         assert result == [0.1, 0.2, 0.3]
 
-    def test_vector_search(self):
+    def test_vector_search(self, summary_store, mock_store):
         """Test _vector_search method"""
         query_vector = [0.1, 0.2, 0.3]
         k = 3
-        self.mock_store.cypher_query_mock.return_value = (
+        mock_store.cypher_query_mock.return_value = (
             [
                 ["@#$%^&*()content1", 0.9],
                 ["@#$%^&*()content2", 0.8],
@@ -136,79 +145,79 @@ class TestSummaryStoreFunctionality(unittest.TestCase):
             None,
         )
 
-        result = self.summary_store._vector_search(query_vector, k)
+        result = summary_store._vector_search(query_vector, k)
 
-        self.mock_store.cypher_query_mock.assert_called_once()
-        call_args = self.mock_store.cypher_query_mock.call_args[0]
+        mock_store.cypher_query_mock.assert_called_once()
+        call_args = mock_store.cypher_query_mock.call_args[0]
         assert "vector_index_MemoryShard_vector_address" in call_args[0]
         assert call_args[1] == {"k": k, "query_vector": query_vector}
 
         assert result == [("content1", 0.9), ("content2", 0.8), ("content3", 0.7)]
 
-    def test_vector_search_empty_results(self):
+    def test_vector_search_empty_results(self, summary_store, mock_store):
         """Test _vector_search with empty results"""
-        self.mock_store.cypher_query_mock.return_value = ([], None)
+        mock_store.cypher_query_mock.return_value = ([], None)
 
-        result = self.summary_store._vector_search([0.1, 0.2], 2)
+        result = summary_store._vector_search([0.1, 0.2], 2)
 
         assert result == []
 
-    def test_search_success(self):
+    def test_search_success(self, summary_store, mock_store, mock_transformer):
         """Test successful search operation"""
         query = "test query"
         k = 2
-        self.mock_store.cypher_query_mock.return_value = (
+        mock_store.cypher_query_mock.return_value = (
             [["@#$%^&*()result1", 0.95], ["@#$%^&*()result2", 0.85]],
             None,
         )
 
-        result = self.summary_store.search(query, k)
+        result = summary_store.search(query, k)
 
-        self.mock_transformer.encode.assert_called_once_with(query)
+        mock_transformer.encode.assert_called_once_with(query)
         assert result == [("result1", 0.95), ("result2", 0.85)]
 
-    def test_search_with_default_k(self):
+    def test_search_with_default_k(self, summary_store, mock_store):
         """Test search with default k value"""
-        self.mock_store.cypher_query_mock.return_value = ([], None)
+        mock_store.cypher_query_mock.return_value = ([], None)
 
-        self.summary_store.search("test")
+        summary_store.search("test")
 
-        call_args = self.mock_store.cypher_query_mock.call_args[0]
+        call_args = mock_store.cypher_query_mock.call_args[0]
         assert call_args[1]["k"] == 2  # default k value
 
     @patch("kairix_engine.summary_store.logger")
-    def test_search_error_handling(self, mock_logger):
+    def test_search_error_handling(self, mock_logger, summary_store, mock_transformer):
         """Test search error handling"""
         query = "test query"
-        self.mock_transformer.encode.side_effect = Exception("Encoding failed")
+        mock_transformer.encode.side_effect = Exception("Encoding failed")
 
         with pytest.raises(RuntimeError) as exc_info:
-            self.summary_store.search(query)
+            summary_store.search(query)
 
         assert str(exc_info.value) == f"Failed to retrieve summaries for query {query}"
         mock_logger.error.assert_called_once()
 
     @patch("kairix_engine.summary_store.logger")
-    def test_search_database_error(self, mock_logger):
+    def test_search_database_error(self, mock_logger, summary_store, mock_store):
         """Test search with database error"""
         query = "test query"
-        self.mock_store.cypher_query_mock.side_effect = Exception("Database error")
+        mock_store.cypher_query_mock.side_effect = Exception("Database error")
 
         with pytest.raises(RuntimeError) as exc_info:
-            self.summary_store.search(query)
+            summary_store.search(query)
 
         assert str(exc_info.value) == f"Failed to retrieve summaries for query {query}"
         mock_logger.error.assert_called_once()
 
     @patch("kairix_engine.summary_store.logger")
-    def test_get_embedding_logging(self, mock_logger):
+    def test_get_embedding_logging(self, mock_logger, summary_store):
         """Test that _get_embedding logs debug information"""
-        self.summary_store._get_embedding("test")
+        summary_store._get_embedding("test")
 
         mock_logger.debug.assert_called_once_with("Got embedding of length: 3.")
 
 
-class TestCypherQuery(unittest.TestCase):
+class TestCypherQuery:
     """Test the Cypher query constant"""
 
     def test_cypher_query_format(self):
@@ -220,7 +229,3 @@ class TestCypherQuery(unittest.TestCase):
         assert "$query_vector" in CYPHER_QUERY
         assert "node.shard_contents AS content" in CYPHER_QUERY
         assert "ORDER BY score DESC" in CYPHER_QUERY
-
-
-if __name__ == "__main__":
-    unittest.main()

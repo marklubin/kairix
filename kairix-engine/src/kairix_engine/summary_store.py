@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 from neomodel import config as neomodel_config
 from neomodel import db
@@ -20,21 +21,22 @@ logger = logging.getLogger(__name__)
 
 class StoreDB(ABC):
     @abstractmethod
-    def configure(self, url):
+    def configure(self, url: str) -> None:
         pass
 
     @abstractmethod
-    def cypher_query(self, query, n) -> tuple[list | None, tuple[str, ...] | None]:
+    def cypher_query(self, query: str, params: dict[str, Any]) -> tuple[list[Any], Any]:
         pass
 
 
 class DefaultStoreDB(StoreDB):
-    def configure(self, url):
+    def configure(self, url: str) -> None:
         neomodel_config.DATABASE_URL = url
         db.set_connection(url)
 
-    def cypher_query(self, *args):
-        return db.cypher_query(*args)
+    def cypher_query(self, query: str, params: dict[str, Any]) -> tuple[list[Any], Any]:
+        result = db.cypher_query(query, params)
+        return result  # type: ignore[no-any-return]
 
 
 class SummaryStore:
@@ -42,7 +44,7 @@ class SummaryStore:
         self,
         *,
         store_url: str | None = None,
-        embedding_model=DEFAULT_EMBEDDING_MODEL,
+        embedding_model: str = DEFAULT_EMBEDDING_MODEL,
         override_store: StoreDB | None = None,
     ):
         self.transformer = SentenceTransformer(embedding_model)
@@ -57,7 +59,7 @@ class SummaryStore:
 
     def _vector_search(
         self, query_vector: list[float], k: int = 2
-    ) -> list[tuple[str, str]]:
+    ) -> list[tuple[str, float]]:
         results, _ = self.store.cypher_query(
             CYPHER_QUERY, {"k": k, "query_vector": query_vector}
         )
@@ -71,7 +73,7 @@ class SummaryStore:
         logger.debug(f"Got embedding of length: {len(numpy_array)}.")
         return numpy_array.tolist()
 
-    def search(self, query: str, k: int = 2) -> list[tuple[str, str]]:
+    def search(self, query: str, k: int = 2) -> list[tuple[str, float]]:
         try:
             vect = self._get_embedding(query)
             return self._vector_search(query_vector=vect, k=k)

@@ -1,4 +1,4 @@
-ll: clean install fix typecheck test
+all: clean install fix typecheck mypy test
 
 # Install dependencies using uv
 install:
@@ -16,6 +16,11 @@ test-file FILE:
 fix:
     uv run ruff check --fix .
 
+# Check code without fixing (for CI)
+check:
+    uv run ruff check .
+    uv run mypy src/ tests/ --warn-unused-ignores
+
 # Run linting with unsafe fixes
 fix-unsafe:
     uv run ruff check --fix --unsafe-fixes .
@@ -24,10 +29,14 @@ fix-unsafe:
 typecheck:
     uv run ty check src/ tests/
 
+# Run mypy type checking with async checking
+mypy:
+    uv run mypy src/ tests/ --warn-unused-ignores
+
 # Clean Python cache files
 clean:
     find . -type d -name ".venv" -exec rm -rf {} +
-    find . -type d -name "uv.lock" -exec rm -rf {} +
+    find . -type f -name "uv.lock" -delete
     find . -type d -name "__pycache__" -exec rm -rf {} +
     find . -type f -name "*.pyc" -delete
     find . -type f -name "*.pyo" -delete

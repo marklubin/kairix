@@ -12,12 +12,14 @@ from kairix_engine.basic_chat import Chat
 from kairix_engine.summary_store import SummaryStore
 
 NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="DEBUG", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()], force=True
-)
+logging.basicConfig(datefmt="[%X]", handlers=[RichHandler()], force=True)
+
 
 logger = logging.getLogger()
+logger.setLevel(logging.WARNING)
+
+logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
+logging.getLogger("cognition_engine").setLevel(logging.DEBUG)
 
 pretty.install()
 
@@ -30,7 +32,7 @@ perceptor = ConversationRememberingPerceptor(
     memory_provider=lambda query, k: [
         content for content, score in store.search(query, k)
     ],
-    k_memories=5,
+    k_memories=20,
 )
 chat = Chat(user_name="Mark", agent_name="Apiana", perceptor=perceptor)
 
@@ -47,8 +49,10 @@ async def main_loop():
             message = await chat.chat(user_input)
             console.print(f"[italic cyan]{message}\n")
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main_loop())
 
     # for chunk in chat.submit(user_input):

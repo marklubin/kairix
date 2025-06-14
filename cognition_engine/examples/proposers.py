@@ -14,7 +14,7 @@ class PerceptionSpeakingProposer(Proposer):
     particularly for user input perceptions.
     """
     
-    def consider(self, stimulus: Stimulus, perceptions: List[Perception]) -> List[Action]:
+    async def consider(self, stimulus: Stimulus, perceptions: List[Perception]) -> List[Action]:
         console.print("[bold magenta]Proposer considering actions...[/bold magenta]")
         
         actions = []

@@ -1,32 +1,35 @@
-import asyncio
-import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from kairix_engine.basic_chat import Chat
 
 
-class TestChatRunMethod(unittest.TestCase):
-    """Test cases for the Chat.run() async streaming method"""
+@pytest.fixture
+def mock_perceptor():
+    """Fixture providing a mock perceptor"""
+    perceptor = Mock()
+    perceptor.perceive = AsyncMock(return_value=[])
+    return perceptor
 
-    def setUp(self):
-        """Set up test fixtures"""
-        # Mock the perceptor
-        self.mock_perceptor = Mock()
-        self.mock_perceptor.perceive.return_value = []
-        
-        # Create Chat instance with mocked dependencies
-        self.chat = Chat(
-            user_name="TestUser",
-            agent_name="TestAgent",
-            perceptor=self.mock_perceptor
-        )
+
+@pytest.fixture
+def chat(mock_perceptor):
+    """Fixture providing a Chat instance with mocked dependencies"""
+    return Chat(
+        user_name="TestUser",
+        agent_name="TestAgent",
+        perceptor=mock_perceptor
+    )
+
+
+class TestChatRunMethod:
+    """Test cases for the Chat.run() async streaming method"""
 
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_basic_streaming(self, mock_helper, mock_runner):
+    async def test_run_basic_streaming(self, mock_helper, mock_runner, chat):
         """Test basic streaming functionality of run method"""
         # Setup
         test_input = "Hello, stream this response"
@@ -47,7 +50,7 @@ class TestChatRunMethod(unittest.TestCase):
         
         # Execute
         received_chunks = []
-        async for chunk in self.chat.run(test_input):
+        async for chunk in chat.run(test_input):
             received_chunks.append(chunk)
         
         # Verify
@@ -56,16 +59,18 @@ class TestChatRunMethod(unittest.TestCase):
         mock_helper.stream_text_from.assert_called_once_with(mock_result)
         
         # Check history is updated after streaming
-        assert len(self.chat.history) == 2
-        assert self.chat.history[0].role == "user"
-        assert self.chat.history[0].content == test_input
-        assert self.chat.history[1].role == "assistant"
-        assert self.chat.history[1].content == full_response
+        assert len(chat.history) == 2
+        assert chat.history[0].role == "user"
+        assert chat.history[0].content == test_input
+        assert chat.history[1].role == "assistant"
+        assert chat.history[1].content == full_response
 
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_with_memory_integration(self, mock_helper, mock_runner):
+    async def test_run_with_memory_integration(
+        self, mock_helper, mock_runner, chat, mock_perceptor
+    ):
         """Test streaming with memory/perceptor integration"""
         # Setup
         test_input = "What did we discuss in our last meeting?"
@@ -75,7 +80,7 @@ class TestChatRunMethod(unittest.TestCase):
         mock_perception.content = "Meeting notes from last week"
         mock_perception.confidence = "0.92"
         mock_perception.source = "meeting_2024_01_15"
-        self.mock_perceptor.perceive.return_value = [mock_perception]
+        mock_perceptor.perceive = AsyncMock(return_value=[mock_perception])
         
         # Mock streaming
         chunks = ["We discussed", " the project", " timeline."]
@@ -93,23 +98,23 @@ class TestChatRunMethod(unittest.TestCase):
         
         # Execute
         received_chunks = []
-        async for chunk in self.chat.run(test_input):
+        async for chunk in chat.run(test_input):
             received_chunks.append(chunk)
         
         # Verify
         assert received_chunks == chunks
-        self.mock_perceptor.perceive.assert_called_once()
+        mock_perceptor.perceive.assert_called_once()
         
         # Verify the agent was called with context including memories
         call_args = mock_runner.run_streamed.call_args[0]
         agent_prompt = call_args[1]
         assert "RECOLLECTIONS" in agent_prompt
-        assert "0.92" in agent_prompt
+        assert "Meeting notes from last week" in agent_prompt
 
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_empty_stream(self, mock_helper, mock_runner):
+    async def test_run_empty_stream(self, mock_helper, mock_runner, chat):
         """Test handling of empty streaming response"""
         # Setup
         test_input = "Give me nothing"
@@ -127,18 +132,18 @@ class TestChatRunMethod(unittest.TestCase):
         
         # Execute
         received_chunks = []
-        async for chunk in self.chat.run(test_input):
+        async for chunk in chat.run(test_input):
             received_chunks.append(chunk)
         
         # Verify
         assert received_chunks == []
-        assert len(self.chat.history) == 2
-        assert self.chat.history[1].content == ""
+        assert len(chat.history) == 2
+        assert chat.history[1].content == ""
 
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_conversation_continuity(self, mock_helper, mock_runner):
+    async def test_run_conversation_continuity(self, mock_helper, mock_runner, chat):
         """Test that conversation history is maintained across streaming calls"""
         # Setup multiple interactions
         interactions = [
@@ -162,25 +167,25 @@ class TestChatRunMethod(unittest.TestCase):
             mock_helper.stream_text_from.return_value = mock_stream()
             
             received_chunks = []
-            async for chunk in self.chat.run(user_input):
+            async for chunk in chat.run(user_input):
                 received_chunks.append(chunk)
             
             assert received_chunks == expected_chunks
         
         # Verify history accumulation
-        assert len(self.chat.history) == 6  # 3 user + 3 assistant messages
+        assert len(chat.history) == 6  # 3 user + 3 assistant messages
         
         # Verify history content
         for i, (user_input, chunks) in enumerate(interactions):
-            assert self.chat.history[i*2].role == "user"
-            assert self.chat.history[i*2].content == user_input
-            assert self.chat.history[i*2+1].role == "assistant"
-            assert self.chat.history[i*2+1].content == "".join(chunks)
+            assert chat.history[i*2].role == "user"
+            assert chat.history[i*2].content == user_input
+            assert chat.history[i*2+1].role == "assistant"
+            assert chat.history[i*2+1].content == "".join(chunks)
 
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_streaming_error_handling(self, mock_helper, mock_runner):
+    async def test_run_streaming_error_handling(self, mock_helper, mock_runner, chat):
         """Test error handling during streaming"""
         # Setup
         test_input = "This will fail"
@@ -198,19 +203,19 @@ class TestChatRunMethod(unittest.TestCase):
         # Execute and verify
         received_chunks = []
         with pytest.raises(Exception) as exc_info:
-            async for chunk in self.chat.run(test_input):
+            async for chunk in chat.run(test_input):
                 received_chunks.append(chunk)
         
         assert str(exc_info.value) == "Stream failed"
         assert received_chunks == ["Starting..."]
         # User message should be in history, but not assistant message
-        assert len(self.chat.history) == 1
-        assert self.chat.history[0].content == test_input
+        assert len(chat.history) == 1
+        assert chat.history[0].content == test_input
 
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_partial_response_on_error(self, mock_helper, mock_runner):
+    async def test_run_partial_response_on_error(self, mock_helper, mock_runner, chat):
         """Test that partial responses are handled correctly on error"""
         # Setup
         test_input = "Stream with partial failure"
@@ -232,7 +237,7 @@ class TestChatRunMethod(unittest.TestCase):
         # Execute
         received_chunks = []
         try:
-            async for chunk in self.chat.run(test_input):
+            async for chunk in chat.run(test_input):
                 received_chunks.append(chunk)
         except Exception:
             pass
@@ -245,7 +250,7 @@ class TestChatRunMethod(unittest.TestCase):
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
     @patch("kairix_engine.basic_chat.logger")
     async def test_run_memory_logging_during_stream(
-        self, mock_logger, mock_helper, mock_runner
+        self, mock_logger, mock_helper, mock_runner, chat, mock_perceptor
     ):
         """Test that memory recovery logging works with streaming"""
         # Setup with memories
@@ -253,7 +258,7 @@ class TestChatRunMethod(unittest.TestCase):
         mock_perception.content = "Streaming memory content"
         mock_perception.confidence = "0.88"
         mock_perception.source = "stream_memory_123"
-        self.mock_perceptor.perceive.return_value = [mock_perception]
+        mock_perceptor.perceive = AsyncMock(return_value=[mock_perception])
         
         # Setup streaming
         chunks = ["Memory", " response"]
@@ -270,7 +275,7 @@ class TestChatRunMethod(unittest.TestCase):
         mock_helper.stream_text_from.return_value = mock_stream()
         
         # Execute
-        async for _ in self.chat.run("Remember something"):
+        async for _ in chat.run("Remember something"):
             pass
         
         # Verify logging
@@ -282,7 +287,7 @@ class TestChatRunMethod(unittest.TestCase):
     @pytest.mark.asyncio
     @patch("kairix_engine.basic_chat.Runner")
     @patch("kairix_engine.basic_chat.VoiceWorkflowHelper")
-    async def test_run_voice_workflow_integration(self, mock_helper, mock_runner):
+    async def test_run_voice_workflow_integration(self, mock_helper, mock_runner, chat):
         """Test that run method properly integrates with VoiceWorkflowBase"""
         # This test verifies that Chat inherits from VoiceWorkflowBase properly
         # and implements the required run method for voice workflows
@@ -304,32 +309,25 @@ class TestChatRunMethod(unittest.TestCase):
         
         # Execute - using it as a voice workflow
         received_chunks = []
-        async for chunk in self.chat.run(test_transcription):
+        async for chunk in chat.run(test_transcription):
             received_chunks.append(chunk)
         
         # Verify it works as a voice workflow
         assert received_chunks == chunks
-        assert hasattr(self.chat, 'run')  # Required by VoiceWorkflowBase
-        assert asyncio.iscoroutinefunction(self.chat.run)
+        assert hasattr(chat, 'run')  # Required by VoiceWorkflowBase
+        # Note: chat.run is an async generator, not a regular coroutine function
+        import inspect
+        assert inspect.isasyncgenfunction(chat.run)
 
 
-class TestChatAsyncHelpers(unittest.TestCase):
+class TestChatAsyncHelpers:
     """Test helper methods used in async context"""
 
-    def test_prepare_method(self):
+    @pytest.mark.asyncio
+    async def test_prepare_method(self, chat):
         """Test the _prepare method used by both chat and run"""
-        # Setup
-        mock_perceptor = Mock()
-        mock_perceptor.perceive.return_value = []
-        
-        chat = Chat(
-            user_name="TestUser",
-            agent_name="TestAgent",
-            perceptor=mock_perceptor
-        )
-        
         # Execute
-        result = chat._prepare("Test message")
+        result = await chat._prepare("Test message")
         
         # Verify
         assert "RECOLLECTIONS" in result
@@ -338,16 +336,8 @@ class TestChatAsyncHelpers(unittest.TestCase):
         assert len(chat.history) == 1
         assert chat.history[0].content == "Test message"
 
-    def test_record_method(self):
+    def test_record_method(self, chat):
         """Test the _record method used to update history"""
-        # Setup
-        mock_perceptor = Mock()
-        chat = Chat(
-            user_name="TestUser",
-            agent_name="TestAgent",
-            perceptor=mock_perceptor
-        )
-        
         # Execute
         chat._record("Assistant response")
         
@@ -355,8 +345,3 @@ class TestChatAsyncHelpers(unittest.TestCase):
         assert len(chat.history) == 1
         assert chat.history[0].role == "assistant"
         assert chat.history[0].content == "Assistant response"
-
-
-if __name__ == "__main__":
-    # For async tests, we need pytest
-    pytest.main([__file__, "-v"])

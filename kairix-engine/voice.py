@@ -2,37 +2,43 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import sounddevice as sd
+from agents import Runner
 from agents.voice import StreamedAudioInput, VoicePipeline
 from cognition_engine.perceptor.conversation_remembering_perceptor import (
     ConversationRememberingPerceptor,
 )
 from rich import pretty
 from rich.logging import RichHandler
-from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.widgets import Button, RichLog, Static
 from typing_extensions import override
 
+if TYPE_CHECKING:
+    from textual import events
+
 from kairix_engine.basic_chat import Chat
 from kairix_engine.summary_store import SummaryStore
 
+NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
 CHUNK_LENGTH_S = 0.05  # 100ms
 SAMPLE_RATE = 24000
 FORMAT = np.int16
 CHANNELS = 1
 
-NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="debug", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()], force=True
-)
+logging.basicConfig(datefmt="[%X]", handlers=[RichHandler()], force=True)
+
 
 logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
+logging.getLogger("cognition_engine").setLevel(logging.DEBUG)
 
 pretty.install()
 
@@ -133,6 +139,7 @@ class RealtimeApp(App[None]):
 
         store = SummaryStore(store_url=NEO4J_URL)
         perceptor = ConversationRememberingPerceptor(
+            Runner(),
             memory_provider=lambda query, k: [
                 content for content, score in store.search(query, k)
             ],
@@ -166,15 +173,14 @@ class RealtimeApp(App[None]):
     async def start_voice_pipeline(self) -> None:
         try:
             self.audio_player.start()
-            self.result = await self.pipeline.run(self._audio_input)
+            result = await self.pipeline.run(self._audio_input)
 
-            async for event in self.result.stream():
+            async for event in result.stream():
                 bottom_pane = self.query_one("#bottom-pane", RichLog)
                 if event.type == "voice_stream_event_audio":
                     self.audio_player.write(event.data)
-                    bottom_pane.write(
-                        f"Received audio: {len(event.data) if event.data is not None else '0'} bytes"
-                    )
+                    data_len = len(event.data) if event.data is not None else 0
+                    bottom_pane.write(f"Received audio: {data_len} bytes")
                 elif event.type == "voice_stream_event_lifecycle":
                     bottom_pane.write(f"Lifecycle event: {event.event}")
         except Exception as e:

@@ -30,6 +30,7 @@ dev = [
     "ruff-lsp>=0.0.53",
     "python-lsp-server>=1.11.0",
     "pyright>=1.1.350",
+    "mypy>=1.8.0",
 ]
 
 [build-system]
@@ -61,6 +62,7 @@ select = [
     "I",    # isort
     "TCH",  # flake8-type-checking
     "RUF",  # Ruff-specific
+    "ASYNC",# flake8-async - Check for common async/await mistakes
 ]
 ignore = []
 
@@ -93,9 +95,31 @@ collection_check_strategy = "ALL_ITEMS"
 
 [dependency-groups]
 dev = [
+    "mypy>=1.16.0",
     "pytest-asyncio>=1.0.0",
+    "textual-dev>=1.7.0",
 ]
 
 [tool.uv.sources]
 kairix-core = { path = "../kairix-core" }
-cognition-engine = { path = "../cognition_engine" }
+cognition-engine = { path = "../cognition_engine", editable = true }
+
+# Mypy configuration for better type checking
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Temporarily disabled to focus on async issues
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false  # Temporarily disabled
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false  # Temporarily disabled
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+# Enable strict async checking
+enable_error_code = ["unused-awaitable", "redundant-expr", "truthy-bool"]
+# Ignore missing imports for external packages
+ignore_missing_imports = true

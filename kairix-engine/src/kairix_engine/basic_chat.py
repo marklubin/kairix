@@ -11,7 +11,7 @@ from cognition_engine.perceptor.conversation_remembering_perceptor import (
 )
 from typing_extensions import override
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -20,18 +20,18 @@ class KairixMessage:
     content: str
 
     @staticmethod
-    def user_message(content: str):
+    def user_message(content: str) -> "KairixMessage":
         return KairixMessage("user", content)
 
     @staticmethod
-    def assistant_message(content: str):
+    def assistant_message(content: str) -> "KairixMessage":
         return KairixMessage("assistant", content)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"""{self.role}:\t{self.content}\n"""
 
 
-def system_messge_template(agent_name, user_name):
+def system_messge_template(agent_name: str, user_name: str) -> str:
     return f"""
         You are {agent_name}, {user_name}'s AI Assistant. Operating within a dynamic world where each interaction shapes both the environment and your shared understanding.
 
@@ -66,7 +66,7 @@ def system_messge_template(agent_name, user_name):
     """  # noqa
 
 
-def chat_template(recollections, dialog):
+def chat_template(recollections: str, dialog: str) -> str:
     return f"""
         You have the following recollection relevant which are likely relevant and should shape your response
         to the user. Use these along with the context of the conversastion history to craft a response to the
@@ -92,15 +92,17 @@ class Chat(VoiceWorkflowBase):
         user_name: str,
         agent_name: str,
         perceptor: ConversationRememberingPerceptor,
-    ):
+    ) -> None:
         system_instruction = system_messge_template(agent_name, user_name)
         self.history: list[KairixMessage] = []
         self.perceptor = perceptor
-        self.agent = Agent("chat-agent", instructions=system_instruction)
+        self.agent = Agent(
+            "chat-agent", instructions=system_instruction, model="o3-mini"
+        )
 
-    def _remember(self, message: str) -> str:
+    async def _remember(self, message: str) -> str:
         stimulus = Stimulus(message, StimulusType.user_message)
-        perceptions = self.perceptor.perceive(stimulus)
+        perceptions = await self.perceptor.perceive(stimulus)
 
         recollections = ""
         for p in perceptions:
@@ -117,22 +119,20 @@ class Chat(VoiceWorkflowBase):
         <RECOLLECTIONS>{recollections}</RECOLLECTIONS>
         """
 
-    def _prepare(self, content: str) -> str:
-        recollections = self._remember(content)
+    async def _prepare(self, content: str) -> str:
+        recollections = await self._remember(content)
 
         user_message = KairixMessage.user_message(content)
         self.history.append(user_message)
 
-        # console.print(user_message.content)
-
         return chat_template(recollections, "\n".join(str(msg) for msg in self.history))
 
-    def _record(self, response: str):
+    def _record(self, response: str) -> None:
         assistant_message = KairixMessage.assistant_message(response)
         self.history.append(assistant_message)
 
     async def chat(self, content: str) -> str:
-        agent_prompt = self._prepare(content)
+        agent_prompt = await self._prepare(content)
         response = await Runner.run(self.agent, agent_prompt)
         result = response.final_output_as(str)
         self._record(result)
@@ -140,7 +140,7 @@ class Chat(VoiceWorkflowBase):
 
     @override
     async def run(self, transcription: str) -> AsyncIterator[str]:
-        agent_prompt = self._prepare(transcription)
+        agent_prompt = await self._prepare(transcription)
         result = Runner.run_streamed(self.agent, agent_prompt)
 
         # Stream the text from the result

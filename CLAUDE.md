@@ -34,6 +34,12 @@ make test-comprehensive # All tests with environment checks
 # Run linting and auto-fix
 uv run ruff check --fix
 
+# Run type checking with mypy (includes async/await checking)
+just mypy
+
+# Run all checks (linting + type checking)
+just check
+
 # Run with hot reload during development
 uv run textual run --dev apiana/applications/chatgpt_export/tui.py
 ```

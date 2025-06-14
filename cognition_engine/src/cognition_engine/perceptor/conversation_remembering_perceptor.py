@@ -29,34 +29,38 @@ class ConversationRememberingPerceptor(Perceptor):
         k_memories: int,
     ):
         self.query_generating_agent = Agent(
-            name="query_gen", instructions=_QUERY_INSTRUCTIONS
+            name="query_gen",
+            instructions=_QUERY_INSTRUCTIONS,
+            model="gpt-4.5-preview",
         )
         self.insight_extraction_agent = Agent(
-            name="insight_extractor", instructions=_EXTRACT_INSTRUCTIONS
+            name="insight_extractor",
+            instructions=_EXTRACT_INSTRUCTIONS,
+            model="gpt-4.1-nano",
         )
 
         self.memory_provider = memory_provider
         self.runner = runner
         self.k_memories = k_memories
 
-    def perceive(self, stimulus: Stimulus) -> List[Perception]:
+    async def perceive(self, stimulus: Stimulus) -> List[Perception]:
         logger.info(f"ConversationRememberingPerceptor received: {stimulus.type}")
         if stimulus.type != StimulusType.user_message:
             logger.info("...taking no action.")
             return []
         user_input: str = stimulus.content
 
-        query = self.runner.run_sync(
-            self.query_generating_agent, user_input
-        ).final_output_as(str, True)
+        result = await self.runner.run(self.query_generating_agent, user_input)
+        query = result.final_output_as(str, True)
 
         logger.debug(f"...Embedding Store Query: {query}")
 
         logger.info(f"Gathering top {self.k_memories} memories...")
         memories = self.memory_provider(query, self.k_memories)
+        prompts = [f"{m}\n<CURRENT_CONTEXT>{query}</CURRENT_CONTEXT>" for m in memories]
 
         logger.info("Running paralleized insight generation agents...")
-        insights = self._run_insights(memories)
+        insights = await self._run_insights(prompts)
 
         logger.info(f"Extracted {len(insights)} relevant insights.")
         perceptions: List[Perception] = []
@@ -71,9 +75,7 @@ class ConversationRememberingPerceptor(Perceptor):
             logger.debug(f"Attaching Insight: {insight}")
         return perceptions
 
-    async def _run_insights(self, memories: List[str]) -> List[str]:
-        tasks = [
-            self.runner.run(self.insight_extraction_agent, mem) for mem in memories
-        ]
+    async def _run_insights(self, prompts: List[str]) -> List[str]:
+        tasks = [self.runner.run(self.insight_extraction_agent, p) for p in prompts]
         results = await asyncio.gather(*tasks)
         return [r.final_output_as(str, True) for r in results]

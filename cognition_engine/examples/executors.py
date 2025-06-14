@@ -14,7 +14,7 @@ class SayDoExecutor(Executor):
     - 'do' actions print the action parameters
     """
     
-    def attempt(self, action: Action) -> Optional[Any]:
+    async def attempt(self, action: Action) -> Optional[Any]:
         console.print(f"[bold red]Executor attempting: {action.type}[/bold red]")
         
         try:

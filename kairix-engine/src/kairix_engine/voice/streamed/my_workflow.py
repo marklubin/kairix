@@ -26,7 +26,8 @@ spanish_agent = Agent(
 agent = Agent(
     name="Assistant",
     instructions=prompt_with_handoff_instructions(
-        "You're speaking to a human, so be polite and concise. If the user speaks in Spanish, handoff to the spanish agent.",
+        "You're speaking to a human, so be polite and concise. "
+        "If the user speaks in Spanish, handoff to the spanish agent.",
     ),
     model="gpt-4o-mini",
     handoffs=[spanish_agent],
@@ -39,8 +40,8 @@ class MyWorkflow(VoiceWorkflowBase):
         """
         Args:
             secret_word: The secret word to guess.
-            on_start: A callback that is called when the workflow starts. The transcription
-                is passed in as an argument.
+            on_start: A callback that is called when the workflow starts. The
+                transcription is passed in as an argument.
         """
         self._input_history: list[TResponseInputItem] = []
         self._current_agent = agent

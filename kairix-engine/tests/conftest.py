@@ -4,12 +4,12 @@ import pytest
 
 
 @pytest.fixture
-def neo4j_test_url():
+def neo4j_test_url() -> str:
     """Fixture providing a test Neo4j database URL."""
     return "bolt://localhost:7687"
 
 
 @pytest.fixture
-def test_embedding_model():
+def test_embedding_model() -> str:
     """Fixture providing a test embedding model name."""
     return "sentence-transformers/all-MiniLM-L6-v2"  # Smaller model for tests

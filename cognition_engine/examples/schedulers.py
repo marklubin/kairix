@@ -50,10 +50,23 @@ class InlineExecutionScheduler(Scheduler):
         return True
 
     def do_now(self, action: Action) -> ActionResult:
+        import asyncio
         try:
             # Use first available executor
             executor = self.executors[0] if self.executors else SayDoExecutor()
-            result = executor.attempt(action)
+            
+            # Check if we're already in an async context
+            try:
+                asyncio.get_running_loop()
+                # We're in an async context, create a task
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    future = pool.submit(asyncio.run, executor.attempt(action))
+                    result = future.result()
+            except RuntimeError:
+                # No running loop, create one
+                result = asyncio.run(executor.attempt(action))
+            
             return ActionResult(
                 action=action, result=result, success=result is not None
             )
@@ -117,9 +130,22 @@ class HesitatingExecutionScheduler(Scheduler):
         return accepted_any
 
     def do_now(self, action: Action):
+        import asyncio
         try:
             executor = self.executors[0] if self.executors else SayDoExecutor()
-            result = executor.attempt(action)
+            
+            # Check if we're already in an async context
+            try:
+                asyncio.get_running_loop()
+                # We're in an async context, create a task
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    future = pool.submit(asyncio.run, executor.attempt(action))
+                    result = future.result()
+            except RuntimeError:
+                # No running loop, create one
+                result = asyncio.run(executor.attempt(action))
+            
             return ExecutedAction(action=action, result=result)
         except Exception as e:
             return Failure(action=action, exception=e)

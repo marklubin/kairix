@@ -33,7 +33,7 @@ class UserMessagePerceptor(Perceptor):
         self._sources = sources or []
         self._sinks = sinks or []
 
-    def perceive(self, stimulus: Stimulus) -> List[Perception]:
+    async def perceive(self, stimulus: Stimulus) -> List[Perception]:
         console.print(
             f"[bold green]Perceptor processing stimulus: {stimulus.type.value}[/bold green]"
         )

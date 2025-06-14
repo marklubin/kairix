@@ -7,7 +7,8 @@ from examples.proposers import PerceptionSpeakingProposer
 from examples.schedulers import InlineExecutionScheduler
 
 
-def test_persona_react():
+@pytest.mark.asyncio
+async def test_persona_react():
     bus = StimulusBus()
     scheduler = InlineExecutionScheduler(bus)
     persona = Persona(
@@ -21,10 +22,11 @@ def test_persona_react():
     )
 
     # Should not raise any exceptions
-    persona.react(stimulus)
+    await persona.react(stimulus)
 
 
-def test_persona_without_scheduler():
+@pytest.mark.asyncio
+async def test_persona_without_scheduler():
     persona = Persona(
         perceptors=[UserMessagePerceptor()],
         proposers=[PerceptionSpeakingProposer()],
@@ -35,5 +37,5 @@ def test_persona_without_scheduler():
 
     # Should raise RuntimeError when no scheduler accepts actions
     with pytest.raises(RuntimeError) as exc_info:
-        persona.react(stimulus)
+        await persona.react(stimulus)
     assert "No scheduler accepted actions" in str(exc_info.value)
