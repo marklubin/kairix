@@ -1,0 +1,1 @@
+- use the command `just all` for verify the project builds correctly before finalizing any changes

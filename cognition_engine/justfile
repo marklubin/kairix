@@ -1,8 +1,7 @@
 # Kairix Cognition Engine Justfile
 
-# Default recipe to display help
-default:
-    @just --list
+
+all: clean install fix typecheck test
 
 # Install dependencies using uv
 install:
@@ -21,22 +20,21 @@ test-file FILE:
     uv run pytest tests/{{FILE}}
 
 # Run linting with ruff
-lint:
+fix:
     uv run ruff check --fix src/ tests/ examples/
 
 # Run linting with unsafe fixes
-lint-unsafe:
+fix-unsafe:
     uv run ruff check --fix --unsafe-fixes src/ tests/ examples/
 
 # Run type checking with ty
 typecheck:
     uv run ty check src/ tests/ examples/
 
-# Run both linting and type checking
-check: lint typecheck
-
 # Clean Python cache files
 clean:
+    rm -rf .venv
+    rm -rf uv.lock
     find . -type d -name "__pycache__" -exec rm -rf {} +
     find . -type f -name "*.pyc" -delete
     find . -type f -name "*.pyo" -delete

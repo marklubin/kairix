@@ -1,5 +1,6 @@
+from cognition_engine.types import Action
+
 from examples.executors import SayDoExecutor
-from src.types import Action
 
 
 def test_executor_say_action():

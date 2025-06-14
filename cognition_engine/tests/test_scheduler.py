@@ -1,7 +1,9 @@
 from unittest.mock import Mock
+
+from cognition_engine.executor import Executor
+from cognition_engine.types import Action, StimulusBus
+
 from examples.schedulers import InlineExecutionScheduler, HesitatingExecutionScheduler, Hesitator
-from src.executor import Executor
-from src.types import Action, StimulusBus
 
 
 def test_inline_scheduler():

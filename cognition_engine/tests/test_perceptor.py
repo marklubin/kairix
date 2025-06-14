@@ -1,5 +1,6 @@
+from cognition_engine.types import Stimulus, StimulusType
+
 from examples.perceptors import UserMessagePerceptor
-from src.types import Stimulus, StimulusType
 
 
 def test_perceptor_perceive():

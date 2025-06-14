@@ -1,12 +1,8 @@
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
-from src import (
-    Persona, 
-    StimulusBus,
-    Stimulus,
-    StimulusType
-)
+from cognition_engine.persona import Persona
+from cognition_engine.types import StimulusBus, Stimulus, StimulusType
 from .perceptors import UserMessagePerceptor
 from .proposers import PerceptionSpeakingProposer
 from .schedulers import InlineExecutionScheduler, HesitatingExecutionScheduler

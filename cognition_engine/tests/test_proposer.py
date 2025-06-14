@@ -1,5 +1,6 @@
+from cognition_engine.types import Stimulus, StimulusType, Perception
+
 from examples.proposers import PerceptionSpeakingProposer
-from src.types import Stimulus, StimulusType, Perception
 
 
 def test_proposer_consider():

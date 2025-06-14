@@ -19,12 +19,12 @@ class Persona:
     """
     
     def __init__(self, 
-                 perceptors: List[Perceptor] = None, 
-                 proposers: List[Proposer] = None, 
-                 schedulers: List[Scheduler] = None):
-        self.perceptors = perceptors or []
-        self.proposers = proposers or []
-        self.schedulers = schedulers or []
+                 perceptors: List[Perceptor], 
+                 proposers: List[Proposer], 
+                 schedulers: List[Scheduler]):
+        self.perceptors = perceptors
+        self.proposers = proposers
+        self.schedulers = schedulers
 
     def react(self, stimulus: Stimulus) -> None:
         """Process a stimulus through the perception-proposal-execution cycle."""

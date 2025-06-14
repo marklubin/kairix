@@ -1,7 +1,7 @@
 from typing import List
 from rich.console import Console
-from src.proposer import Proposer
-from src.types import Stimulus, Perception, Action
+from cognition_engine.proposer import Proposer
+from cognition_engine.types import Stimulus, Perception, Action
 
 console = Console()
 

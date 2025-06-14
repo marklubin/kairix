@@ -1,4 +1,4 @@
-from src.types import Stimulus, StimulusType, Perception, Action, StimulusBus
+from cognition_engine.types import Stimulus, StimulusType, Perception, Action, StimulusBus
 
 
 def test_stimulus_creation():

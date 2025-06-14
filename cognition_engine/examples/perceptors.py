@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Optional
 from rich.console import Console
-from src.perceptor import Perceptor
-from src.types import Stimulus, Perception, Source, Sink
+from cognition_engine.perceptor import Perceptor
+from cognition_engine.types import Stimulus, Perception, Source, Sink
 
 console = Console()
 
@@ -14,7 +14,7 @@ class UserMessagePerceptor(Perceptor):
     about the message content and intent.
     """
     
-    def __init__(self, sources: List[Source] = None, sinks: List[Sink] = None):
+    def __init__(self, sources: Optional[List[Source]] = None, sinks: Optional[List[Sink]] = None):
         # Sources and sinks are internal implementation details
         self._sources = sources or []
         self._sinks = sinks or []

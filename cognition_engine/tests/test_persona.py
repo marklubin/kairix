@@ -1,9 +1,10 @@
 import pytest
-from src.persona import Persona
-from src.types import Stimulus, StimulusType, StimulusBus
-from examples.schedulers import InlineExecutionScheduler
+from cognition_engine.persona import Persona
+from cognition_engine.types import Stimulus, StimulusType, StimulusBus
+
 from examples.perceptors import UserMessagePerceptor
 from examples.proposers import PerceptionSpeakingProposer
+from examples.schedulers import InlineExecutionScheduler
 
 
 def test_persona_react():

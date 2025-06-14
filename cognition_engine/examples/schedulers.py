@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Optional
 from rich.console import Console
-from src.scheduler import Scheduler
-from src.types import Action, ActionResult, Stimulus, StimulusType, StimulusBus, ExecutedAction, Failure
-from src.executor import Executor
+from cognition_engine.scheduler import Scheduler
+from cognition_engine.types import Action, ActionResult, Stimulus, StimulusType, StimulusBus, ExecutedAction, Failure
+from cognition_engine.executor import Executor
 from .executors import SayDoExecutor
 
 console = Console()
@@ -16,7 +16,7 @@ class InlineExecutionScheduler(Scheduler):
     emitting successful results as EXECUTION_ATTEMPT stimuli.
     """
     
-    def __init__(self, stimulus_bus: StimulusBus, executors: List[Executor] = None):
+    def __init__(self, stimulus_bus: StimulusBus, executors: Optional[List[Executor]] = None):
         self.stimulus_bus = stimulus_bus
         self.executors = executors or [SayDoExecutor()]
 
@@ -66,7 +66,7 @@ class HesitatingExecutionScheduler(Scheduler):
     based on their priority. Only accepts actions it doesn't hesitate on.
     """
     
-    def __init__(self, stimulus_bus: StimulusBus, executors: List[Executor] = None, hesitator: Hesitator = None):
+    def __init__(self, stimulus_bus: StimulusBus, executors: Optional[List[Executor]] = None, hesitator: Optional[Hesitator] = None):
         self.stimulus_bus = stimulus_bus
         self.executors = executors or [SayDoExecutor()]
         self.hesitator = hesitator or Hesitator()

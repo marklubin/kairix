@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from rich.console import Console
-from src.executor import Executor
-from src.types import Action
+from cognition_engine.executor import Executor
+from cognition_engine.types import Action
 
 console = Console()
 
