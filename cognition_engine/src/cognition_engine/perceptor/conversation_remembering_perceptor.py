@@ -71,11 +71,9 @@ class ConversationRememberingPerceptor(Perceptor):
             logger.debug(f"Attaching Insight: {insight}")
         return perceptions
 
-    def _run_insights(self, memories: List[str]) -> List[str]:
-        async def async_run():
-            tasks = [
-                self.runner.run(self.insight_extraction_agent, mem) for mem in memories
-            ]
-            return await asyncio.gather(*tasks)
-
-        return [r.final_output_as(str, True) for r in asyncio.run(async_run())]
+    async def _run_insights(self, memories: List[str]) -> List[str]:
+        tasks = [
+            self.runner.run(self.insight_extraction_agent, mem) for mem in memories
+        ]
+        results = await asyncio.gather(*tasks)
+        return [r.final_output_as(str, True) for r in results]

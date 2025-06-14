@@ -1,30 +1,45 @@
-clean:
-    rm -rf dist uv.lock .venv && uv cache clean
-    
-build: lint test
-      uv build
+ll: clean install fix typecheck test
 
-test:
-    uv run pytest --cov=src
-
-lint: fix ruff 
-      uv run ty src --pretty
-ruff:
-    uv run ruff check
-fix:
-    uv run ruff check --fix
-
-add pkg:
-      uv add {{pkg}}
-
-add-dev pkg:
-      uv add {{pkg}} --dev
-
+# Install dependencies using uv
 install:
-      uv sync
+    uv sync
 
-remove pkg:
-      uv remove {{pkg}}
+# Run all tests
+test:
+    uv run pytest tests/
+
+# Run specific test file
+test-file FILE:
+    uv run pytest tests/{{FILE}}
+
+# Run linting with ruff
+fix:
+    uv run ruff check --fix .
+
+# Run linting with unsafe fixes
+fix-unsafe:
+    uv run ruff check --fix --unsafe-fixes .
+
+# Run type checking with ty
+typecheck:
+    uv run ty check src/ tests/
+
+# Clean Python cache files
+clean:
+    find . -type d -name ".venv" -exec rm -rf {} +
+    find . -type d -name "uv.lock" -exec rm -rf {} +
+    find . -type d -name "__pycache__" -exec rm -rf {} +
+    find . -type f -name "*.pyc" -delete
+    find . -type f -name "*.pyo" -delete
+    find . -type f -name ".coverage" -delete
+    find . -type d -name "*.egg-info" -exec rm -rf {} +
+    find . -type d -name ".pytest_cache" -exec rm -rf {} +
+
+
+# Show project structure
+tree:
+    tree -I '__pycache__|*.pyc|.git'
+
 clear-source-documents:
       echo "MATCH (n:SourceDocument) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password
 

@@ -5,12 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
+    "cognition-engine",
     "gradio>=5.33.2",
     "kairix-core",
     "neomodel>=5.5.0",
-    "ollama>=0.5.1",
+    "nest-asyncio>=1.6.0",
+    "openai>=1.86.0",
+    "openai-agents>=0.0.17",
     "openai-swarm>=0.1.1",
     "sentence-transformers>=4.1.0",
+    "sounddevice>=0.5.2",
+    "textual>=3.3.0",
     "ty>=0.0.1a9",
 ]
 
@@ -39,6 +44,7 @@ fix = true
 src = ["src"]
 
 [tool.uv]
+package = true
 override-dependencies = [
     "openai>=1.33.0",  # Force newer openai
     "instructor>=1.0.0",  # Force newer instructor that works with newer openai
@@ -65,23 +71,31 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 
-# Pytest configuration with typeguard
+# Pytest configuration
 [tool.pytest.ini_options]
 addopts = [
-    "--typeguard-packages=src",
     "--strict-markers",
     "-v",
 ]
 testpaths = ["tests"]
+markers = [
+    "asyncio: marks tests as async (deselect with '-m \"not asyncio\"')",
+]
 
 # Typeguard configuration
 [tool.typeguard]
 # Automatically check all functions in your package
-packages = ["src"]
+packages = ["kairix_engine"]
 # Forward references work automatically
 forward_ref_policy = "RESOLVE"
 # Check collection types deeply
 collection_check_strategy = "ALL_ITEMS"
 
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.0.0",
+]
+
 [tool.uv.sources]
 kairix-core = { path = "../kairix-core" }
+cognition-engine = { path = "../cognition_engine" }

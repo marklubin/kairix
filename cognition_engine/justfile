@@ -7,10 +7,6 @@ all: clean install fix typecheck test
 install:
     uv sync
 
-# Run example demo
-demo:
-    uv run python -m examples.demo
-
 # Run all tests
 test:
     uv run pytest tests/
@@ -21,20 +17,20 @@ test-file FILE:
 
 # Run linting with ruff
 fix:
-    uv run ruff check --fix src/ tests/ examples/
+    uv run ruff check --fix .
 
 # Run linting with unsafe fixes
 fix-unsafe:
-    uv run ruff check --fix --unsafe-fixes src/ tests/ examples/
+    uv run ruff check --fix --unsafe-fixes .
 
 # Run type checking with ty
 typecheck:
-    uv run ty check src/ tests/ examples/
+    uv run ty check src/ tests/
 
 # Clean Python cache files
 clean:
-    rm -rf .venv
-    rm -rf uv.lock
+    find . -type d -name ".venv" -exec rm -rf {} +
+    find . -type d -name "uv.lock" -exec rm -rf {} +
     find . -type d -name "__pycache__" -exec rm -rf {} +
     find . -type f -name "*.pyc" -delete
     find . -type f -name "*.pyo" -delete
@@ -42,9 +38,6 @@ clean:
     find . -type d -name "*.egg-info" -exec rm -rf {} +
     find . -type d -name ".pytest_cache" -exec rm -rf {} +
 
-# Development mode - run demo with auto-reload
-dev:
-    uv run python -m examples.demo
 
 # Show project structure
 tree:
