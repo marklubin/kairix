@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Kairix Cognition Engine - Agent-based cognition architecture"
 requires-python = ">=3.10,<3.11"
 dependencies = [
+    "openai-agents>=0.0.17",
     "rich>=14.0.0",
 ]
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from .types import Stimulus, Perception, Action
+from ..types import Stimulus, Perception, Action
 
 
 class Proposer(ABC):

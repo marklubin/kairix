@@ -1,10 +1,10 @@
 from typing import List
 from rich.console import Console
 from rich.panel import Panel
-from .types import Stimulus, Perception, Action
-from .perceptor import Perceptor
-from .proposer import Proposer
-from .scheduler import Scheduler
+from ..types import Stimulus, Perception, Action
+from ..perceptor import Perceptor
+from ..proposer import Proposer
+from ..scheduler import Scheduler
 
 console = Console()
 

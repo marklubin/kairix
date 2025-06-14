@@ -13,14 +13,13 @@ def test_persona_react():
     persona = Persona(
         perceptors=[UserMessagePerceptor()],
         proposers=[PerceptionSpeakingProposer()],
-        schedulers=[scheduler]
+        schedulers=[scheduler],
     )
-    
+
     stimulus = Stimulus(
-        content={"text": "Hello persona"},
-        type=StimulusType.USER_MESSAGE
+        content="Hello persona", type=StimulusType.user_message
     )
-    
+
     # Should not raise any exceptions
     persona.react(stimulus)
 
@@ -29,14 +28,11 @@ def test_persona_without_scheduler():
     persona = Persona(
         perceptors=[UserMessagePerceptor()],
         proposers=[PerceptionSpeakingProposer()],
-        schedulers=[]  # No schedulers
+        schedulers=[],  # No schedulers
     )
-    
-    stimulus = Stimulus(
-        content={"text": "Test"},
-        type=StimulusType.USER_MESSAGE
-    )
-    
+
+    stimulus = Stimulus(content="Test", type=StimulusType.user_message)
+
     # Should raise RuntimeError when no scheduler accepts actions
     with pytest.raises(RuntimeError) as exc_info:
         persona.react(stimulus)

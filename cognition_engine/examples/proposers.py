@@ -25,7 +25,7 @@ class PerceptionSpeakingProposer(Proposer):
                 actions.append(
                     Action(
                         type="say",
-                        parameters={"text": f"I perceived: {perception.content.get('message', '')}"},
+                        parameters={"text": f"I perceived: {perception.content}"},
                         priority=1
                     )
                 )

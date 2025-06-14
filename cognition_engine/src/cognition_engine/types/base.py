@@ -9,28 +9,28 @@ console = Console()
 
 
 class StimulusType(Enum):
-    USER_MESSAGE = "user_message"
-    EXECUTION_ATTEMPT = "execution_attempt"
-    TIME_TICK = "time_tick"
-    WORLD_EVENT = "world_event"
+    user_message = "user_message"
+    execution_attempt = "execution_attempt"
+    time_tick = "time_tick"
+    world_event = "world_event"
 
 
 @dataclass
 class Stimulus:
-    content: Dict[str, str]
+    content: str
     type: StimulusType
 
     def __rich__(self):
         return Panel(
             f"Type: {self.type.value}\nContent: {self.content}",
             title="Stimulus",
-            border_style="blue"
+            border_style="blue",
         )
 
 
 @dataclass
 class Perception:
-    content: Dict[str, Any]
+    content: str
     source: str
     confidence: float = 1.0
 
@@ -38,7 +38,7 @@ class Perception:
         return Panel(
             f"Source: {self.source}\nConfidence: {self.confidence}\nContent: {self.content}",
             title="Perception",
-            border_style="green"
+            border_style="green",
         )
 
 

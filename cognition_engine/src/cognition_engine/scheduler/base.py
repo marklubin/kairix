@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from .types import Action
+from ..types import Action
 
 
 class Scheduler(ABC):

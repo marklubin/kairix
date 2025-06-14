@@ -21,7 +21,7 @@ def test_inline_scheduler():
     
     assert result is True
     assert len(emitted) == 1
-    assert emitted[0].type.name == "EXECUTION_ATTEMPT"
+    assert emitted[0].type.name == "execution_attempt"
 
 
 def test_hesitating_scheduler():
