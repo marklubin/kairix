@@ -119,12 +119,19 @@ class MessageHistory:
             
             async with self._write_lock:
                 if self._file:
-                    # Format message as YAML list item
-                    yaml_entry = (
-                        f"  - timestamp: \"{message['timestamp']}\"\n"
-                        f"    user: \"{message['user']}\"\n"
-                        f"    assistant: \"{message['assistant']}\"\n"
-                    )
+                    # Format message as YAML list item with proper escaping
+                    # Use yaml.dump to properly escape special characters
+                    message_data = [{
+                        "timestamp": message['timestamp'],
+                        "user": message['user'],
+                        "assistant": message['assistant']
+                    }]
+                    yaml_entry = yaml.dump(
+                        message_data, 
+                        default_flow_style=False,
+                        allow_unicode=True,
+                        sort_keys=False
+                    ).replace("- ", "  - ", 1)  # Fix indentation for list item
                     
                     # Write and flush
                     await self._file.write(yaml_entry)
