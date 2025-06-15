@@ -11,6 +11,8 @@ from cognition_engine.perceptor.conversation_remembering_perceptor import (
 )
 from typing_extensions import override
 
+from .message_history import MessageHistory
+
 logger = logging.getLogger(__name__)
 
 
@@ -92,6 +94,9 @@ class Chat(VoiceWorkflowBase):
         user_name: str,
         agent_name: str,
         perceptor: ConversationRememberingPerceptor,
+        enable_history: bool = True,
+        history_log_dir: str = "chat_logs",
+        max_context_pairs: int = 10,
     ) -> None:
         system_instruction = system_messge_template(agent_name, user_name)
         self.history: list[KairixMessage] = []
@@ -99,6 +104,29 @@ class Chat(VoiceWorkflowBase):
         self.agent = Agent(
             "chat-agent", instructions=system_instruction, model="o3-mini"
         )
+        
+        # Initialize message history if enabled
+        self.message_history: MessageHistory | None = None
+        if enable_history:
+            self.message_history = MessageHistory(
+                log_dir=history_log_dir,
+                max_context_pairs=max_context_pairs
+            )
+
+    async def initialize(self) -> None:
+        """Initialize the chat, including loading message history."""
+        if self.message_history:
+            await self.message_history.start()
+            # Load recent context into conversation history
+            recent_messages = await self.message_history.load_recent_context()
+            for msg in recent_messages:
+                self.history.append(KairixMessage.user_message(msg["user"]))
+                self.history.append(KairixMessage.assistant_message(msg["assistant"]))
+
+    async def close(self) -> None:
+        """Close the chat and save any pending messages."""
+        if self.message_history:
+            await self.message_history.stop()
 
     async def _remember(self, message: str) -> str:
         stimulus = Stimulus(message, StimulusType.user_message)
@@ -136,6 +164,11 @@ class Chat(VoiceWorkflowBase):
         response = await Runner.run(self.agent, agent_prompt)
         result = response.final_output_as(str)
         self._record(result)
+        
+        # Persist to message history
+        if self.message_history:
+            await self.message_history.append_message_pair(content, result)
+        
         return result
 
     @override
@@ -147,4 +180,11 @@ class Chat(VoiceWorkflowBase):
         async for chunk in VoiceWorkflowHelper.stream_text_from(result):
             yield chunk
 
-        self._record(result.final_output_as(str))
+        final_response = result.final_output_as(str)
+        self._record(final_response)
+        
+        # Persist to message history
+        if self.message_history:
+            await self.message_history.append_message_pair(
+                transcription, final_response
+            )

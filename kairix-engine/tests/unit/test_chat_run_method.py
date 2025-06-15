@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+import pytest_asyncio
 
 from kairix_engine.basic_chat import Chat
 
@@ -13,14 +14,18 @@ def mock_perceptor():
     return perceptor
 
 
-@pytest.fixture
-def chat(mock_perceptor):
+@pytest_asyncio.fixture
+async def chat(mock_perceptor):
     """Fixture providing a Chat instance with mocked dependencies"""
-    return Chat(
+    chat_instance = Chat(
         user_name="TestUser",
         agent_name="TestAgent",
-        perceptor=mock_perceptor
+        perceptor=mock_perceptor,
+        enable_history=False  # Disable file history for tests
     )
+    await chat_instance.initialize()
+    yield chat_instance
+    await chat_instance.close()
 
 
 class TestChatRunMethod:
