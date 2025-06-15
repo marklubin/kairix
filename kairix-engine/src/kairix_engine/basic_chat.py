@@ -102,7 +102,7 @@ class Chat(VoiceWorkflowBase):
         self.history: list[KairixMessage] = []
         self.perceptor = perceptor
         self.agent = Agent(
-            "chat-agent", instructions=system_instruction, model="o3-mini"
+            "chat-agent", instructions=system_instruction, model="gpt-4.1"
         )
         
         # Initialize message history if enabled

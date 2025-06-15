@@ -1,6 +1,7 @@
 import hashlib
 import uuid
 from threading import Thread
+import subprocess
 
 import gradio as gr
 from kairix_core.thread_runner import LogStreamingThreadRuner
@@ -12,6 +13,7 @@ from kairix_offline.processing import (
     synth_memories,
 )
 from kairix_offline.ui import kairirx_log_stream
+from kairix_offline.stores.sqlite import ConversationStore
 
 
 def with_streaming_logs(fn):
@@ -149,6 +151,75 @@ Result:
 
     except Exception as e:
         return f"<pre style='font-family: Courier New, monospace; color: #d32f2f;'>Error during inference: {e!s}</pre>"
+
+
+def get_cron_job_history():
+    """Get recent cron job history"""
+    try:
+        store = ConversationStore()
+        jobs = store.get_job_history(limit=20)
+        
+        if not jobs:
+            return "<pre style='font-family: Courier New, monospace; color: #666;'>No job history found</pre>"
+        
+        html = "<div style='font-family: Courier New, monospace;'>"
+        html += "<table style='width: 100%; border-collapse: collapse;'>"
+        html += "<tr style='border-bottom: 2px solid #000;'>"
+        html += "<th style='text-align: left; padding: 8px;'>Job ID</th>"
+        html += "<th style='text-align: left; padding: 8px;'>Start Time</th>"
+        html += "<th style='text-align: left; padding: 8px;'>Status</th>"
+        html += "<th style='text-align: left; padding: 8px;'>Files</th>"
+        html += "<th style='text-align: left; padding: 8px;'>Errors</th>"
+        html += "</tr>"
+        
+        for job in jobs:
+            status_color = {
+                'running': '#ff6f00',
+                'completed': '#00897b',
+                'completed_with_errors': '#ffa000',
+                'failed': '#d32f2f'
+            }.get(job['status'], '#666')
+            
+            html += "<tr style='border-bottom: 1px solid #ddd;'>"
+            html += f"<td style='padding: 8px;'>{job['id'][:8]}...</td>"
+            html += f"<td style='padding: 8px;'>{job['start_time'].strftime('%Y-%m-%d %H:%M')}</td>"
+            html += f"<td style='padding: 8px; color: {status_color}; font-weight: bold;'>{job['status']}</td>"
+            html += f"<td style='padding: 8px;'>{job['files_processed']}/{job['files_found']}</td>"
+            html += f"<td style='padding: 8px; color: {'#d32f2f' if job['errors_count'] else '#00897b'};'>{job['errors_count']}</td>"
+            html += "</tr>"
+        
+        html += "</table></div>"
+        return html
+        
+    except Exception as e:
+        return f"<pre style='font-family: Courier New, monospace; color: #d32f2f;'>Error loading job history: {e!s}</pre>"
+
+
+def run_cron_job_manually():
+    """Manually trigger the cron job"""
+    try:
+        # Run the cron job script
+        result = subprocess.run(
+            ['python', 'scripts/conversation_ingestion_cron.py'],
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+        
+        output = result.stdout if result.returncode == 0 else result.stderr
+        status = "✓ Job completed successfully" if result.returncode == 0 else "✗ Job failed"
+        
+        return f"""<pre style='font-family: Courier New, monospace; color: {'#00897b' if result.returncode == 0 else '#d32f2f'}'>
+{status}
+
+Output:
+{output}
+</pre>"""
+        
+    except subprocess.TimeoutExpired:
+        return "<pre style='font-family: Courier New, monospace; color: #d32f2f;'>Error: Job timed out after 5 minutes</pre>"
+    except Exception as e:
+        return f"<pre style='font-family: Courier New, monospace; color: #d32f2f;'>Error running job: {e!s}</pre>"
 
 
 theme = gr.themes.Base(
@@ -460,6 +531,33 @@ with gr.Blocks(
                         value="<pre style='font-family: Courier New, monospace; color: #1a237e;'>Results will appear here...</pre>",
                     )
 
+        # Tab 5: Cron Job Monitoring
+        with gr.Tab("📊 Cron Monitoring", id=4):
+            gr.Markdown("### Conversation Ingestion Jobs")
+            gr.Markdown(
+                "Monitor and manage the automated conversation ingestion cron jobs."
+            )
+
+            with gr.Row():
+                with gr.Column(scale=3):
+                    job_history = gr.HTML(
+                        label="Job History",
+                        value=get_cron_job_history(),
+                    )
+                    refresh_btn = gr.Button(
+                        "🔄 Refresh History", variant="secondary"
+                    )
+
+                with gr.Column(scale=1):
+                    gr.Markdown("### Manual Controls")
+                    manual_run_btn = gr.Button(
+                        "▶️ Run Job Now", variant="primary", size="lg"
+                    )
+                    job_output = gr.HTML(
+                        label="Job Output",
+                        value="<pre style='font-family: Courier New, monospace; color: #666;'>Click 'Run Job Now' to start...</pre>",
+                    )
+
     # Wire up the manual entry functionality
     manual_submit_btn.click(
         fn=create_and_embed_shard_text,
@@ -486,6 +584,19 @@ with gr.Blocks(
         fn=direct_inference_query,
         inputs=[inference_input],
         outputs=[inference_output],
+    )
+
+    # Wire up the cron monitoring functionality
+    refresh_btn.click(
+        fn=get_cron_job_history,
+        inputs=[],
+        outputs=[job_history],
+    )
+    
+    manual_run_btn.click(
+        fn=run_cron_job_manually,
+        inputs=[],
+        outputs=[job_output],
     )
 
 

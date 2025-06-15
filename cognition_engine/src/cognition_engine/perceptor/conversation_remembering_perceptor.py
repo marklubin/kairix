@@ -31,7 +31,7 @@ class ConversationRememberingPerceptor(Perceptor):
         self.query_generating_agent = Agent(
             name="query_gen",
             instructions=_QUERY_INSTRUCTIONS,
-            model="gpt-4.5-preview",
+            model="gpt-4.1-nano",
         )
         self.insight_extraction_agent = Agent(
             name="insight_extractor",

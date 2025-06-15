@@ -1,21 +1,33 @@
 import logging
+import os
 
 import gradio as gr
+import numpy as np
 from agents import Runner
 from cognition_engine.perceptor.conversation_remembering_perceptor import (
     ConversationRememberingPerceptor,
 )
+from dotenv import load_dotenv
+from elevenlabs import VoiceSettings
+from elevenlabs.client import ElevenLabs
 
 from kairix_engine.basic_chat import Chat
 from kairix_engine.summary_store import SummaryStore
+
+# Load environment variables from .env file
+load_dotenv()
 
 NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("kairix_engine").setLevel(logging.INFO)
-logging.getLogger("cognition_engine").setLevel(logging.INFO)
+logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
+logging.getLogger("cognition_engine").setLevel(logging.DEBUG)
 
+# Initialize ElevenLabs client
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+VOICE_ID = "0NkECxcbkydDMspBKvQp"  # From eleven.py
+elevenlabs_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 # Initialize components
 store = SummaryStore(store_url=NEO4J_URL)
 perceptor = ConversationRememberingPerceptor(
@@ -27,73 +39,23 @@ perceptor = ConversationRememberingPerceptor(
 )
 chat = Chat(user_name="Mark", agent_name="Apiana", perceptor=perceptor)
 
-# Flag to track initialization
-_initialized = False
+def play_audio(text):
 
+def do_chat(message, history):
+    result = ""
+    async for chunk in chat.run():
+        result += chunk
+        yield result
+        play_audio(chunk)
 
-async def ensure_initialized():
-    """Ensure chat is initialized."""
-    global _initialized
-    if not _initialized:
-        await chat.initialize()
-        _initialized = True
-
-
-async def respond(message, history):
-    await ensure_initialized()
-    """Stream responses from the chat engine"""
-    history = history or []
-    history.append({"role": "user", "content": message})
-    history.append({"role": "assistant", "content": ""})
-    
-    full_response = ""
-    
-    # Use the streaming run() method
-    async for chunk in chat.run(message):
-        full_response += chunk
-        history[-1]["content"] = full_response
-        yield "", history
-
-
-# Create Gradio interface with custom CSS for compact layout
-with gr.Blocks(
-    title="Kairix Chat",
-    css="""
-    .contain { max-width: 900px !important; }
-    footer { display: none !important; }
-    #component-0 { height: calc(100vh - 200px) !important; }
-    .message-wrap { padding: 8px !important; }
-    """
-) as demo, gr.Column():
-    chatbot = gr.Chatbot(
-        height=450,
-        bubble_full_width=False,
-        avatar_images=(None, "🐝"),
-        show_label=False,
-        elem_id="component-0",
-        autoscroll=True,  # Always scroll to bottom
-        type="messages",  # Use openai-style format
-    )
-    
-    with gr.Row():
-        msg = gr.Textbox(
-            placeholder="Message Apiana... (Enter to send, Shift+Enter for new line)",
-            lines=1,
-            max_lines=3,
-            show_label=False,
-            autofocus=True,
-        )
-        
-        clear = gr.Button("Clear", scale=0, min_width=60)
-    
-    # Handle message submission with streaming
-    msg.submit(respond, [msg, chatbot], [msg, chatbot])
-    clear.click(lambda: (None, None), outputs=[msg, chatbot])
-
+demo = gr.ChatInterface(
+    fn=do_chat, 
+    type="messages"
+).launch()
 
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
-        server_port=7860,
+        server_port=7875,
         share=False,
     )

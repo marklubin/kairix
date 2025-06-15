@@ -356,6 +356,23 @@ wheels = [
 ]
 
 [[package]]
+name = "elevenlabs"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/1b/8189665dce1682fc81df22bbac596c35e67623a847867393b5ea18ca7845/elevenlabs-2.3.0.tar.gz", hash = "sha256:f61c7d02e191c2a5c7659e09f86ebe0d3ece7188330569c3b60d6af23681641f", size = 249485, upload-time = "2025-06-06T14:52:12.368Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/91/ebe553eb8827cd0bd9a846ca5f3f73b98ffb4876e176f58cf49a579cb87a/elevenlabs-2.3.0-py3-none-any.whl", hash = "sha256:23797ca329aa2ab68ce3b6e54fcb27b0ce13e73281a9d2c740f7090fd22b04e6", size = 708106, upload-time = "2025-06-06T14:52:11.096Z" },
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -776,6 +793,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
     { name = "cognition-engine" },
+    { name = "elevenlabs" },
     { name = "gradio" },
     { name = "kairix-core" },
     { name = "neomodel" },
@@ -808,6 +826,7 @@ dev = [
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
+    { name = "pydub" },
     { name = "pytest-asyncio" },
     { name = "textual-dev" },
     { name = "types-aiofiles" },
@@ -818,6 +837,7 @@ dev = [
 requires-dist = [
     { name = "aiofiles", specifier = ">=24.1.0" },
     { name = "cognition-engine", editable = "../cognition_engine" },
+    { name = "elevenlabs", specifier = ">=2.3.0" },
     { name = "gradio", specifier = ">=5.33.2" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "kairix-core", directory = "../kairix-core" },
@@ -847,6 +867,7 @@ provides-extras = ["dev"]
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=1.16.0" },
+    { name = "pydub", specifier = ">=0.25.1" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "textual-dev", specifier = ">=1.7.0" },
     { name = "types-aiofiles", specifier = ">=24.1.0.20250606" },
