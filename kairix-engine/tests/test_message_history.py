@@ -259,7 +259,7 @@ async def test_non_blocking_writes(message_history, caplog):
     import time
     
     # Set log level to debug to capture debug messages
-    caplog.set_level(logging.DEBUG)
+    caplog.set_level(logging.DEBUG, logger="kairix_engine.message_history")
     
     # Time how long append_message_pair takes
     start = time.time()

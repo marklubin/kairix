@@ -1,16 +1,20 @@
-all: clean install fix typecheck mypy test
+all: clean install fix mypy test
 
 # Install dependencies using uv
 install:
     uv sync
 
-# Run all tests
+# Run all tests (excluding integration tests)
 test:
-    uv run pytest tests/
+    uv run pytest tests/ -k "not integration"
 
 # Run specific test file
 test-file FILE:
     uv run pytest tests/{{FILE}}
+
+# Run integration tests
+test-integration:
+    uv run pytest tests/ -k "integration"
 
 # Run linting with ruff
 fix:

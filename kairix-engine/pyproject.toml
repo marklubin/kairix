@@ -7,6 +7,7 @@ requires-python = ">=3.10,<3.11"
 dependencies = [
     "aiofiles>=24.1.0",
     "cognition-engine",
+    "elevenlabs>=2.3.0",
     "gradio>=5.33.2",
     "kairix-core",
     "neomodel>=5.5.0",
@@ -85,6 +86,7 @@ addopts = [
 testpaths = ["tests"]
 markers = [
     "asyncio: marks tests as async (deselect with '-m \"not asyncio\"')",
+    "integration: marks tests as integration tests requiring external services",
 ]
 
 # Typeguard configuration
@@ -99,6 +101,7 @@ collection_check_strategy = "ALL_ITEMS"
 [dependency-groups]
 dev = [
     "mypy>=1.16.0",
+    "pydub>=0.25.1",
     "pytest-asyncio>=1.0.0",
     "textual-dev>=1.7.0",
     "types-aiofiles>=24.1.0.20250606",

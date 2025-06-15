@@ -121,20 +121,23 @@ class MessageHistory:
                 if self._file:
                     # Format message as YAML list item with proper escaping
                     # Use yaml.dump to properly escape special characters
-                    message_data = [{
-                        "timestamp": message['timestamp'],
-                        "user": message['user'],
-                        "assistant": message['assistant']
-                    }]
                     yaml_entry = yaml.dump(
-                        message_data, 
+                        [{
+                            "timestamp": message['timestamp'],
+                            "user": message['user'],
+                            "assistant": message['assistant']
+                        }], 
                         default_flow_style=False,
                         allow_unicode=True,
                         sort_keys=False
-                    ).replace("- ", "  - ", 1)  # Fix indentation for list item
+                    ).strip()  # Remove trailing newline
                     
-                    # Write and flush
-                    await self._file.write(yaml_entry)
+                    # Ensure proper indentation for list item
+                    yaml_entry = yaml_entry.replace("\n", "\n  ")  # Indent all lines
+                    yaml_entry = "  " + yaml_entry  # Indent first line
+                    
+                    # Write and flush with newline
+                    await self._file.write(yaml_entry + "\n")
                     await self._file.flush()
                     
         except Exception as e:

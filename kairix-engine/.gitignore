@@ -21,4 +21,5 @@ build/
 # Project specific
 chat_logs/
 *.log
+.env.env
 .env

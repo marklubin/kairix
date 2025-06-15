@@ -30,6 +30,7 @@ dependencies = [
     "ty>=0.0.1a8",
     "burr>=0.40.2",
     "sqlalchemy>=2.0.0",
+    "python-dateutil>=2.8.0",
 ]
 
 [dependency-groups]
