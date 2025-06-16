@@ -11,6 +11,9 @@ watch:
     watchexec -e py -- just check lint
 
 
+serve:
+    uv run textual serve voice.py
+
 # Initialize project with Python 3.10
 init:
     uv venv --python 3.10

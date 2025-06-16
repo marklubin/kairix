@@ -7,18 +7,16 @@ requires-python = ">=3.10,<3.11"
 dependencies = [
     "aiofiles>=24.1.0",
     "cognition-engine",
+    "elevenlabs>=2.3.0",
+    "fastrtc[stt,tts,vad]>=0.0.28",
     "gradio>=5.33.2",
     "kairix-core",
     "neomodel>=5.5.0",
-    "nest-asyncio>=1.6.0",
     "openai>=1.86.0",
     "openai-agents>=0.0.17",
-    "openai-swarm>=0.1.1",
     "pydantic>=2.11.7",
     "pyyaml>=6.0.2",
     "sentence-transformers>=4.1.0",
-    "sounddevice>=0.5.2",
-    "textual>=3.3.0",
     "ty>=0.0.1a9",
 ]
 

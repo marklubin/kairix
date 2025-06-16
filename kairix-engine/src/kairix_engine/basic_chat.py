@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import logging
 from collections.abc import AsyncIterator
@@ -12,8 +14,11 @@ from cognition_engine.perceptor.conversation_remembering_perceptor import (
 from typing_extensions import override
 
 from .message_history import MessageHistory
+from .summary_store import SummaryStore
 
 logger = logging.getLogger(__name__)
+
+NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
 
 
 @dataclasses.dataclass
@@ -22,11 +27,11 @@ class KairixMessage:
     content: str
 
     @staticmethod
-    def user_message(content: str) -> "KairixMessage":
+    def user_message(content: str) -> KairixMessage:
         return KairixMessage("user", content)
 
     @staticmethod
-    def assistant_message(content: str) -> "KairixMessage":
+    def assistant_message(content: str) -> KairixMessage:
         return KairixMessage("assistant", content)
 
     def __str__(self) -> str:
@@ -104,13 +109,12 @@ class Chat(VoiceWorkflowBase):
         self.agent = Agent(
             "chat-agent", instructions=system_instruction, model="o3-mini"
         )
-        
+
         # Initialize message history if enabled
         self.message_history: MessageHistory | None = None
         if enable_history:
             self.message_history = MessageHistory(
-                log_dir=history_log_dir,
-                max_context_pairs=max_context_pairs
+                log_dir=history_log_dir, max_context_pairs=max_context_pairs
             )
 
     async def initialize(self) -> None:
@@ -164,11 +168,11 @@ class Chat(VoiceWorkflowBase):
         response = await Runner.run(self.agent, agent_prompt)
         result = response.final_output_as(str)
         self._record(result)
-        
+
         # Persist to message history
         if self.message_history:
             await self.message_history.append_message_pair(content, result)
-        
+
         return result
 
     @override
@@ -182,9 +186,22 @@ class Chat(VoiceWorkflowBase):
 
         final_response = result.final_output_as(str)
         self._record(final_response)
-        
+
         # Persist to message history
         if self.message_history:
             await self.message_history.append_message_pair(
                 transcription, final_response
             )
+
+    @classmethod
+    def get_chat_for_provider(cls, provider: Literal["openai"]) -> Chat:
+        logger.info(f"Getting chat instance for provider: {provider}.")
+        store = SummaryStore(store_url=NEO4J_URL)
+        perceptor = ConversationRememberingPerceptor(
+            Runner(),
+            memory_provider=lambda query, k: [
+                content for content, score in store.search(query, k)
+            ],
+            k_memories=10,
+        )
+        return cls(user_name="Mark", agent_name="Apiana", perceptor=perceptor)
