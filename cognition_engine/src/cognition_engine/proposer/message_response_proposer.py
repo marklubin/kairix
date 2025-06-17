@@ -2,7 +2,14 @@ from cognition_engine import Proposer, Perception, Stimulus, StimulusType, Actio
 
 
 class MessageResponseAction(Action):
-    pass
+    def __init__(self, stimulus: Stimulus, perceptions: list[Perception]):
+        super().__init__(
+            type="message_response",
+            parameters={
+                "stimulus": stimulus,
+                "perceptions": perceptions
+            }
+        )
 
 
 class MessageResponseProposer(Proposer):

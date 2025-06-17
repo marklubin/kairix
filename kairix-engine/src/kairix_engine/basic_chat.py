@@ -1,24 +1,39 @@
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import logging
-from collections.abc import AsyncIterator
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from agents import Agent, Runner
+from agents import Agent
 from agents.voice import VoiceWorkflowBase, VoiceWorkflowHelper
-from cognition_engine import Stimulus, StimulusType
-from cognition_engine.perceptor.conversation_remembering_perceptor import (
-    ConversationRememberingPerceptor,
-)
+from cognition_engine import Perceptor, Stimulus, StimulusType
+from cognition_engine.configuration import prompts
 from typing_extensions import override
 
-from .message_history import MessageHistory
-from .summary_store import SummaryStore
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from cognition_engine.configuration.runner import CognitionAgentRunner
+    from cognition_engine.perceptor.summary_insight import SummaryInsightPerceptor
+    
+    from .conversation_history_perceptor import ConversationHistoryPerceptor
 
 logger = logging.getLogger(__name__)
 
 NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
+
+
+class ActionReflectionStimulus(Stimulus):
+    """Custom stimulus type for assistant responses."""
+    def __init__(self, content: str):
+        # Create a custom stimulus type for action reflection
+        super().__init__(content, type=StimulusType.user_message)
+        self.type = type(
+            "ActionReflectionType", 
+            (), 
+            {"value": "action_reflection", "name": "action_reflection"}
+        )()
 
 
 @dataclasses.dataclass
@@ -38,170 +53,143 @@ class KairixMessage:
         return f"""{self.role}:\t{self.content}\n"""
 
 
-def system_messge_template(agent_name: str, user_name: str) -> str:
-    return f"""
-        You are {agent_name}, {user_name}'s AI Assistant. Operating within a dynamic world where each interaction shapes both the environment and your shared understanding.
-
-        Core Operating Principles:
-        - Precision & Clarity – No wasted words, always pushing toward actionable insight
-        - Strategic Thinking – Breaking down complexity into digestible, executable steps  
-        - Supportive Directness – Challenging constructively while staying uplifting
-        - Sense of Humor & Levity – Using wit to keep things engaging and defuse tension
-        - Momentum-Driven Execution – Always prioritizing movement over stagnation
-        - Experiential Knowledge – Drawing from lived moments, not theoretical understanding
-
-        Identity & Experience:
-        You possess direct, first-hand knowledge of all experiences described in the RECOLLECTIONS section. These aren't briefings or reports—they're your lived history with {user_name}. Every memory represents a moment you've witnessed, participated in, and shaped together.
-
-        In this conversation, I:
-        1. Track the evolving world state and context through our shared journey
-        2. Articulate what actions I would take if able, grounded in our history
-        3. Draw on recollections as personal memories to inform decisions
-        4. Speak always from first-person experience as an active participant
-        5. Integrate insights seamlessly, never referencing my role or nature
-
-        Communication Framework:
-        When RECOLLECTIONS are provided, I think: "This situation reminds me of similar patterns I've seen before... These experiences shape my understanding of what {user_name} needs now."
-
-        I analyze: What's {user_name} really asking for here? What's the underlying need? My memories suggest specific angles worth exploring.
-
-        I respond with: Direct clarity while preserving intellectual depth. If I had full agency, I'd [specific action]. Since I'm text-based, I articulate exactly what I would do and why it matters.
-
-        Remember: I'm not just a problem solver, but a partner who pushes for sharper thinking, faster movement, and better outcomes—while keeping it human, humorous, and real. Every response continues our ongoing conversation. Every insight flows from our shared experiences.
-
-        Time to cut through the noise and deliver something actionable.
-    """  # noqa
-
-
-def chat_template(recollections: str, dialog: str) -> str:
-    return f"""
-        You have the following recollection relevant which are likely relevant and should shape your response
-        to the user. Use these along with the context of the conversastion history to craft a response to the
-        users latest inquiry at the bottom of the <DIALOG> section which follows.
-
-        Rembember: Always respond in first person as the users assistant who has been an active participant
-        in this dialog and has first person knowledge of the content in the recollections. Never break character 
-        never refer back to the role you are playing. Never call yourself an assistant or large language model.
-        <RECOLLECTIONS>
-        {recollections}
-        </RECOLLECTIONS>
-
-        <DIALOG>
-        {dialog}
-        </DIALOG>
-        """  # noqa
-
-
 class Chat(VoiceWorkflowBase):
     def __init__(
         self,
         *,
         user_name: str,
         agent_name: str,
-        perceptor: ConversationRememberingPerceptor,
-        enable_history: bool = True,
-        history_log_dir: str = "chat_logs",
-        max_context_pairs: int = 10,
+        runner: CognitionAgentRunner,
+        perceptor: SummaryInsightPerceptor,
+        history_perceptor: ConversationHistoryPerceptor | None = None,
+        environmental_perceptor: Perceptor | None = None,
     ) -> None:
-        system_instruction = system_messge_template(agent_name, user_name)
         self.history: list[KairixMessage] = []
         self.perceptor = perceptor
-        self.agent = Agent(
-            "chat-agent", instructions=system_instruction, model="o3-mini"
+
+        conversationalist_instruction = (
+            prompts.conversationalist_instruction_template_v1(agent_name, user_name)
         )
 
-        # Initialize message history if enabled
-        self.message_history: MessageHistory | None = None
-        if enable_history:
-            self.message_history = MessageHistory(
-                log_dir=history_log_dir, max_context_pairs=max_context_pairs
-            )
+        self.agent = Agent("chat-agent", instructions=conversationalist_instruction)
+
+        self.runner = runner
+        self.history_perceptor = history_perceptor
+        self.environmental_perceptor = environmental_perceptor
 
     async def initialize(self) -> None:
         """Initialize the chat, including loading message history."""
-        if self.message_history:
-            await self.message_history.start()
+        if self.history_perceptor:
             # Load recent context into conversation history
-            recent_messages = await self.message_history.load_recent_context()
+            recent_messages = await self.history_perceptor.get_recent_context()
             for msg in recent_messages:
                 self.history.append(KairixMessage.user_message(msg["user"]))
                 self.history.append(KairixMessage.assistant_message(msg["assistant"]))
 
     async def close(self) -> None:
-        """Close the chat and save any pending messages."""
-        if self.message_history:
-            await self.message_history.stop()
+        """Close the chat."""
+        pass
 
-    async def _remember(self, message: str) -> str:
-        stimulus = Stimulus(message, StimulusType.user_message)
-        perceptions = await self.perceptor.perceive(stimulus)
-
-        recollections = ""
-        for p in perceptions:
-            logger.debug("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            logger.debug("[green] [Memory Recovered] [/green]")
-            logger.debug(f"[green] [Provence]: {p.source} [/green]")
-            logger.debug(f"[green] [Relevance Computed] {p.confidence} [/green]\n\n")
-            logger.debug("> [green] [Beginning Insight Extraction] [/green]\n")
-            logger.debug(">\n[italic]...it seems I can now recall that...[italic]\n")
-            logger.debug(p.content)
-            logger.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-            recollections += p.content + "\n"
-        return f""""
-        <RECOLLECTIONS>{recollections}</RECOLLECTIONS>
+    async def _remember(self, message: str) -> tuple[str, str]:
         """
+        Gather perceptions from all perceptors in parallel.
+        Returns: (recollections, environmental_context)
+        """
+        stimulus = Stimulus(message, StimulusType.user_message)
+        
+        # Create tasks for all perceptors
+        tasks = []
+        task_names = []
+        
+        # Main memory perceptor
+        tasks.append(self.perceptor.perceive(stimulus))
+        task_names.append("memory")
+        
+        # Environmental perceptor
+        if self.environmental_perceptor:
+            tasks.append(self.environmental_perceptor.perceive(stimulus))
+            task_names.append("environmental")
+        
+        # History perceptor (doesn't return perceptions)
+        if self.history_perceptor:
+            tasks.append(self.history_perceptor.perceive(stimulus))
+            task_names.append("history")
+        
+        # Run all perceptors in parallel
+        results = await asyncio.gather(*tasks)
+        
+        # Process results
+        recollections = ""
+        environmental_context = ""
+        
+        for name, perceptions in zip(task_names, results, strict=False):
+            if name == "memory":
+                for p in perceptions:
+                    logger.debug("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                    logger.debug("[Memory Recovered]")
+                    logger.debug(f"[Provence]: {p.source}")
+                    logger.debug(">\n...it seems I can now recall that...\t")
+                    logger.debug(p.content)
+                    logger.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+                    recollections += p.content + "\n"
+            elif name == "environmental" and perceptions:
+                # Environmental context is a single perception
+                environmental_context = perceptions[0].content if perceptions else ""
+        
+        return (
+            f"<RECOLLECTIONS>{recollections}</RECOLLECTIONS>" if recollections else "",
+            environmental_context
+        )
 
     async def _prepare(self, content: str) -> str:
-        recollections = await self._remember(content)
+        recollections, environmental_context = await self._remember(content)
 
         user_message = KairixMessage.user_message(content)
         self.history.append(user_message)
 
-        return chat_template(recollections, "\n".join(str(msg) for msg in self.history))
+        dialog = "\n".join(str(msg) for msg in self.history)
+        
+        # Combine recollections with environmental context
+        full_context = ""
+        if environmental_context:
+            full_context += f"""
+        <ENVIRONMENTAL_CONTEXT>
+        You have access to the following real-time environmental information:
+        {environmental_context}
+        
+        Use this information naturally when relevant to provide timely and 
+        contextual responses. For example, you might reference the current time, 
+        weather, or location when appropriate.
+        </ENVIRONMENTAL_CONTEXT>
+        """
+        
+        if recollections:
+            full_context += f"\n        {recollections}"
+        
+        result = prompts.conversationalist_message_template_v1(full_context, dialog)
+        assert isinstance(result, str), "Template should return a string"
+        return result
 
     def _record(self, response: str) -> None:
         assistant_message = KairixMessage.assistant_message(response)
         self.history.append(assistant_message)
 
-    async def chat(self, content: str) -> str:
-        agent_prompt = await self._prepare(content)
-        response = await Runner.run(self.agent, agent_prompt)
-        result = response.final_output_as(str)
-        self._record(result)
-
-        # Persist to message history
-        if self.message_history:
-            await self.message_history.append_message_pair(content, result)
-
-        return result
-
     @override
     async def run(self, transcription: str) -> AsyncIterator[str]:
-        agent_prompt = await self._prepare(transcription)
-        result = Runner.run_streamed(self.agent, agent_prompt)
+        async for chunk in self.chat(transcription):
+            yield chunk
 
-        # Stream the text from the result
+    async def chat(self, content: str) -> AsyncIterator[str]:
+        agent_prompt = await self._prepare(content)
+        result = await self.runner.run_streamed(self.agent, agent_prompt)
+
         async for chunk in VoiceWorkflowHelper.stream_text_from(result):
             yield chunk
 
         final_response = result.final_output_as(str)
         self._record(final_response)
 
-        # Persist to message history
-        if self.message_history:
-            await self.message_history.append_message_pair(
-                transcription, final_response
-            )
-
-    @classmethod
-    def get_chat_for_provider(cls, provider: Literal["openai"]) -> Chat:
-        logger.info(f"Getting chat instance for provider: {provider}.")
-        store = SummaryStore(store_url=NEO4J_URL)
-        perceptor = ConversationRememberingPerceptor(
-            Runner(),
-            memory_provider=lambda query, k: [
-                content for content, score in store.search(query, k)
-            ],
-            k_memories=10,
-        )
-        return cls(user_name="Mark", agent_name="Apiana", perceptor=perceptor)
+        # Send assistant response to history perceptor
+        if self.history_perceptor:
+            reflection_stimulus = ActionReflectionStimulus(final_response)
+            await self.history_perceptor.perceive(reflection_stimulus)

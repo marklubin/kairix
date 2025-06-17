@@ -22,3 +22,4 @@ build/
 chat_logs/
 *.log
 .env
+async_coverage_report.json

@@ -19,19 +19,32 @@ fix:
 # Check code without fixing (for CI)
 check:
     uv run ruff check .
-    uv run mypy src/ tests/ --warn-unused-ignores
+    cd src && uv run mypy -p kairix_engine --warn-unused-ignores
+    uv run mypy tests/ --warn-unused-ignores
+    uv run python scripts/async_test_validator.py --src src --tests tests
 
 # Run linting with unsafe fixes
 fix-unsafe:
     uv run ruff check --fix --unsafe-fixes .
 
-# Run type checking with ty
+# Run type checking with ty and async test validation
 typecheck:
     uv run ty check src/ tests/
+    @echo "Checking async method test coverage..."
+    uv run python scripts/async_test_validator.py --src src --tests tests
+
+# Run async test validation only
+async-check:
+    uv run python scripts/async_test_validator.py --src src --tests tests
+
+# Run async test validation in strict mode (requires quality tests)
+async-check-strict:
+    uv run python scripts/async_test_validator.py --src src --tests tests --strict --verbose
 
 # Run mypy type checking with async checking
 mypy:
-    uv run mypy src/ tests/ --warn-unused-ignores
+    uv run mypy src/kairix_engine --warn-unused-ignores
+    uv run mypy tests/ --warn-unused-ignores
 
 # Clean Python cache files
 clean:

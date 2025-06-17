@@ -13,33 +13,57 @@ from fastrtc import (
     ReplyOnPause,
     Stream,
     get_stt_model,
-    get_tts_model,
 )
 from pydantic import BaseModel
+from pyinstrument import Profiler
+from rich import pretty
+from rich.logging import RichHandler
 
-from kairix_engine.basic_chat import Chat
+from kairix_engine.engine import KairixEngine
+from kairix_engine.tts import ElevenLabsTTS
 
-load_dotenv()
+logging.basicConfig(datefmt="[%X]", handlers=[RichHandler()], force=True)
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-
-# Set specific loggers
 logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
 logging.getLogger("cognition_engine").setLevel(logging.DEBUG)
-logging.getLogger("fastrtc").setLevel(logging.DEBUG)
+logging.getLogger("fastrtc").setLevel(logging.INFO)
 logging.getLogger("gradio").setLevel(logging.DEBUG)
+
+pretty.install()
 
 logger = logging.getLogger(__name__)
 
 
-tts_client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
-stt = get_stt_model()
-tts = get_tts_model()
+# Load .env file if not already loaded by justfile
+if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv():
+    # Try to load from env/ directory if available
+    env_name = os.environ.get("ENV", "mac")
+    env_path = f"env/{env_name}.env"
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    else:
+        raise ValueError(
+            f"No environment variables loaded and {env_path} not found."
+        )
 
-chat = Chat.get_chat_for_provider("openai")
+
+elevenlabs_api_key = os.environ["ELEVENLABS_API_KEY"]
+tts_client = ElevenLabs(api_key=elevenlabs_api_key)
+stt = get_stt_model()
+# Use ElevenLabs TTS instead of default
+tts = ElevenLabsTTS(
+    api_key=elevenlabs_api_key,
+    voice_id=os.environ.get("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM"),
+    model_id=os.environ.get("ELEVENLABS_MODEL_ID", "eleven_monolingual_v1"),
+    stability=float(os.environ.get("ELEVENLABS_STABILITY", "0.5")),
+    similarity_boost=float(os.environ.get("ELEVENLABS_SIMILARITY_BOOST", "0.5")),
+    style=float(os.environ.get("ELEVENLABS_STYLE", "0.5")),
+    use_speaker_boost=(
+        os.environ.get("ELEVENLABS_USE_SPEAKER_BOOST", "true").lower() == "true"
+    ),
+)
+
+chat = KairixEngine.get_chat_for_environment()
 chat_initialized = False
 
 
@@ -50,7 +74,9 @@ def response(
     current_messages = current_messages or []
     messages = [{"role": d["role"], "content": d["content"]} for d in current_messages]
 
+    p = Profiler()
     try:
+        p.start()
         prompt = stt.stt(audio)
         logger.info(f"Transcribed: {prompt}")
         messages.append({"role": "user", "content": prompt})
@@ -73,7 +99,7 @@ def response(
             future = executor.submit(asyncio.run, get_response())
             full_response = future.result()
 
-        logger.info(f"Response: {full_response}")
+        logger.info("Received LLM response starting TTS.")
 
         messages.append({"role": "assistant", "content": full_response})
         yield AdditionalOutputs(messages)
@@ -86,6 +112,10 @@ def response(
         # Yield error message
         messages.append({"role": "assistant", "content": f"Error: {e!s}"})
         yield AdditionalOutputs(messages)
+
+    finally:
+        p.stop()
+        p.open_in_browser(timeline=True)
 
 
 chatbot = gr.Chatbot(type="messages")
@@ -130,9 +160,4 @@ def _(webrtc_id: str):
 
 
 if __name__ == "__main__":
-    import os
-
-    import uvicorn
-
     stream.ui.launch(server_port=8000)
-    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import Mock, patch
 from typing import List
 
-from cognition_engine.perceptor.conversation_remembering_perceptor import (
-    ConversationRememberingPerceptor,
+from cognition_engine.perceptor.summary_insight import (
+    SummaryInsightPerceptor,
 )
 from cognition_engine.types import Stimulus, StimulusType, Perception
 
@@ -21,7 +21,7 @@ pretty.install()
 
 
 class TestConversationRememberingPerceptor:
-    """Test suite for ConversationRememberingPerceptor"""
+    """Test suite for SummaryInsightPerceptor"""
 
     @pytest.fixture
     def mock_runner(self):
@@ -32,7 +32,7 @@ class TestConversationRememberingPerceptor:
         async def mock_run(agent, input_text):
             result = Mock()
             # For query generation agent, return query keywords
-            if agent.name == "query_gen":
+            if agent.name == "query_generator":
                 result.final_output_as.return_value = "test query keywords"
             else:
                 # For insight extraction agent
@@ -53,14 +53,14 @@ class TestConversationRememberingPerceptor:
 
     @pytest.fixture
     def perceptor(self, mock_runner, mock_memory_provider):
-        """Create a ConversationRememberingPerceptor instance with mocks"""
-        return ConversationRememberingPerceptor(
+        """Create a SummaryInsightPerceptor instance with mocks"""
+        return SummaryInsightPerceptor(
             runner=mock_runner, memory_provider=mock_memory_provider, k_memories=3
         )
 
     def test_init(self, mock_runner, mock_memory_provider):
         """Test perceptor initialization"""
-        perceptor = ConversationRememberingPerceptor(
+        perceptor = SummaryInsightPerceptor(
             runner=mock_runner, memory_provider=mock_memory_provider, k_memories=5
         )
 
@@ -87,7 +87,7 @@ class TestConversationRememberingPerceptor:
         # Verify the first call was for query generation
         first_call = mock_runner.run.call_args_list[0]
         agent_call = first_call[0]
-        assert agent_call[0].name == "query_gen"
+        assert agent_call[0].name == "query_generator"
         assert agent_call[1] == "Hello, how are you?"
 
         # Verify memory provider was called with generated query
@@ -100,7 +100,7 @@ class TestConversationRememberingPerceptor:
         # Check perception properties
         for i, perception in enumerate(perceptions):
             assert isinstance(perception, Perception)
-            assert perception.source == "conversation_remembering_perceptor"
+            assert perception.source == "summary_insight_v1"
             assert perception.confidence == 1.0
             assert perception.content.startswith("Insight from: Memory")
 
@@ -127,7 +127,7 @@ class TestConversationRememberingPerceptor:
         def empty_memory_provider(query, k):
             return []
 
-        perceptor = ConversationRememberingPerceptor(
+        perceptor = SummaryInsightPerceptor(
             runner=mock_runner, memory_provider=empty_memory_provider, k_memories=3
         )
 
@@ -153,7 +153,7 @@ class TestConversationRememberingPerceptor:
     async def test_different_k_memories_values(self, mock_runner, mock_memory_provider):
         """Test perceptor with different k_memories values"""
         for k in [1, 5, 10]:
-            perceptor = ConversationRememberingPerceptor(
+            perceptor = SummaryInsightPerceptor(
                 runner=mock_runner, memory_provider=mock_memory_provider, k_memories=k
             )
 
@@ -163,7 +163,7 @@ class TestConversationRememberingPerceptor:
             assert len(perceptions) == k
 
     @pytest.mark.asyncio
-    @patch("cognition_engine.perceptor.conversation_remembering_perceptor.logger")
+    @patch("cognition_engine.perceptor.summary_insight.logger")
     async def test_logging_behavior(self, mock_logger, perceptor):
         """Test that appropriate logging occurs"""
         # Test user message logging
@@ -172,7 +172,7 @@ class TestConversationRememberingPerceptor:
 
         # Check info logs
         mock_logger.info.assert_any_call(
-            "ConversationRememberingPerceptor received: StimulusType.user_message"
+            "SummaryInsightPerceptor received: StimulusType.user_message"
         )
         mock_logger.info.assert_any_call("Gathering top 3 memories...")
         mock_logger.info.assert_any_call(
@@ -192,7 +192,7 @@ class TestConversationRememberingPerceptor:
         """Test that memory provider is called correctly with query and k"""
         mock_memory_provider = Mock(return_value=["Memory 1", "Memory 2"])
 
-        perceptor = ConversationRememberingPerceptor(
+        perceptor = SummaryInsightPerceptor(
             runner=mock_runner, memory_provider=mock_memory_provider, k_memories=2
         )
 
@@ -205,7 +205,7 @@ class TestConversationRememberingPerceptor:
 
     def test_agent_names_and_instructions(self, perceptor):
         """Test that agents are created with correct names and instructions"""
-        assert perceptor.query_generating_agent.name == "query_gen"
+        assert perceptor.query_generating_agent.name == "query_generator"
         assert perceptor.insight_extraction_agent.name == "insight_extractor"
 
         # Check that instructions contain expected content
@@ -222,7 +222,7 @@ class TestConversationRememberingPerceptor:
         def custom_memory_provider(query: str, k: int) -> List[str]:
             return [f"Memory about {i}: {query}" for i in range(k)]
 
-        perceptor = ConversationRememberingPerceptor(
+        perceptor = SummaryInsightPerceptor(
             runner=mock_runner, memory_provider=custom_memory_provider, k_memories=5
         )
 
@@ -241,5 +241,5 @@ class TestConversationRememberingPerceptor:
 
         # All should have same source and confidence
         for p in perceptions:
-            assert p.source == "conversation_remembering_perceptor"
+            assert p.source == "summary_insight_v1"
             assert p.confidence == 1.0
