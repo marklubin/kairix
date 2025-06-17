@@ -73,9 +73,8 @@ class TestCognitionAgentRunner:
     def test_get_run_config(self, runner, agent_config):
         """Test get_run_config method"""
         agent = Agent(name="test_agent")
-        stimulus = "test input"
-        
-        config = runner.get_run_config(agent, stimulus)
+
+        config = runner.get_run_config(agent)
         
         assert isinstance(config, RunConfig)
         assert config.model == agent_config.model
@@ -88,10 +87,9 @@ class TestCognitionAgentRunner:
     def test_get_run_config_unknown_agent(self, runner):
         """Test get_run_config with unknown agent raises ValueError"""
         agent = Agent(name="unknown_agent")
-        stimulus = "test input"
         
         with pytest.raises(ValueError, match="Unknown Agent type unknown_agent"):
-            runner.get_run_config(agent, stimulus)
+            runner.get_run_config(agent)
 
     @pytest.mark.asyncio
     async def test_run_method(self, runner):
@@ -151,9 +149,7 @@ class TestCognitionAgentRunner:
         runner = CognitionAgentRunner(configuration_set, providers)
         
         agent = Agent(name="another_agent")
-        stimulus = "test input"
-        
-        config = runner.get_run_config(agent, stimulus)
+        config = runner.get_run_config(agent)
         
         assert config.model == "gpt-3.5-turbo"
         assert config.model_settings is not None

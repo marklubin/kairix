@@ -1,35 +1,15 @@
-from .persona import Persona
+from .persona import ConversationalPersona
 from .perceptor import Perceptor
-from .proposer import Proposer
-from .scheduler import Scheduler
-from .executor import Executor
 from .types import (
     Stimulus,
     StimulusType,
-    Perception,
-    Action,
-    ActionResult,
-    StimulusBus,
-    ExecutedAction,
-    Failure,
-    Source,
-    Sink
+    Perception
 )
 
 __all__ = [
-    "Persona",
+    "ConversationalPersona",
     "Perceptor",
-    "Proposer",
-    "Scheduler",
-    "Executor",
     "Stimulus",
     "StimulusType",
     "Perception",
-    "Action",
-    "ActionResult",
-    "StimulusBus",
-    "ExecutedAction",
-    "Failure",
-    "Source",
-    "Sink"
 ]

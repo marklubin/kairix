@@ -1,10 +1,10 @@
 from typing import List, Callable
 from agents import Agent
 
+from . import Perceptor
 from ..configuration import prompts
 from ..configuration.runner import CognitionAgentRunner
 from ..types import Perception, Stimulus, StimulusType
-from .base import Perceptor
 import logging
 import asyncio
 
@@ -37,6 +37,7 @@ class SummaryInsightPerceptor(Perceptor):
             return []
         user_input: str = stimulus.content
 
+        # TODO - see if short circuit here if we don't need to pull mem context
         result = await self.runner.run(self.query_generating_agent, user_input)
         query = result.final_output_as(str, True)
 

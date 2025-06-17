@@ -2,8 +2,6 @@ from cognition_engine.types import (
     Stimulus,
     StimulusType,
     Perception,
-    Action,
-    StimulusBus,
 )
 
 
@@ -22,23 +20,3 @@ def test_perception_creation():
     assert perception.content == "test perception"
 
 
-def test_action_creation():
-    action = Action(type="test_action", parameters={"param": "value"}, priority=5)
-    assert action.type == "test_action"
-    assert action.priority == 5
-
-
-def test_stimulus_bus():
-    bus = StimulusBus()
-    received = []
-
-    def listener(stim):
-        received.append(stim)
-
-    bus.subscribe(listener)
-
-    stimulus = Stimulus(content="test data", type=StimulusType.time_tick)
-    bus.emit(stimulus)
-
-    assert len(received) == 1
-    assert received[0] == stimulus

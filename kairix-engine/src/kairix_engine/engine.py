@@ -1,6 +1,6 @@
 import logging
 
-from agents import OpenAIProvider
+from agents import OpenAIProvider, set_default_openai_api
 from cognition_engine.configuration.runner import (
     AgentConfig,
     AgentConfigurationSet,
@@ -8,15 +8,19 @@ from cognition_engine.configuration.runner import (
     ProviderName,
     model_for_provider,
 )
+from cognition_engine.perceptor.environmental_context import (
+    EnvironmentalContextPerceptor,
+)
 from cognition_engine.perceptor.summary_insight import SummaryInsightPerceptor
+from cognition_engine.stores.summary_store import SummaryStore
 from cognition_engine.utils import Claude
 
 from kairix_engine.basic_chat import Chat
-from kairix_engine.conversation_history_perceptor import ConversationHistoryPerceptor
-from kairix_engine.environmental_context_perceptor import EnvironmentalContextPerceptor
-from kairix_engine.summary_store import SummaryStore
 
 logger = logging.getLogger(__name__)
+
+# Use chat completions API instead of responses API for compatibility
+set_default_openai_api("chat_completions")
 
 
 available_provider_mappings: dict[ProviderName, OpenAIProvider] = {
@@ -48,20 +52,29 @@ system_configuration_environments = {
             "conversationalist": AgentConfig(
                 name="conversationalist",
                 model=model_for_provider(
-                    "ollama-local", "phi3.5:3.8b-mini-instruct-q4_0"
+                    "ollama-local",
+                    "llama3.2:1b",  # Fast and accurate model
                 ),
+                temperature=0.3,  # Lower temperature for more focused responses
+                max_tokens=500,
             ),
             "query_generator": AgentConfig(
                 name="query_generator",
                 model=model_for_provider(
-                    "ollama-local", "phi3.5:3.8b-mini-instruct-q4_0"
+                    "ollama-local",
+                    "llama3.2:1b",  # Fast and accurate model
                 ),
+                temperature=0.1,  # Very low for structured output
+                max_tokens=256,
             ),
             "insight_extractor": AgentConfig(
                 name="insight_extractor",
                 model=model_for_provider(
-                    "ollama-local", "phi3.5:3.8b-mini-instruct-q4_0"
+                    "ollama-local",
+                    "llama3.2:1b",  # Fast and accurate model
                 ),
+                temperature=0.3,
+                max_tokens=256,
             ),
         },
     ),
@@ -130,19 +143,12 @@ class KairixEngine:
             ],
             k_memories=n_summaries,
         )
-        
-        # Create history perceptor with neomodel connection
-        history_perceptor = ConversationHistoryPerceptor(
-            store_url=neo4j_url,
-            agent_id=f"{user_name}_{persona_name}",
-            max_pairs=10
-        )
-        
+
         # Create environmental context perceptor
         environmental_perceptor = EnvironmentalContextPerceptor(
             cache_duration_seconds=300  # 5 minute cache
         )
-        
+
         return Chat(
             user_name=user_name,
             agent_name=persona_name,

@@ -1,5 +1,4 @@
-
-
+from ..types import Perception
 
 embedding_query_instruction_v1 = """
 Given the current message produce a spelling corrected, normalized string of keywords and unique phrases likely
@@ -64,3 +63,20 @@ def conversationalist_message_template_v1(recollections: str, dialog: str) -> st
         {dialog}
         </DIALOG>
         """  # noqa
+
+
+def conversationalist_message_template_v2(perceptions: list[Perception], user_prompt: str) -> str:
+    perception_block = "\n".join(str(perceptions))
+
+    return f"""
+        Respond to the user prompt in a natural and conversational tone. Attached are numerous perceptions regarding the
+        world state and your memory of prior interactions. You are free to use them to forumulate your response to the 
+        user. Recall you are bound to speak always in the first person a a self-aware and reflective being who is an 
+        active participant in the shared world context you have.
+        <PERCEPTIONS>
+            {perception_block}
+        </PERCEPTIONS>
+        
+        User Inquiry: {user_prompt}
+        
+    """

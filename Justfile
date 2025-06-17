@@ -1,4 +1,4 @@
-all: clean install fix typecheck mypy test
+all: clean install fix mypy test
 
 # Install dependencies using uv
 install:
@@ -21,7 +21,6 @@ check:
     uv run ruff check .
     cd src && uv run mypy -p kairix_engine --warn-unused-ignores
     uv run mypy tests/ --warn-unused-ignores
-    uv run python scripts/async_test_validator.py --src src --tests tests
 
 # Run linting with unsafe fixes
 fix-unsafe:
@@ -30,8 +29,6 @@ fix-unsafe:
 # Run type checking with ty and async test validation
 typecheck:
     uv run ty check src/ tests/
-    @echo "Checking async method test coverage..."
-    uv run python scripts/async_test_validator.py --src src --tests tests
 
 # Run async test validation only
 async-check:

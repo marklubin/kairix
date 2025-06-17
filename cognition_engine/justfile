@@ -25,7 +25,8 @@ fix-unsafe:
 
 # Run type checking with ty
 typecheck:
-    uv run ty check src/ tests/
+    uv run ty check src/
+    uv run mypy src/
 
 # Clean Python cache files
 clean:

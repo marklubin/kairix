@@ -1,9 +1,16 @@
 from typing import Literal
 
-from agents import Agent, ModelSettings, OpenAIProvider, RunConfig, RunResult, RunResultStreaming, Runner
+from agents import (
+    Agent,
+    ModelSettings,
+    OpenAIProvider,
+    RunConfig,
+    Runner,
+    RunResult,
+    RunResultStreaming,
+)
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 from pydantic import BaseModel
-from ..utils import Claude
 
 ProviderName = Literal["openai" , "ollama-remote" , "ollama-local"]
 
@@ -21,7 +28,7 @@ class AgentConfigurationSet(BaseModel):
     agent_configs: dict[str, AgentConfig]
 
 
-def model_for_provider(provider_name: ProviderName, model: str):
+def model_for_provider(provider_name: ProviderName, model: str)->str:
     if provider_name == "openai":
         return model
     return f"{provider_name}/{model}"
@@ -34,10 +41,10 @@ class CognitionAgentRunner:
 
         self.configuration_set = configuration_set
         self.model_provider = MultiProvider(provider_map=MultiProviderMap())
-        self.model_provider.provider_map.set_mapping(available_provider_mappings)
+        self.model_provider.provider_map.set_mapping(available_provider_mappings) # type: ignore
 
 
-    def get_run_config(self, agent: Agent, stimulus: str)->RunConfig:
+    def get_run_config(self, agent: Agent)->RunConfig:
         if agent.name not in self.configuration_set.agent_configs:
             raise ValueError(f"Unknown Agent type {agent.name}, not supported.")
 
@@ -54,11 +61,11 @@ class CognitionAgentRunner:
             tracing_disabled=True,
         )
 
-    @Claude
     async def run(self, agent: Agent, stimulus: str) -> RunResult:
-        return await Runner.run(agent, stimulus, run_config=self.get_run_config(agent, stimulus))
+        return await Runner.run(agent, stimulus, run_config=self.get_run_config(agent))
 
+    def run_sync(self, agent: Agent, stimulus: str) -> RunResult:
+        return Runner.run_sync(agent, stimulus, run_config=self.get_run_config(agent))
 
-    @Claude
     def run_streamed(self, agent: Agent, stimulus: str) -> RunResultStreaming:
-        return Runner.run_streamed(agent, stimulus, run_config=self.get_run_config(agent, stimulus))
+        return Runner.run_streamed(agent, stimulus, run_config=self.get_run_config(agent))

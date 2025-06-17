@@ -1,1 +1,0 @@
-# Example implementations of the cognition engine components

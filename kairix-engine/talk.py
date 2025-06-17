@@ -4,6 +4,7 @@ import os
 
 import gradio as gr
 import numpy as np
+from cognition_engine.tts import ElevenLabsTTS
 from dotenv import load_dotenv
 from elevenlabs import ElevenLabs
 from fastapi import FastAPI
@@ -20,7 +21,6 @@ from rich import pretty
 from rich.logging import RichHandler
 
 from kairix_engine.engine import KairixEngine
-from kairix_engine.tts import ElevenLabsTTS
 
 logging.basicConfig(datefmt="[%X]", handlers=[RichHandler()], force=True)
 
@@ -42,9 +42,7 @@ if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv():
     if os.path.exists(env_path):
         load_dotenv(env_path)
     else:
-        raise ValueError(
-            f"No environment variables loaded and {env_path} not found."
-        )
+        raise ValueError(f"No environment variables loaded and {env_path} not found.")
 
 
 elevenlabs_api_key = os.environ["ELEVENLABS_API_KEY"]

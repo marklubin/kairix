@@ -1,9 +1,8 @@
 import os
 
 import pytest
+from cognition_engine.tts import ElevenLabsTTS
 from dotenv import load_dotenv
-
-from kairix_engine.tts import ElevenLabsTTS
 
 # Load environment variables
 # Try to load from env/ directory if ENV is set
@@ -36,10 +35,10 @@ class TestTalkSmoke:
     def test_tts_simple_generation(self, api_key):
         """Test basic TTS generation with a short phrase."""
         tts = ElevenLabsTTS(api_key=api_key)
-        
+
         # Generate audio for a simple phrase
         sample_rate, audio_array = tts.tts("Hello")
-        
+
         # Verify output
         assert sample_rate == 16000
         assert audio_array is not None
@@ -50,13 +49,13 @@ class TestTalkSmoke:
     def test_tts_streaming(self, api_key):
         """Test streaming TTS generation."""
         tts = ElevenLabsTTS(api_key=api_key)
-        
+
         # Generate streaming audio
         chunks = list(tts.stream_tts_sync("Test"))
-        
+
         # Should produce at least one chunk
         assert len(chunks) > 0
-        
+
         # Verify first chunk
         sample_rate, audio_chunk = chunks[0]
         assert sample_rate == 16000
@@ -66,10 +65,10 @@ class TestTalkSmoke:
     async def test_async_tts(self, api_key):
         """Test async TTS generation."""
         tts = ElevenLabsTTS(api_key=api_key)
-        
+
         # Generate audio asynchronously
         sample_rate, audio_array = await tts.atts("Async test")
-        
+
         # Verify output
         assert sample_rate == 16000
         assert audio_array is not None
@@ -86,7 +85,7 @@ class TestTalkSmoke:
             style=0.2,
             use_speaker_boost=False,
         )
-        
+
         # Should work with custom settings
         sample_rate, audio_array = tts.tts("Custom voice test")
         assert sample_rate == 16000
@@ -95,7 +94,7 @@ class TestTalkSmoke:
     def test_error_handling(self):
         """Test error handling with invalid API key."""
         tts = ElevenLabsTTS(api_key="invalid-key-12345")
-        
+
         # Should raise an error with invalid key
         with pytest.raises(Exception):  # noqa: B017
             tts.tts("This should fail")
