@@ -1,6 +1,5 @@
 import logging
 import os
-from os import getenv
 
 from dotenv import load_dotenv
 from kairix_core.util.logging import InMemoryLogStreamHandler, Neo4jLogHandler
