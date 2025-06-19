@@ -292,3 +292,171 @@ RESPONSE>
     }
 ]
 </REQUEST>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: None"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='5767618544'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: What is 2+2?"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='5767520096'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: Test input"
+    }
+]
+</REQUEST>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: None"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='5145214832'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: What is 2+2?"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='5145122304'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: Test input"
+    }
+]
+</REQUEST>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: None"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='4964268592'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: What is 2+2?"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='4964156896'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: Test input"
+    }
+]
+</REQUEST>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: None"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='5336071424'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: What is 2+2?"
+    }
+]
+</REQUEST>
+RESPONSE>
+ "<Mock name='OpenAI().chat.completions.create()' id='5335925760'>"
+</RESPONSE>
+<REQUEST>
+ [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant"
+    },
+    {
+        "role": "user",
+        "content": "Answer this: Test input"
+    }
+]
+</REQUEST>

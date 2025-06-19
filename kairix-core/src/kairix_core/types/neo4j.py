@@ -13,6 +13,8 @@ from neomodel import (
     IntegerProperty
 )
 
+from kairix_core.types.vector_indexed import VectorIndexedNode
+
 
 class SemanticRelationship(StructuredRel):
     descriptions = ArrayProperty(StringProperty())
@@ -21,7 +23,15 @@ class SemanticRelationship(StructuredRel):
     occurrences = IntegerProperty(default=1)
 
 
-class SemanticUnit(StructuredNode):
+class SemanticUnit(VectorIndexedNode):
+
+    VECTOR_INDEX_CONFIG = {
+        'embedding': {  # property name
+            'dimensions': 128,
+            'similarity_function': 'cosine'  # or 'euclidean'
+        }
+    }
+
     uid = StringProperty(unique_index=True, required=True)
     descriptions=ArrayProperty(StringProperty())
     type=StringProperty(choices=(

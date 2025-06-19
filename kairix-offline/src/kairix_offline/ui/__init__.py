@@ -1,12 +1,14 @@
 import logging
 import os
-from os import getenv
 
 from dotenv import load_dotenv
 from kairix_core.util.logging import InMemoryLogStreamHandler, Neo4jLogHandler
 from rich.logging import RichHandler
 
 from kairix_offline.processing import initialize_processing
+
+import pdb
+
 
 # Only load dotenv if not in test environment
 if "PYTEST_CURRENT_TEST" not in os.environ:
@@ -15,7 +17,6 @@ if "PYTEST_CURRENT_TEST" not in os.environ:
 
 
 if os.getenv("KAIRIX_DEBUG"):
-    import pdb
 
     pdb.set_trace()
 

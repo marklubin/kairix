@@ -53,10 +53,11 @@ class OpenAIInferenceProvider(InferenceProvider):
         # System instruction is optional but must be string if provided
         if params["system_instruction"] is not None:
             assert isinstance(params["system_instruction"], str), "system_instruction must be a string"
-            system_msg: ChatCompletionSystemMessageParam = {
+            ins: str  = "" if not params["system_instruction"] else  params["system_instruction"]
+            system_msg: ChatCompletionSystemMessageParam = { # type: ignore
                 "role": "system",
-                "content": params["system_instruction"],
-            }
+                "content": ins,
+            } # noqa
 
             messages.append(system_msg)
         # User prompt is optional but must be string if provided

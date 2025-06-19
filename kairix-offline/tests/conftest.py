@@ -1,10 +1,15 @@
 """
 Pytest configuration and fixtures for knowledge_db_demo tests
 """
+
 import pytest
 from unittest.mock import Mock, patch
 import sys
 import os
+
+from mock_types import SemanticUnit, SemanticRelationship, Summary
+from unittest.mock import AsyncMock
+
 
 # Set PYTEST_RUN environment variable to prevent Neo4j connection
 os.environ['PYTEST_RUN'] = '1'
@@ -46,7 +51,6 @@ sys.modules['agents'].Runner = Mock()
 sys.modules['agents'].ModelSettings = Mock()
 
 # Import our mock types
-from mock_types import SemanticUnit, SemanticRelationship, Summary
 
 # Set the mock types in the mocked module
 sys.modules['kairix_core.types'].SemanticUnit = SemanticUnit
@@ -105,7 +109,6 @@ def mock_neo4j_models():
 @pytest.fixture
 def async_mock_runner():
     """Provide a properly configured async mock for Runner"""
-    from unittest.mock import AsyncMock
     
     with patch('knowledge_db_demo.Runner') as mock_runner:
         mock_runner.run = AsyncMock()

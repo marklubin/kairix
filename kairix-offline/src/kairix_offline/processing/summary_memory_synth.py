@@ -2,10 +2,17 @@ import hashlib
 import logging
 from typing import Any
 
-from kairix_core.inference_provider import InferenceParams, InferenceProvider
-from kairix_core.types import Agent, Embedding, MemoryShard, SourceDocument, Summary
+from kairix_core.inference.inference_provider import InferenceParams, InferenceProvider
+from kairix_core.types.neo4j import (
+    Agent,
+    Embedding,
+    MemoryShard,
+    SourceDocument,
+    Summary,
+)
 from semchunk import Chunker
 from sentence_transformers import SentenceTransformer
+
 
 logger = logging.getLogger(__name__)
 

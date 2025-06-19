@@ -5,11 +5,13 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+import kairix_offline.processing.summary_memory_synth
+
+
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../src"))
 
 # Import directly to avoid the processing module __init__.py
-import kairix_offline.processing.summary_memory_synth
 
 Chunk = kairix_offline.processing.summary_memory_synth.Chunk
 SummaryMemorySynth = kairix_offline.processing.summary_memory_synth.SummaryMemorySynth

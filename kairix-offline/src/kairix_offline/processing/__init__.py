@@ -1,12 +1,12 @@
 import logging
 import os
 
-from kairix_core.inference_provider import (
+from kairix_core.inference.inference_provider import (
     ModelParams,
     get_inference_provider_for_environement,
 )
 from kairix_core.prompt import summary_system_instruction, summary_user_prompt
-from kairix_core.types import SourceDocument
+from kairix_core.types.neo4j import SourceDocument
 from kairix_core.util.environment import get_or_raise
 from neomodel import config as neomodel_config
 from neomodel import db
@@ -16,6 +16,7 @@ from transformers import AutoTokenizer
 
 from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
 from kairix_offline.processing.summary_memory_synth import SummaryMemorySynth
+
 
 __all__ = ["initialize_processing", "load_sources_from_gpt_export", "synth_memories"]
 

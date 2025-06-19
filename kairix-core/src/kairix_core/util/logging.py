@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from kairix_core.types import StoredLog
+from kairix_core.types.neo4j import StoredLog
 
 kairix_logger_format_str = "%(message)s"
 

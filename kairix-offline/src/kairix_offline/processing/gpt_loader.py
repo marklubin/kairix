@@ -6,6 +6,7 @@ from typing import Any, TypedDict, cast
 from kairix_core.prompt import as_historical_convo, as_message
 from kairix_core.types import SourceDocument
 
+
 logger = logging.getLogger(__name__)
 
 

@@ -14,6 +14,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
+
 logger = logging.getLogger(__name__)
 
 

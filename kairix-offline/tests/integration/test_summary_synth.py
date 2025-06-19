@@ -1,7 +1,7 @@
 import uuid
 
 import pytest
-from kairix_core.types import Embedding, MemoryShard, SourceDocument, Summary
+from kairix_core.types.neo4j import Embedding, MemoryShard, SourceDocument, Summary
 from kairix_offline.processing import SummaryMemorySynth
 
 # Import from conftest will happen at runtime

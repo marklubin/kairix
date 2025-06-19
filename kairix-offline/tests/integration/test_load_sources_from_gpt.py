@@ -188,7 +188,7 @@ class TestGPTLoaderIntegration:
 
     def test_load_sources_from_gpt_export_with_no_mappings(self):
         """Test handling conversations with no mappings"""
-        from kairix_core.types import SourceDocument
+        from kairix_core.types.neo4j import SourceDocument
         from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
 
         data = [{"title": "Empty Conversation", "mapping": None}]
@@ -239,7 +239,7 @@ class TestGPTLoaderIntegration:
 
     def test_document_content_formatting(self, sample_conversation_data):
         """Test that document content is properly formatted"""
-        from kairix_core.types import SourceDocument
+        from kairix_core.types.neo4j import SourceDocument
         from kairix_offline.processing.gpt_loader import load_sources_from_gpt_export
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:

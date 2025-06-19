@@ -3,8 +3,14 @@ import uuid
 from threading import Thread
 
 import gradio as gr
-from kairix_core.thread_runner import LogStreamingThreadRuner
-from kairix_core.types import Agent, Embedding, MemoryShard, SourceDocument, Summary
+from kairix_core.util.thread_runner import LogStreamingThreadRuner
+from kairix_core.types.neo4j import (
+    Agent,
+    Embedding,
+    MemoryShard,
+    SourceDocument,
+    Summary,
+)
 
 from kairix_offline.processing import (
     initialize_processing,
@@ -12,6 +18,10 @@ from kairix_offline.processing import (
     synth_memories,
 )
 from kairix_offline.ui import kairirx_log_stream
+
+
+from kairix_offline.processing import _initialized, summary_memory_synthezier
+from kairix_offline.processing import _initialized, summary_memory_synthezier
 
 
 def with_streaming_logs(fn):
@@ -60,7 +70,6 @@ def create_and_embed_shard_text(agent_name: str, input_text: str, source_label: 
             return f"✓ Memory shard already exists with ID: {idempotency_key}"
 
         # Get embedder from the global processing environment
-        from kairix_offline.processing import _initialized, summary_memory_synthezier
 
         if not _initialized or not summary_memory_synthezier:
             return "Error: Processing environment not initialized. Please restart the application."
@@ -118,7 +127,6 @@ def direct_inference_query(input_text: str):
             return "Error: Input text is required"
 
         # Get the synthesizer instance
-        from kairix_offline.processing import _initialized, summary_memory_synthezier
 
         if not _initialized or not summary_memory_synthezier:
             return "Error: Processing environment not initialized. Please restart the application."
