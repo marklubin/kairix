@@ -10,7 +10,7 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
 )
 
-from kairix_core.inference_provider import (
+from .inference_provider import (
     InferenceParams,
     InferenceProvider,
     ModelParams,
@@ -52,9 +52,7 @@ class OpenAIInferenceProvider(InferenceProvider):
 
         # System instruction is optional but must be string if provided
         if params["system_instruction"] is not None:
-            assert isinstance(params["system_instruction"], str), (
-                "system_instruction must be a string"
-            )
+            assert isinstance(params["system_instruction"], str), "system_instruction must be a string"
             system_msg: ChatCompletionSystemMessageParam = {
                 "role": "system",
                 "content": params["system_instruction"],
@@ -63,9 +61,7 @@ class OpenAIInferenceProvider(InferenceProvider):
             messages.append(system_msg)
         # User prompt is optional but must be string if provided
         if params["user_prompt"] is not None:
-            assert isinstance(params["user_prompt"], str), (
-                "user_prompt must be a string"
-            )
+            assert isinstance(params["user_prompt"], str), "user_prompt must be a string"
             user_messsage_content = params["user_prompt"].format(input=user_input)
         else:
             user_messsage_content = user_input
@@ -76,8 +72,6 @@ class OpenAIInferenceProvider(InferenceProvider):
                 "content": user_messsage_content,
             }
         )
-
-
 
         wirelog.info(f"<REQUEST>\n {dump_obj(messages)}\n</REQUEST>")
 

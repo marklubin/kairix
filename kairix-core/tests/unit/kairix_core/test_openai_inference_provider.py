@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from kairix_core.inference.openai import OpenAIInferenceProvider
-from kairix_core.inference_provider import InferenceParams, ModelParams
+from kairix_core.inference.inference_provider import InferenceParams, ModelParams
 
 
 class TestOpenAIInferenceProvider(unittest.TestCase):
