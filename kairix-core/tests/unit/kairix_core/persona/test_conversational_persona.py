@@ -98,7 +98,7 @@ def conversational_persona(mock_runner, mock_agent, mock_perceptors, mock_reflec
         persona = ConversationalPersona(
             persona_name="TestPersona",
             user_name="TestUser",
-            runner=mock_runner,
+            runtime=mock_runner,
             perceptors=mock_perceptors,
             actuating_agent=mock_agent,
             reflection_perceptors=mock_reflection_perceptors,

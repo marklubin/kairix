@@ -33,11 +33,16 @@ class TestTalkEnvironmentLoading:
         monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
         monkeypatch.delenv("ELEVENLABS_MODEL_ID", raising=False)
         monkeypatch.delenv("ENV", raising=False)
+        
+        # Prevent loading from home directory
+        monkeypatch.delenv("HOME", raising=False)
 
         from dotenv import load_dotenv
 
         # Simulate talk.py logic
-        if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv():
+        if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv(
+            dotenv_path=str(mock_env_dir / ".env")
+        ):
             # Try to load from env/ directory if available
             env_name = os.environ.get("ENV", "mac")
             env_path = f"env/{env_name}.env"
@@ -58,11 +63,16 @@ class TestTalkEnvironmentLoading:
         monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
         monkeypatch.delenv("ELEVENLABS_MODEL_ID", raising=False)
         monkeypatch.setenv("ENV", "cayucos")
+        
+        # Prevent loading from home directory
+        monkeypatch.delenv("HOME", raising=False)
 
         from dotenv import load_dotenv
 
         # Simulate talk.py logic
-        if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv():
+        if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv(
+            dotenv_path=str(mock_env_dir / ".env")
+        ):
             env_name = os.environ.get("ENV", "mac")
             env_path = f"env/{env_name}.env"
             if os.path.exists(env_path):
@@ -96,11 +106,16 @@ class TestTalkEnvironmentLoading:
         # Create empty env directory
         (tmp_path / "env").mkdir()
 
+        # Prevent loading from home directory
+        monkeypatch.delenv("HOME", raising=False)
+        
         from dotenv import load_dotenv
 
         # Test the error case
         with pytest.raises(ValueError) as exc_info:
-            if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv():
+            if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv(
+                dotenv_path=str(tmp_path / ".env")
+            ):
                 env_name = os.environ.get("ENV", "mac")
                 env_path = f"env/{env_name}.env"
                 if os.path.exists(env_path):
@@ -112,7 +127,7 @@ class TestTalkEnvironmentLoading:
 
         assert "env/nonexistent.env not found" in str(exc_info.value)
 
-    @patch("kairix_engine.tts.ElevenLabsTTS")
+    @patch("kairix_core.tts.ElevenLabsTTS")
     def test_tts_initialization_with_env(
         self, mock_tts_class, mock_env_dir, monkeypatch
     ):
@@ -134,7 +149,7 @@ class TestTalkEnvironmentLoading:
             monkeypatch.setenv(key, value)
 
         # Simulate TTS initialization from talk.py
-        from cognition.tts import ElevenLabsTTS
+        from kairix_core.tts import ElevenLabsTTS
 
         ElevenLabsTTS(
             api_key=os.environ["ELEVENLABS_API_KEY"],

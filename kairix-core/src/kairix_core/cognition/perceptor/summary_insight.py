@@ -2,11 +2,12 @@ from typing import List, Callable
 from agents import Agent
 
 from . import Perceptor
-from ..configuration.runner import CognitionAgentRunner
 from kairix_core.types.cognition import Perception, Stimulus, StimulusType
 from kairix_core.prompt import agent_prompts as prompts
 import logging
 import asyncio
+
+from ...runtime.agent import AgentRuntime
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class SummaryInsightPerceptor(Perceptor):
     def __init__(
         self,
-        runner: CognitionAgentRunner,
+        runtime: AgentRuntime,
         memory_provider: Callable[[str, int], List[str]],
         k_memories: int,
     ):
@@ -25,7 +26,7 @@ class SummaryInsightPerceptor(Perceptor):
         )
 
         self.memory_provider = memory_provider
-        self.runner = runner
+        self.runtime = runtime
         self.k_memories = k_memories
 
     # async def perceive(self, stimulus: Stimulus) -> List[Perception]:
@@ -57,7 +58,7 @@ class SummaryInsightPerceptor(Perceptor):
         user_input: str = stimulus.content
 
         # TODO - see if short circuit here if we don't need to pull mem context
-        result = await self.runner.run(self.query_generating_agent, user_input)
+        result = await self.runtime.run(self.query_generating_agent, user_input)
         query = result.final_output_as(str, True)
 
         logger.debug(f"...Embedding Store Query: {query}")
@@ -83,6 +84,6 @@ class SummaryInsightPerceptor(Perceptor):
         return perceptions
 
     async def _run_insights(self, prompts: List[str]) -> List[str]:
-        tasks = [self.runner.run(self.insight_extraction_agent, p) for p in prompts]
+        tasks = [self.runtime.run(self.insight_extraction_agent, p) for p in prompts]
         results = await asyncio.gather(*tasks)
         return [r.final_output_as(str, True) for r in results]

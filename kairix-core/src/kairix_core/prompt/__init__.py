@@ -1,18 +1,18 @@
 import chatformat
 
 
-def as_message(*args, role: str, content: str, **kwargs) -> dict[str, str]:
-    content.replace("{", "")
-    content.replace("}", "")
+def as_message(role: str, content: str, **kwargs: str) -> dict[str, str]:
+    content = content.replace("{", "")
+    content = content.replace("}", "")
 
-    if kwargs is not None and len(kwargs) > 0:
+    if len(kwargs) > 0:
         content = content.format(**kwargs)
     return {"role": role, "content": content}
 
 
 def as_prompt(template: str, messages: list[dict]) -> str:
     prompt, stop = chatformat.format_chat_prompt(template="chatml", messages=messages)
-    return prompt
+    return str(prompt)
 
 
 def as_historical_convo(messages: list[dict]) -> str:

@@ -4,7 +4,7 @@ import uuid
 from typing import Any, TypedDict, cast
 
 from kairix_core.prompt import as_historical_convo, as_message
-from kairix_core.types import SourceDocument
+from kairix_core.types.neo4j import SourceDocument
 
 
 logger = logging.getLogger(__name__)

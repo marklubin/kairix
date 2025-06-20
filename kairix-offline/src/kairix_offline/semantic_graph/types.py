@@ -6,8 +6,131 @@ from pydantic import BaseModel, ConfigDict
 
 class Subject(BaseModel):
     model_config = ConfigDict(strict=False)
-    type: Literal["entity", "action", "attribute", "topic", "event"]
-    short_description: str
+    type: Literal[
+        # Core Entity Types
+        "person",
+        "organization",
+        "location",
+        "event",
+        "concept",
+        "object",
+        "document",
+        "time_period",
+        # People & Roles
+        "role",
+        "group",
+        "team",
+        "community",
+        # Places
+        "place",
+        "facility",
+        "region",
+        "country",
+        "city",
+        # Abstract Concepts
+        "idea",
+        "theory",
+        "principle",
+        "belief",
+        "value",
+        "goal",
+        "strategy",
+        "method",
+        "process",
+        "system",
+        "framework",
+        "model",
+        "pattern",
+        # Knowledge & Information
+        "topic",
+        "field",
+        "domain",
+        "skill",
+        "capability",
+        "knowledge_area",
+        # Activities & States
+        "activity",
+        "action",
+        "task",
+        "project",
+        "initiative",
+        "state",
+        "condition",
+        "situation",
+        # Artifacts & Creations
+        "product",
+        "service",
+        "technology",
+        "tool",
+        "resource",
+        "asset",
+        "work",
+        "publication",
+        "creation",
+        # Relationships & Structures
+        "relationship",
+        "agreement",
+        "contract",
+        "rule",
+        "policy",
+        "standard",
+        "requirement",
+        # Measures & Attributes
+        "metric",
+        "measurement",
+        "attribute",
+        "property",
+        "characteristic",
+        "quality",
+        # Problems & Solutions
+        "problem",
+        "challenge",
+        "issue",
+        "risk",
+        "opportunity",
+        "solution",
+        "outcome",
+        "result",
+        # Temporal
+        "moment",
+        "duration",
+        "milestone",
+        "phase",
+        "cycle",
+        # Communication
+        "message",
+        "communication",
+        "narrative",
+        "argument",
+        "question",
+        "answer",
+        # Economic
+        "transaction",
+        "exchange",
+        "market",
+        "economy",
+        "industry",
+        # Biological/Natural
+        "organism",
+        "species",
+        "environment",
+        "phenomenon",
+        # Cultural/Social
+        "culture",
+        "tradition",
+        "movement",
+        "trend",
+        # Technical/Digital
+        "data",
+        "information",
+        "software",
+        "hardware",
+        "network",
+        "platform",
+        "interface",
+        "component",
+        "element",
+    ]
     name: str
 
     def semantic_identifer(self):

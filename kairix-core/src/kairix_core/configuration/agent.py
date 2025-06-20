@@ -1,11 +1,13 @@
 from agents import OpenAIProvider
 
-from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig
+from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig, GGUFHuggingFaceRepo
 from kairix_core.configuration.utils import model_for_provider
 
 provider_mappings: dict[ProviderName, OpenAIProvider] = {
-    "ollama-remote": OpenAIProvider(base_url="https://ollama.kairix.net/v1"),
-    "ollama-local": OpenAIProvider(base_url="http://localhost:11434/v1"),
+    "ollama-remote": OpenAIProvider(base_url="https://ollama.kairix.net/v1",
+                                    use_responses=False),
+    "ollama-local": OpenAIProvider(base_url="http://localhost:11434/v1",
+                                   use_responses=False),
 }
 
 
@@ -106,7 +108,7 @@ configuration_sets = {
                 name="default",
                 model=model_for_provider(
                     "ollama-remote",
-                    "qwen3:4b"
+                    "iodose/nuextract-v1.5:latest"
                 ),
             )
         },

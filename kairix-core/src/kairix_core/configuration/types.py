@@ -5,7 +5,7 @@ from pydantic import BaseModel
 ProviderName = Literal["openai" , "ollama-remote" , "ollama-local"]
 
 class AgentConfig(BaseModel):
-    name: str
+    name: strs
     model: str
     temperature: float = 0.8
     max_tokens: int = 256

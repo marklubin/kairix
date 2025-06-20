@@ -6,12 +6,12 @@ readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
     "aiofiles>=24.1.0",
-    "cognition-engine",
     "elevenlabs>=2.3.0",
     "fastrtc[stt,tts,vad]>=0.0.28",
     "gradio>=5.33.2",
     "httpx>=0.28.1",
     "kairix-core",
+    "mypy>=1.16.1",
     "neomodel>=5.5.0",
     "openai>=1.86.0",
     "openai-agents>=0.0.17",
@@ -49,11 +49,6 @@ src = ["src"]
 
 [tool.uv]
 package = true
-override-dependencies = [
-    "openai>=1.33.0",  # Force newer openai
-    "instructor>=1.0.0",  # Force newer instructor that works with newer openai
-    "rich>=14.0.0"
-]
 
 [tool.ruff.lint]
 select = [
@@ -90,27 +85,15 @@ markers = [
 # Typeguard configuration
 [tool.typeguard]
 # Automatically check all functions in your package
-packages = ["kairix_engine"]
+packages = ["kairix_apps"]
 # Forward references work automatically
 forward_ref_policy = "RESOLVE"
 # Check collection types deeply
 collection_check_strategy = "ALL_ITEMS"
 
-[dependency-groups]
-dev = [
-    "mypy>=1.16.0",
-    "pyinstrument>=5.0.2",
-    "pytest-asyncio>=1.0.0",
-    "python-levenshtein>=0.27.1",
-    "requests>=2.32.4",
-    "textual-dev>=1.7.0",
-    "types-aiofiles>=24.1.0.20250606",
-    "types-pyyaml>=6.0.12.20250516",
-]
 
 [tool.uv.sources]
 kairix-core = { path = "../kairix-core" }
-cognition-engine = { path = "../cognition_engine", editable = true }
 
 # Mypy configuration for better type checking
 [tool.mypy]
@@ -131,3 +114,12 @@ strict_equality = true
 enable_error_code = ["unused-awaitable", "redundant-expr", "truthy-bool"]
 # Ignore missing imports for external packages
 ignore_missing_imports = true
+# Add kairix-core source to mypy path
+mypy_path = "../kairix-core/src"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "python-dotenv>=1.1.0",
+]

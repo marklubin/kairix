@@ -54,13 +54,13 @@ class TestSummaryInsightPerceptor:
     @pytest.fixture
     def perceptor(self, mock_runner, mock_memory_provider):
         """Create a SummaryInsightPerceptor instance with mocks"""
-        return SummaryInsightPerceptor(runner=mock_runner, memory_provider=mock_memory_provider, k_memories=3)
+        return SummaryInsightPerceptor(runtime=mock_runner, memory_provider=mock_memory_provider, k_memories=3)
 
     def test_init(self, mock_runner, mock_memory_provider):
         """Test perceptor initialization"""
-        perceptor = SummaryInsightPerceptor(runner=mock_runner, memory_provider=mock_memory_provider, k_memories=5)
+        perceptor = SummaryInsightPerceptor(runtime=mock_runner, memory_provider=mock_memory_provider, k_memories=5)
 
-        assert perceptor.runner == mock_runner
+        assert perceptor.runtime == mock_runner
         assert perceptor.memory_provider == mock_memory_provider
         assert perceptor.k_memories == 5
         assert hasattr(perceptor, "query_generating_agent")
@@ -117,7 +117,7 @@ class TestSummaryInsightPerceptor:
         def empty_memory_provider(query, k):
             return []
 
-        perceptor = SummaryInsightPerceptor(runner=mock_runner, memory_provider=empty_memory_provider, k_memories=3)
+        perceptor = SummaryInsightPerceptor(runtime=mock_runner, memory_provider=empty_memory_provider, k_memories=3)
 
         stimulus = Stimulus(content="Hello", type=StimulusType.user_message)
 
@@ -141,7 +141,7 @@ class TestSummaryInsightPerceptor:
     async def test_different_k_memories_values(self, mock_runner, mock_memory_provider):
         """Test perceptor with different k_memories values"""
         for k in [1, 5, 10]:
-            perceptor = SummaryInsightPerceptor(runner=mock_runner, memory_provider=mock_memory_provider, k_memories=k)
+            perceptor = SummaryInsightPerceptor(runtime=mock_runner, memory_provider=mock_memory_provider, k_memories=k)
 
             stimulus = Stimulus(content="Test message", type=StimulusType.user_message)
 
@@ -174,7 +174,7 @@ class TestSummaryInsightPerceptor:
         """Test that memory provider is called correctly with query and k"""
         mock_memory_provider = Mock(return_value=["Memory 1", "Memory 2"])
 
-        perceptor = SummaryInsightPerceptor(runner=mock_runner, memory_provider=mock_memory_provider, k_memories=2)
+        perceptor = SummaryInsightPerceptor(runtime=mock_runner, memory_provider=mock_memory_provider, k_memories=2)
 
         stimulus = Stimulus(content="Test input", type=StimulusType.user_message)
 
@@ -200,7 +200,7 @@ class TestSummaryInsightPerceptor:
         def custom_memory_provider(query: str, k: int) -> List[str]:
             return [f"Memory about {i}: {query}" for i in range(k)]
 
-        perceptor = SummaryInsightPerceptor(runner=mock_runner, memory_provider=custom_memory_provider, k_memories=5)
+        perceptor = SummaryInsightPerceptor(runtime=mock_runner, memory_provider=custom_memory_provider, k_memories=5)
 
         stimulus = Stimulus(content="What did we discuss?", type=StimulusType.user_message)
 

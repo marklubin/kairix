@@ -6,7 +6,7 @@ from agents import (
     RunConfig,
     Runner,
     RunResult,
-    RunResultStreaming, set_default_openai_api,
+    RunResultStreaming, set_default_openai_api, set_tracing_disabled,
 )
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 
@@ -18,6 +18,10 @@ from kairix_core.util.environment import get_or_raise
 logger = LoggingRuntime().logger
 
 environment_configuration_set = configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
+
+
+set_default_openai_api("chat_completions")
+set_tracing_disabled(True)
 
 class AgentRuntime:
     _instance = None
@@ -31,8 +35,6 @@ class AgentRuntime:
                  configuration_set: AgentConfigurationSet=environment_configuration_set,
                  available_provider_mappings: dict[ProviderName,OpenAIProvider]= provider_mappings
                  ):
-        # Use chat completions API instead of responses API for compatibility
-        set_default_openai_api("chat_completions")
         self.configuration_set = configuration_set
         self.model_provider = MultiProvider(provider_map=MultiProviderMap())
         self.model_provider.provider_map.set_mapping(available_provider_mappings) # type: ignore

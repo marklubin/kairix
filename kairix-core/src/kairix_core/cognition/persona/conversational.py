@@ -5,12 +5,12 @@ from typing import List, AsyncIterator
 from agents import Agent
 from openai.types.responses import ResponseTextDeltaEvent
 
-from ..configuration.runner import CognitionAgentRunner
 from ..perceptor import Perceptor
 from kairix_core.types.cognition import Stimulus, Perception, StimulusType
 from kairix_core.util.utils import MessageTurnFormatter
 
 from kairix_core.prompt import agent_prompts as prompts
+from kairix_core.runtime.agent import AgentRuntime
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +21,14 @@ class ConversationalPersona:
         *,
         persona_name: str,
         user_name: str,
-        runner: CognitionAgentRunner,
+        runtime: AgentRuntime,
         perceptors: List[Perceptor],
         actuating_agent: Agent,
         reflection_perceptors: List[Perceptor],
     ):
         self.persona_name = persona_name
         self.user_name = user_name
-        self.runner: CognitionAgentRunner = runner
+        self.runner: AgentRuntime = runtime
         self.message_turn_formatter = MessageTurnFormatter(user_name, persona_name)
         self.perceptors = perceptors
         self.actuating_agent = actuating_agent

@@ -40,8 +40,7 @@ async-check-strict:
 
 # Run mypy type checking with async checking
 mypy:
-    uv run mypy src/kairix_engine --warn-unused-ignores
-    uv run mypy tests/ --warn-unused-ignores
+    uv run mypy src/  --warn-unused-ignores
 
 # Clean Python cache files
 clean:

@@ -15,7 +15,7 @@ semantic-graph:
     dotenv  uv run scripts/semantic_graph.py
     
 mem-ui:
-    uv run python -m kairix_offline.ui.mem_ui
+    dotenv uv run python -m kairix_offline.ui.mem_ui
 
 gradio:
     uv run gradio src/kairix_offline/ui/mem_ui.py --demo-name history_importer

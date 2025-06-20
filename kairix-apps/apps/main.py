@@ -1,7 +1,9 @@
+
 import logging
 
-from cognition import Stimulus, StimulusType
-from dotenv import load_dotenv
+from kairix_core.runtime.agent import AgentRuntime
+from kairix_core.runtime.neo4j import Neo4jRuntime
+from kairix_core.types.cognition import Stimulus, StimulusType
 from rich import pretty
 from rich.console import Console
 from rich.layout import Layout
@@ -9,22 +11,12 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 
-from kairix_engine.engine import KairixEngine
+from kairix_apps.engine import KairixEngine
 
-if not load_dotenv():
-    raise ValueError("Failed to load .env file.")
-
-# Set up file-based logging instead of console logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("kairix.log"),
-    ],
-    force=True,
-)
-
+neo4j  = Neo4jRuntime()
+agent_runtime =AgentRuntime()
 logger = logging.getLogger()
+
 logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
 logging.getLogger("cognition_engine").setLevel(logging.DEBUG)
 

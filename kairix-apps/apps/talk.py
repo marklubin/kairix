@@ -4,8 +4,6 @@ import os
 
 import gradio as gr
 import numpy as np
-from cognition import Stimulus, StimulusType
-from cognition.tts import ElevenLabsTTS
 from dotenv import load_dotenv
 from elevenlabs import ElevenLabs
 from fastapi import FastAPI
@@ -17,16 +15,17 @@ from fastrtc import (
     Stream,
     get_stt_model,
 )
+from kairix_core.tts import ElevenLabsTTS
+from kairix_core.types.cognition import Stimulus, StimulusType
 from pydantic import BaseModel
 from rich import pretty
 from rich.logging import RichHandler
 
-from kairix_engine.engine import KairixEngine
+from kairix_apps.engine import KairixEngine
 
 logging.basicConfig(level=logging.INFO)
 
-logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
-logging.getLogger("cognition_engine").setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("fastrtc").setLevel(logging.WARN)
 logging.getLogger("gradio").setLevel(logging.DEBUG)
 

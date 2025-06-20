@@ -12,7 +12,7 @@ class TestJustfileEnvironment:
             ["just", "list-envs"],
             capture_output=True,
             text=True,
-            cwd="/Users/mark/kairix/kairix-engine",
+            cwd="/Users/mark/kairix/kairix-apps",
         )
         
         assert result.returncode == 0
@@ -26,7 +26,7 @@ class TestJustfileEnvironment:
             ["just", "run-talk", "nonexistent"],
             capture_output=True,
             text=True,
-            cwd="/Users/mark/kairix/kairix-engine",
+            cwd="/Users/mark/kairix/kairix-apps",
         )
         
         assert result.returncode == 1
@@ -39,7 +39,7 @@ class TestJustfileEnvironment:
         # We'll do a dry-run test by checking the command structure
         
         # Read the actual justfile to verify the command structure
-        with open("/kairix-apps/justfile") as f:
+        with open("/Users/mark/kairix/kairix-apps/Justfile") as f:
             justfile_content = f.read()
         
         # Verify run-talk target exists and uses proper env loading

@@ -71,7 +71,9 @@ def initialize_processing():
         return
 
     logger.info("Initializing Neo4J database.")
-    neomodel_config.DATABASE_URL = get_or_raise("NEO4J_URL")
+    neomodel_config.DATABASE_URL = (
+        "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
+    )
     db.install_all_labels()
     SourceDocument(
         uid="1", source_label="smoke-test", source_type="none", content="test"

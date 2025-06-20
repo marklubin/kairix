@@ -1,8 +1,8 @@
 import os
 
 import pytest
-from cognition.tts import ElevenLabsTTS
 from dotenv import load_dotenv
+from kairix_core.tts import ElevenLabsTTS
 
 # Load environment variables
 # Try to load from env/ directory if ENV is set
@@ -30,7 +30,7 @@ class TestTalkSmoke:
         """Test that TTS can be initialized with API key."""
         tts = ElevenLabsTTS(api_key=api_key)
         assert tts is not None
-        assert tts.voice_id == "21m00Tcm4TlvDq8ikWAM"  # Default Rachel voice
+        assert tts.voice_id == "0NkECxcbkydDMspBKvQp"  # Default voice
 
     def test_tts_simple_generation(self, api_key):
         """Test basic TTS generation with a short phrase."""
