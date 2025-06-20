@@ -28,6 +28,9 @@ typecheck:
     uv run ty check src/
     uv run mypy src/
 
+
+gen-env:
+    uv run scripts/generate_env.py
 # Clean Python cache files
 clean:
     find . -type d -name ".venv" -exec rm -rf {} +

@@ -59,31 +59,10 @@ class VectorIndexedNode(StructuredNode):
   def vector_search(
       cls: Type['T'],
       vector: List[float],
-      vector_property: Optional[str] = None,
-      k: int = 10
+      k: int = 10,
+      index_name: str = "vector_index_Concept_embedding"
   ) -> List[Tuple['T', float]]:
-      """
-      Perform vector similarity search.
 
-      Args:
-          vector: Query vector
-          vector_property: Name of the vector property (defaults to first in
-VECTOR_INDEX_CONFIG)
-          k: Number of results to return
-
-      Returns:
-          List of tuples (node, similarity_score)
-      """
-      if cls.__abstract_node__:
-          raise TypeError(f"Cannot perform vector search on abstract node {cls.__name__}")
-
-      if not cls.VECTOR_INDEX_CONFIG:
-          raise ValueError(f"{cls.__name__} has no VECTOR_INDEX_CONFIG defined")
-
-      if vector_property is None:
-          vector_property = next(iter(cls.VECTOR_INDEX_CONFIG.keys()))
-
-      index_name = f"{cls.__label__.lower()}_{vector_property}_index"
 
       results, _ = db.cypher_query(
           f"""

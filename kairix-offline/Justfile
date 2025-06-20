@@ -9,6 +9,10 @@ run-for-test:
 
     CUDA_VISIBIBLE_DEVICES=0 ollama serve
 
+
+
+semantic-graph:
+    dotenv  uv run scripts/semantic_graph.py
     
 mem-ui:
     uv run python -m kairix_offline.ui.mem_ui

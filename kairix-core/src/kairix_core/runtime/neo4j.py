@@ -8,7 +8,7 @@ _NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
 
 
 _KDB_EMBEDDING_QUERY = """
-CALL db.index.vector.queryNodes('semantic_unit_SemanticUnit_embedding',
+CALL db.index.vector.queryNodes('vector_index_Concept_embedding',
     $k, $query_vector)
 YIELD node, score 
 RETURN node, score 
@@ -32,3 +32,7 @@ class Neo4jRuntime:
 
     def transaction(self):
         return db.transaction
+
+
+    def rollback(self):
+        return db.rollback()

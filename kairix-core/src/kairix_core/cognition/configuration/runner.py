@@ -12,13 +12,18 @@ from agents import (
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 from pydantic import BaseModel
 
+from kairix_core.util.environment import get_or_raise
+
+tokens = int(get_or_raise("KAIRIX_SUMMARIZER_MAX_TOKENS"))
+temp = float(get_or_raise("KAIRIX_SUMMARIZER_TEMPERATURE"))
+
 ProviderName = Literal["openai" , "ollama-remote" , "ollama-local"]
 
 class AgentConfig(BaseModel):
     name: str
     model: str
-    temperature: float = 0.8
-    max_tokens: int = 256
+    temperature: float = temp
+    max_tokens: int = tokens
 
 
 class AgentConfigurationSet(BaseModel):
