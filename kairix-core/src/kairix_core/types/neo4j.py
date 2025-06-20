@@ -1,3 +1,4 @@
+import uuid
 
 from neomodel import (
     ArrayProperty,
@@ -16,33 +17,34 @@ from neomodel import (
 from kairix_core.types.vector_indexed import VectorIndexedNode
 
 
-class SemanticRelationship(StructuredRel):
-    descriptions = ArrayProperty(StringProperty())
+class SemanticLinkage(StructuredRel):
     created_at = DateTimeProperty(default_now=True)
     updated_at = DateTimeProperty(default_now=True)
-    occurrences = IntegerProperty(default=1)
+    linkage_type = StringProperty(required=True)
+    weight: IntegerProperty(default=1)
 
 
-class SemanticUnit(VectorIndexedNode):
-
+class Concept(VectorIndexedNode):
     VECTOR_INDEX_CONFIG = {
         'embedding': {  # property name
             'dimensions': 128,
             'similarity_function': 'cosine'  # or 'euclidean'
         }
     }
-
-    uid = StringProperty(unique_index=True, required=True)
-    descriptions=ArrayProperty(StringProperty())
-    type=StringProperty(choices=(
-        ("entity", "entity"),
-        ("action","action" ),
-        ("attribute", "attribute"),
-        ("topic","topic"),
-        ("event", "event")))
-    created_at=DateTimeProperty(default_now=True)
-    updated_at=DateTimeProperty(default_now=True)
-    occurences=IntegerProperty(default=1)
+    semantic_id = StringProperty(unique_index=True, required=True)
+    name = StringProperty(required=True)
+    type = StringProperty(
+        required=True,
+        choices=(
+            ("entity", "entity"),
+            ("action", "action"),
+            ("attribute", "attribute"),
+            ("topic", "topic"),
+            ("event", "event")
+        ))
+    created_at = DateTimeProperty(default_now=True)
+    updated_at = DateTimeProperty(default_now=True)
+    occurences = IntegerProperty(default=1)
     embedding = ArrayProperty(
         FloatProperty(),
         required=True,
@@ -50,11 +52,27 @@ class SemanticUnit(VectorIndexedNode):
         vector_index=VectorIndex(dimensions=128),
     )
 
-    related = Relationship("SemanticUnit",
-                            "RELATED",
-                           model=SemanticRelationship)
+    link = Relationship("Concept",
+                           "semantic_linkage",
+                        model=SemanticLinkage)
 
+    @staticmethod
+    def _composite_key(name: str, type: str):
+        return f"{type}://{name}"
 
+    @staticmethod
+    def first_or_none(*, name: str, type: str):
+        semantic_id = Concept._composite_key(name, type)
+        return Concept.nodes.first_or_none(semantic_id=semantic_id)
+
+    def __init__(self, **kwargs):
+        name = kwargs['name']
+        type_ = kwargs['type']
+
+        kwargs['semantic_id'] = self._composite_key(name, type_)
+
+        # Call parent with all kwargs
+        super().__init__(**kwargs)
 
 
 class StoredLog(StructuredNode):
@@ -106,7 +124,6 @@ class Summary(IdempotentNode):
     extractions_performed = ArrayProperty(StringProperty(), default=[])
 
 
-
 class MemoryShard(IdempotentNode):
     uid = StringProperty(unique_index=True, required=True)
     shard_contents = StringProperty(required=True)
@@ -123,3 +140,9 @@ class MemoryShard(IdempotentNode):
     source_document = Relationship("SourceDocument", "DERIVED_FROM", cardinality=One)
     summary = Relationship("Summary", "HAS_SUMMARY", cardinality=One)
     relates = Relationship("MemoryShard", "RELATES")
+
+
+class TrackingNode(IdempotentNode):
+    uid = StringProperty(
+        unique_index=True, required=True
+    )

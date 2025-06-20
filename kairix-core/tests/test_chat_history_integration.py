@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 import pytest_asyncio
 
-from kairix_engine.basic_chat import Chat
-from kairix_engine.conversation_history_perceptor import ConversationHistoryPerceptor
+from kairix_apps.basic_chat import Chat
+from kairix_core.cognition.perceptor.conversation_history_perceptor import ConversationHistoryPerceptor
 
 
 @pytest.fixture

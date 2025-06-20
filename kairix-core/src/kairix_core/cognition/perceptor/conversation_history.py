@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import logging
 
-from cognition import Perception, Perceptor, Stimulus, StimulusType
+from kairix_core.cognition import Perceptor
+from kairix_core.types.cognition import Perception, Stimulus, StimulusType
 from neomodel import config as neomodel_config
 from neomodel import db
 
 logger = logging.getLogger(__name__)
 
 
-# TODO - @claude - this needs to be fixed to use sqlite as data store and have seperate perceptors for
-# Providing short-term contextual memory history and saving each message pair. The stored model for
+# TODO - @claude - this needs to be fixed to use sqlite as data store and have seperate
+#  perceptors for
+# Providing short-term contextual memory history and saving each message pair. The stored
+# model for
 # mssage should unify across the stack
 class ConversationHistoryPerceptor(Perceptor):
     """

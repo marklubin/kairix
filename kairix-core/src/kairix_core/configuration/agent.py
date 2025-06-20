@@ -29,7 +29,9 @@ configuration_sets = {
             ),
             "default": AgentConfig(
                 name="default",
-                model="gpt-4.1-nano"
+                model="gpt-4.1-nano",
+                temperature=1.0,
+                max_tokens=16000
             )
         },
     ),

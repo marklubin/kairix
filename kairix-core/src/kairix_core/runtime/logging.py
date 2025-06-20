@@ -16,7 +16,17 @@ class LoggingRuntime:
     def __init__(self, logger_name:str ="kairix"):
         self.console = Console(width=140)
         logging.basicConfig(
-            handlers=[RichHandler(console=self.console, rich_tracebacks=True, markup=True)],
+            format="%(message)s",
+            handlers=[
+                RichHandler(
+                    console=self.console,
+                    tracebacks_show_locals=True,
+                    rich_tracebacks=True,
+                    show_path=True,
+                    show_time=True,
+                    show_level=True,
+                    markup=True
+                )],
             level="INFO",
         )
         self.logger = logging.getLogger(logger_name)

@@ -9,10 +9,16 @@ from agents import (
     RunResultStreaming, set_default_openai_api,
 )
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
+
+from kairix_core.configuration.agent import provider_mappings, configuration_sets
 from kairix_core.configuration.types import AgentConfigurationSet, ProviderName, AgentConfig
 from kairix_core.runtime.logging import LoggingRuntime
+from kairix_core.util.environment import get_or_raise
 
 logger = LoggingRuntime().logger
+
+environment_configuration_set = configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
+
 class AgentRuntime:
     _instance = None
 
@@ -21,8 +27,10 @@ class AgentRuntime:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, configuration_set: AgentConfigurationSet,
-                 available_provider_mappings: dict[ProviderName, OpenAIProvider]):
+    def __init__(self,
+                 configuration_set: AgentConfigurationSet=environment_configuration_set,
+                 available_provider_mappings: dict[ProviderName,OpenAIProvider]= provider_mappings
+                 ):
         # Use chat completions API instead of responses API for compatibility
         set_default_openai_api("chat_completions")
         self.configuration_set = configuration_set
