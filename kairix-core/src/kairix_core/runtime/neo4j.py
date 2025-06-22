@@ -28,7 +28,7 @@ class Neo4jRuntime:
     def __init__(self):
         neomodel_config.DATABASE_URL = _NEO4J_URL
         db.set_connection(_NEO4J_URL)
-        db.install_all_labels()
+
 
     def transaction(self):
         return db.transaction

@@ -29,6 +29,7 @@ typecheck:
     uv run mypy src/
 
 
+
 gen-env:
     uv run scripts/generate_env.py
 # Clean Python cache files
@@ -46,3 +47,7 @@ clean:
 # Show project structure
 tree:
     tree -I '__pycache__|*.pyc|.git'
+
+
+install-labels:
+    uv run python -c "from neomodel import db;db.install_all_labels()"

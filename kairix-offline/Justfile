@@ -1,2 +1,16 @@
-clean:
-    pqq
+import "../Justfile"
+
+
+
+run *FLAGS:
+    dotenv uv run python offline.py {{FLAGS}}
+
+
+
+set-env PLATFORM INFERENCE:
+    @rm -f .env
+    @cp environments/base.env .env
+    @echo "#~~~~~~~~~~~platform~~~~~~~~~~~~~~~~" >> .env
+    @cat environments/platform/{{PLATFORM}}.env >> .env
+    @echo "#~~~~~~~~~~~inference~~~~~~~~~~~~~~">> .env
+    @cat environments/inference/{{INFERENCE}}.env >> .env

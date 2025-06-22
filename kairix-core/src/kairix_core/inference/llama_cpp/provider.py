@@ -14,15 +14,18 @@ _model_definitions = {
 }
 
 class LlamaCppProvider(ModelProvider):
-    #TODO - dynamic allocation or atleast bounded + load balance on hardware
     def __init__(self, *args: Tuple[str, int]):
-        self.models: dict[str, PooledModel] = dict()
-        self._initialization_tasks = []
-        
-        for model, pool_size in args:
+        self.model_and_pool_size: list[Tuple[str, int]] = args
+        for model, pool_size in self.model_and_pool_size:
             if model not in _model_definitions:
                 raise ValueError(f"No model definition for {model}.")
 
+        self.models: dict[str, PooledModel] = dict()
+
+
+    #TODO - dynamic allocation or atleast bounded + load balance on hardware
+    def populate(self):
+        for model, pool_size in self.model_and_pool_size:
             model_pool = [
                 LlamaCppModel(llama=Llama.from_pretrained(
                     n_gpu_layers=-1,  # Fixed parameter name
@@ -41,7 +44,11 @@ class LlamaCppProvider(ModelProvider):
             self.models[model] = pm
 
 
+
     def get_model(self, model_name: str | None) -> Model:
+        if not self.models:
+            self.populate()
+
         if model_name not in self.models:
             raise ValueError(f"No configured model pool for {model_name}. Must configure "
                              f"when creating provider.")
