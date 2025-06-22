@@ -1,3 +1,5 @@
+import os
+
 from agents import OpenAIProvider, ModelProvider
 
 from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig
@@ -12,6 +14,8 @@ provider_mappings: dict[ProviderName, ModelProvider] = {
         ("nh2-mistral", 3)
     )
 }
+
+default_model = os.getenv("KAIRIX_DEFAULT_INFERENCE_MODEL") or "gpt-4o"
 
 configuration_sets = {
     "openai": AgentConfigurationSet(
@@ -33,7 +37,7 @@ configuration_sets = {
             ),
             "default": AgentConfig(
                 name="default",
-                model="gpt-4.1-nano",
+                model=default_model,
                 temperature=1.0,
                 max_tokens=16000
             )
@@ -112,7 +116,7 @@ configuration_sets = {
                 name="default",
                 model=model_for_provider(
                     "ollama-remote",
-                    "gemma3:12b-it-qat"
+                    default_model
                 ),
                 temperature=0.5,
                 max_tokens=4096
