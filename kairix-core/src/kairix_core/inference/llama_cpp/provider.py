@@ -9,27 +9,36 @@ from kairix_core.inference.pooled_model import PooledModel
 _model_definitions = {
     "nh2-mistral": {
         "repo_id": "NousResearch/Nous-Hermes-2-Mistral-7B-DPO-GGUF",
-        "filename": "Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
+        "filename": "Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"''
     }
 }
 
-class LllamaCppProvider(ModelProvider):
-
-
+class LlamaCppProvider(ModelProvider):
     #TODO - dynamic allocation or atleast bounded + load balance on hardware
     def __init__(self, *args: Tuple[str, int]):
         self.models: dict[str, PooledModel] = dict()
+        self._initialization_tasks = []
+        
         for model, pool_size in args:
             if model not in _model_definitions:
                 raise ValueError(f"No model definition for {model}.")
 
             model_pool = [
-                LlamaCppModel(llama=Llama.from_pretrained(_model_definitions[model]))
-                for _ in range (0, pool_size)
+                LlamaCppModel(llama=Llama.from_pretrained(
+                    n_gpu_layers=-1,  # Fixed parameter name
+                    flash_attn=True,
+                    n_ctx=8000,
+                    use_mlock=True,
+                    type_k=2,
+                    type_v=2,
+                    n_threads=8,
+                    **_model_definitions[model]
+                    )
+                )
+                for _ in range(pool_size)
             ]
-            self.models[model] = PooledModel(model_pool)
-
-
+            pm = PooledModel(model_pool)
+            self.models[model] = pm
 
 
     def get_model(self, model_name: str | None) -> Model:

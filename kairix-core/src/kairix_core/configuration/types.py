@@ -2,10 +2,10 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-ProviderName = Literal["openai" , "ollama-remote" , "ollama-local"]
+ProviderName = Literal["openai" , "ollama-remote" , "ollama-local","llama-cpp"]
 
 class AgentConfig(BaseModel):
-    name: strs
+    name: str
     model: str
     temperature: float = 0.8
     max_tokens: int = 256

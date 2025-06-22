@@ -1,4 +1,4 @@
-from typing import List, Tuple, Type, TypeVar, TYPE_CHECKING, Dict, Any, Optional
+from typing import List, Tuple, Type, TypeVar, TYPE_CHECKING, Dict, Any
 
 from neomodel import StructuredNode, db
 

@@ -1,15 +1,17 @@
-from agents import OpenAIProvider
+from agents import OpenAIProvider, ModelProvider
 
-from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig, GGUFHuggingFaceRepo
+from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig
 from kairix_core.configuration.utils import model_for_provider
-
-provider_mappings: dict[ProviderName, OpenAIProvider] = {
+from kairix_core.inference.llama_cpp.provider import LlamaCppProvider
+provider_mappings: dict[ProviderName, ModelProvider] = {
     "ollama-remote": OpenAIProvider(base_url="https://ollama.kairix.net/v1",
                                     use_responses=False),
     "ollama-local": OpenAIProvider(base_url="http://localhost:11434/v1",
                                    use_responses=False),
+    "llama-cpp": LlamaCppProvider(
+        ("nh2-mistral", 3)
+    )
 }
-
 
 configuration_sets = {
     "openai": AgentConfigurationSet(
@@ -75,6 +77,8 @@ configuration_sets = {
                     "ollama-local",
                     "phi3.5:3.8b-mini-instruct-q4_0",  # Fast and accurate model
                 ),
+                temperature=0.5,
+                max_tokens=4096
             )
         },
     ),
@@ -108,9 +112,26 @@ configuration_sets = {
                 name="default",
                 model=model_for_provider(
                     "ollama-remote",
-                    "iodose/nuextract-v1.5:latest"
+                    "gemma3:12b-it-qat"
                 ),
+                temperature=0.5,
+                max_tokens=4096
             )
         },
     ),
+    "llama-cpp": AgentConfigurationSet(
+        name="llama-cpp",
+        default_provider="llama-cpp",
+        description="all agents running in Llama cpp",
+        agent_configs= {
+            "default": AgentConfig(
+                name="default",
+                model=model_for_provider(
+                    "llama-cpp",
+                    "nh2-mistral",
+                ),
+                max_tokens=8192
+            )
+        }
+    )
 }

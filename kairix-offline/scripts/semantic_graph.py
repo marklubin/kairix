@@ -1,9 +1,10 @@
+import argparse
 import asyncio
-import hashlib
+import uuid
 from typing import Iterable
 
+import diskcache
 from agents import Agent
-
 
 from sentence_transformers import SentenceTransformer
 
@@ -12,7 +13,6 @@ from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.neo4j import Neo4jRuntime
 from kairix_core.types.neo4j import (
     Concept,
-    TrackingNode,
     Summary,
     SemanticLinkage,
 )
@@ -28,29 +28,9 @@ logger = LoggingRuntime().logger
 neo4j = Neo4jRuntime()
 agent_runtime = AgentRuntime()
 
-
 embedder = SentenceTransformer(
-    "sentence-transformers/all-mpnet-base-v2", device="mps", truncate_dim=128
+    "sentence-transformers/all-mpnet-base-v2", truncate_dim=128
 )
-
-
-async def extract_facts(text: str, extraction_agents: list[Agent]) -> list[Fact]:
-    tasks_to_await = [agent_runtime.run(agent, text) for agent in extraction_agents]
-
-    results = await asyncio.gather(*tasks_to_await)
-    extractions = [r.final_output for r in results]
-    all_extracted_rels = []
-
-    for a, e in zip(extraction_agents, extractions):
-        logger.debug(f"Inspecting extraction for {a.name}.")
-
-        if e and e.facts and len(e.facts) > 0:
-            logger.debug(f"Exracted Relaitonships.{e.facts}")
-            all_extracted_rels.extend(e.facts)
-        else:
-            logger.warning("Extraction was empty.")
-
-    return all_extracted_rels
 
 
 def upsert_concept(subject: Subject) -> Concept:
@@ -121,59 +101,107 @@ def upsert_linkage(s: Concept, t: Concept, linkage_type: str):
         )
 
 
-def get_tracking_key(text: str):
-    extraction_type_id = "graph-processor-v1"
-    content_hash = hashlib.md5(text.encode()).hexdigest()
-    return f"{extraction_type_id}://{content_hash}"
+def update_semantic_graph_with_facts(facts: Iterable[Fact]):
+    with neo4j.transaction():
+        try:
+            for fact in facts:
+                s_unit = upsert_concept(fact.s)
+                t_unit = upsert_concept(fact.t)
+                upsert_linkage(s_unit, t_unit, fact.relationship)
+            logger.info("Finished with facts commiting to db.")
+        except Exception as e:
+            logger.error(
+                "Encounter fatal error when persisting to db, rolling back.",
+                exc_info=e,
+            )
+            neo4j.rollback()
+            raise e
 
 
-# Summary.nodes.all()
-async def extract(texts: Iterable[str]):
-    logger.info("[red bold]Starting Extraction...:")
+async def do_extract(text: str, extraction_agents: list[Agent]) -> list[Fact]:
+    tasks_to_await = [agent_runtime.run(agent, text) for agent in extraction_agents]
 
-    for i, text in enumerate(texts):
-        tracking_key = get_tracking_key(text)
-        if TrackingNode.get_or_none(tracking_key):
-            logger.info("Already ran extraction sucessfully, skipping.")
+    logger.info("Starting concurrent extraction.")
+    results = await asyncio.gather(*tasks_to_await)
+    extractions = [r.final_output for r in results]
+    all_facts = []
+    logger.info("Received extracted results. Preparing facts.")
+
+    for a, e in zip(extraction_agents, extractions):
+        logger.info(f"Inspecting extraction for agent {a.name}.")
+
+        if e and e.facts and len(e.facts) > 0:
+            logger.info(f"Exracted Facts: {str(e.facts)}")
+            all_facts.extend(e.facts)
+        else:
+            logger.warning("Extraction was empty.")
+
+    return all_facts
+
+
+async def extract_facts_from_summaries(
+    summaries: Iterable[Summary], cache: diskcache.Cache
+) -> list[Fact]:
+    result: list[Fact] = []
+    new_summaries_processed: int = 0
+    for i, summary in enumerate(summaries):
+        if summary.uid in cache:
+            logger.info("Found summary in cache, skipping extraction.")
             continue
-        logger.info(
-            f"Beginning Extraction for Content With Tracking Key: {tracking_key}"
-        )
 
-        logger.info("Extracting Semantic Structre")
-        extractions = await extract_facts(
-            text,
+        logger.info("Processing summary %d, Title: %s.", i, summary.uid)
+
+        logger.info("No cached record for summary, extracting facts.")
+        extractions = await do_extract(
+            summary.summary_text,
             [
                 world_facts_extractor,
                 user_profile_extractor,
                 assistant_cognitive_extractor,
             ],
         )
+        logger.info("Extraction ended.")
+        result.extend(extractions)
+        cache[summary.uid] = "extracted"
+        new_summaries_processed += 1
+        logger.info("Extracted %i new facts from summary", len(extractions))
 
-        logger.info("Finished extraction...deduping and writing to output.")
-        print(f"Processing {len(extractions)} extracted semantic units.")
-
-        with neo4j.transaction():
-            try:
-                for fact in extractions:
-                    s_unit = upsert_concept(fact.s)
-                    t_unit = upsert_concept(fact.t)
-                    upsert_linkage(s_unit, t_unit, fact.relationship)
-
-                logger.info("Finished with extractions commiting to db.")
-                TrackingNode(uid=tracking_key).save()
-            except Exception as e:
-                logger.error(
-                    "Encounter fatal error when persisting to db, rolling back.",
-                    exc_info=e,
-                )
-                neo4j.rollback()
-                raise e
+    logger.info(
+        "Processed %i new summaries, extracting %i facts.",
+        new_summaries_processed,
+        len(result),
+    )
+    return result
 
 
-def summaries(n=3):
-    yield from [s.summary_text for s in Summary.nodes.all()[0:n]]
+def summaries(offset=0, n=3):
+    yield from [s for s in Summary.nodes.all()[offset:n]]
+
+
+async def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("command", type=str)
+
+    args = parser.parse_args()
+    extraction_cache = diskcache.Cache(".cache/summary-extraction")
+    fact_cache = diskcache.Cache(".cache/facts")
+
+    try:
+        if args.command == "summary-extraction":
+            facts_to_process = await extract_facts_from_summaries(
+                summaries(), extraction_cache
+            )
+            for fact in facts_to_process:
+                fact_cache[str(uuid.uuid4())] = fact
+
+        if args.command == "write-facts":
+            update_semantic_graph_with_facts([fact_cache[k] for k in fact_cache])
+            fact_cache.clear()
+
+    finally:
+        extraction_cache.close()
+        fact_cache.close()
 
 
 if __name__ == "__main__":
-    asyncio.run(extract(summaries()))
+    asyncio.run(main())

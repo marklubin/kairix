@@ -1,38 +1,37 @@
-import asyncio
 import uuid
-from typing import AsyncIterator
 
-from agents import Model, TResponseInputItem, ModelSettings, Tool, AgentOutputSchemaBase, Handoff, ModelTracing, \
-    ModelResponse, Usage
-from agents.items import TResponseStreamEvent
+from agents import  TResponseInputItem, ModelSettings, Tool, AgentOutputSchemaBase, ModelResponse, Usage
 from llama_cpp import Llama, ChatCompletionRequestSystemMessage, \
     ChatCompletionRequestUserMessage, ChatCompletionRequestResponseFormat, CreateChatCompletionResponse, \
     ChatCompletionResponseChoice, ChatCompletionResponseMessage
-from openai.types.responses import ResponsePromptParam, ResponseOutputMessage, ResponseOutputText
-
-from kairix_core.runtime.logging import LoggingRuntime
+from openai.types.responses import ResponseOutputMessage, ResponseOutputText
 
 
-class LlamaCppModel(Model):
-
+class LlamaCppModel:
 
     def __init__(self, *, llama: Llama):
-       self.llama = llama
+        self.llama = llama
 
+    def _get_input(self, input: str | list[TResponseInputItem]) -> str:
+        if type(input) is str:
+            return input
 
-    async def get_response(self,
-                           system_instructions: str | None,
-                           input: str | list[TResponseInputItem],
-                           model_settings: ModelSettings=ModelSettings(),
-                           tools: list[Tool]=[], # noqa
-                           output_schema: AgentOutputSchemaBase | None=None,
-                           handoffs: list[Handoff]=[], *args, **kwargs) -> ModelResponse: #noqa
+        assert len(input) > 0
+        assert "content" in input[0]
+        return str(input[0]["content"])
 
-        if type(input) is not str:
-            raise Exception("only string inputs are presently supported.")
+    def sync_complete(self,
+                      system_instructions: str | None,
+                      input: str | list[TResponseInputItem],
+                      model_settings: ModelSettings = ModelSettings(),
+                      tools: list[Tool] = [],  # noqa
+                      output_schema: AgentOutputSchemaBase | None = None,
+                      *args, **kwargs) -> ModelResponse:  # noqa
+
+        input_content = self._get_input(input)
 
         system_message = ChatCompletionRequestSystemMessage(role="system", content=system_instructions)
-        user_message = ChatCompletionRequestUserMessage(role="user", content=input)
+        user_message = ChatCompletionRequestUserMessage(role="user", content=input_content)
         messages = [system_message, user_message]
 
         response_format = ChatCompletionRequestResponseFormat(type="text")
@@ -44,7 +43,7 @@ class LlamaCppModel(Model):
         kwargs = dict()
 
         if model_settings.temperature:
-            kwargs['tempature'] = model_settings.temperature
+            kwargs['temperature'] = model_settings.temperature
 
         if model_settings.max_tokens:
             kwargs['max_tokens'] = model_settings.max_tokens
@@ -59,10 +58,11 @@ class LlamaCppModel(Model):
 
         raw_response: CreateChatCompletionResponse = (
             self.llama.create_chat_completion(messages,
-                                            None,  # fn
-                                            None,  # call
-                                            None,  # tools
-                                            **kwargs))
+                                              None,  # fn
+                                              None,  # call
+                                              None,  # tools
+
+                                              **kwargs))
 
         choices: list[ChatCompletionResponseChoice] = raw_response['choices']
 
@@ -74,7 +74,6 @@ class LlamaCppModel(Model):
         if "content" not in response_message:
             raise Exception("Response was missisng content.")
 
-
         openai_output_text = ResponseOutputText(text=response_message["content"], type="output_text", annotations=[])
         openai_output_message = ResponseOutputMessage(id=f"llama::{str(uuid.uuid4())}",
                                                       role="assistant",
@@ -84,44 +83,28 @@ class LlamaCppModel(Model):
 
         return ModelResponse(output=[openai_output_message], usage=Usage(), response_id=None)
 
-    def stream_response(self,
-                        system_instructions: str | None,
-                        input: str | list[TResponseInputItem],
-                        model_settings: ModelSettings,
-                        tools: list[Tool],
-                        output_schema: AgentOutputSchemaBase | None,
-                        handoffs: list[Handoff],
-                        tracing: ModelTracing,
-                        *,
-                        previous_response_id: str | None,
-                        prompt: ResponsePromptParam | None) -> AsyncIterator[TResponseStreamEvent]:
-        raise NotImplementedError("Streaming not yet supported with llama.cpp.")
-
-
-async def main():
-    logger = LoggingRuntime().logger
-    llama = Llama.from_pretrained(
-        repo_id="NousResearch/Nous-Hermes-2-Mistral-7B-DPO-GGUF",
-        filename="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf",
-        n_gpu_layers=-1,
-        flash_attn=True,
-        n_ctx=8000,
-        use_mlock=True,
-        type_k=2,
-        type_v=2
-    )
-
-    model = LlamaCppModel(llama=llama)
-    while True:
-        user_message = input("What to say to a llama?\t")
-        response: ModelResponse  = await model.get_response(system_instructions="Summarize the provided text",
-                                                            input=user_message,
-                                                            model_settings=ModelSettings(),
-                                                            tools=[],
-                                                            output_schema=None)
-        print(response.output[0].content[0].text)
-
-
-if __name__ == "__main__":
-
-   asyncio.run(main())
+# def main():
+#     llama = Llama.from_pretrained(
+#         repo_id="NousResearch/Nous-Hermes-2-Mistral-7B-DPO-GGUF",
+#         filename="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf",
+#         n_gpu_layers=-1,
+#         flash_attn=True,
+#         n_ctx=8000,
+#         use_mlock=True,
+#         type_k=2,
+#         type_v=2
+#     )
+#
+#     model = LlamaCppModel(llama=llama)
+#     while True:
+#         user_message = input("What to say to a llama?\t")
+#         response: ModelResponse  =  model.get_response(system_instructions="Summarize the provided text",
+#                                                             input=user_message,
+#                                                             model_settings=ModelSettings(),
+#                                                             tools=[],
+#                                                             output_schema=None)
+#         print(response.output[0].content[0].text)
+#
+#
+# if __name__ == "__main__":
+#     main()

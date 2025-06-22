@@ -21,7 +21,7 @@ user_profile_extractor = Agent(
 
 assistant_cognitive_extractor = Agent(
     "assistant_cognitive_extractor",
-    instructions=prompts.assistant_extraction,
+    instructions=prompts.assistant_extraction_prompt,
     output_type=Extract,
     model_settings=ModelSettings(max_tokens=16000),
 )

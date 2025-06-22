@@ -27,7 +27,9 @@ dependencies = [
     "chatformat>=1.2",
     "openai-agents>=0.0.19",
     "kairix-core",
+    "diskcache>=5.6.3",
 ]
+
 
 [dependency-groups]
 dev = [

@@ -1,21 +1,2 @@
-import "../Justfile"
-set dotenv-load
-set dotenv-required
-
-run-for-test:
-    sudo systemctl disable ollama
-    sudo systemctl stop ollama
-    rm -rf logs.log
-
-    CUDA_VISIBIBLE_DEVICES=0 ollama serve
-
-
-
-semantic-graph:
-    dotenv  uv run scripts/semantic_graph.py
-    
-mem-ui:
-    dotenv uv run python -m kairix_offline.ui.mem_ui
-
-gradio:
-    uv run gradio src/kairix_offline/ui/mem_ui.py --demo-name history_importer
+clean:
+    pqq

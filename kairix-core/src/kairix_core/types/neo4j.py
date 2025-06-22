@@ -1,4 +1,3 @@
-import uuid
 
 from neomodel import (
     ArrayProperty,
@@ -33,15 +32,7 @@ class Concept(VectorIndexedNode):
     }
     semantic_id = StringProperty(unique_index=True, required=True)
     name = StringProperty(required=True)
-    type = StringProperty(
-        required=True,
-        choices=(
-            ("entity", "entity"),
-            ("action", "action"),
-            ("attribute", "attribute"),
-            ("topic", "topic"),
-            ("event", "event")
-        ))
+    type = StringProperty(required=True)
     created_at = DateTimeProperty(default_now=True)
     updated_at = DateTimeProperty(default_now=True)
     occurences = IntegerProperty(default=1)

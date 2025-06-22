@@ -35,6 +35,16 @@ OLLAMA_VARS = (False,
 )
 
 
+LLAMA_CPP_VARS = (False,
+    "Llama-cpp", [
+        "LLAMA_CPP_N_GPU_LAYERS",
+        "LLAMA_CPP_USE_FLASH",
+        "LLAMA_CPP_CONTEXT_WINDOW"
+        "LLAMA_CPP_MLOCK"
+        "LLAMA_CPP_TYPE_K",
+        "LLAMA_CPP_TYPE_V"
+])
+
 OUTPUT_DIRS = [
     ("kairix-offline", lambda f: f"../kairix-offline/env/{f}.env"),
     ("kairix-apps", lambda f: f"../kairix-apps/env/{f}.env")

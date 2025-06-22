@@ -1,34 +1,37 @@
 import asyncio
-import queue
-from concurrent.futures import ThreadPoolExecutor
 
 from agents import ModelResponse, Model
 
+from kairix_core.inference.llama_cpp.model import LlamaCppModel
+from kairix_core.runtime.logging import LoggingRuntime
 
+logger = LoggingRuntime().logger
 class PooledModel(Model):
 
-    def __init__(self, model_pool: list[Model]):
-        self._pool = queue.Queue()
-        for model in model_pool:
-            self._pool.put(model)
-        self._executor = ThreadPoolExecutor(len(self._pool))
+    def __init__(self, model_pool: list[LlamaCppModel]):
+        self._pool = model_pool
+        self._queue = None
 
-    def _checkout(self):
-        return self._pool.get(block=True)
-
-    def _checkin(self, model):
-        self._pool.put(model)
-
-    def _blocking_get_response(self, *args, **kwargs):
-        model = self._checkout()
-        try:
-            return model.get_response(*args, **kwargs)
-        finally:
-            self._checkin(model)
+    async def initialize_with_pool(self):
+        async with asyncio.Lock():
+            self._queue = asyncio.Queue(len(self._pool))
+            for model in self._pool:
+                await self._queue.put(model)
 
     async def get_response(self, *args, **kwargs) -> ModelResponse:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(self._executor, self._blocking_get_response, *args, **kwargs)
+        if not self._queue:
+            await self.initialize_with_pool()
+
+        logger.info(f"Getting model from pool. Pool size: {self._queue.qsize()}")
+        model = await self._queue.get()
+
+        try:
+            logger.info("Got pooled model. Generating response.")
+            return await asyncio.to_thread(model.sync_complete, *args, **kwargs)
+        finally:
+            logger.info("Returing model.")
+            await self._queue.put(model)
+            logger.info(f"Pool size: {self._queue.qsize()}")
 
 
 
