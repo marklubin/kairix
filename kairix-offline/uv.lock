@@ -493,6 +493,7 @@ dependencies = [
     { name = "pydub" },
     { name = "rich" },
     { name = "sentence-transformers" },
+    { name = "wireup" },
 ]
 
 [package.metadata]
@@ -510,6 +511,7 @@ requires-dist = [
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "rich", specifier = ">=14.0.0" },
     { name = "sentence-transformers", specifier = ">=4.1.0" },
+    { name = "wireup", specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2031,6 +2033,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8a/98/2d9906746cdc6a6ef809ae6338005b3f21bb568bea3165cfc6a243fdc25c/wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729", size = 107545, upload-time = "2024-11-23T00:18:23.513Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248", size = 72494, upload-time = "2024-11-23T00:18:21.207Z" },
+]
+
+[[package]]
+name = "wireup"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/59/09/0516c8659bac5a8734bd63f51c4c9152fc75b7f55d5a4bbb2eb51ff6df21/wireup-2.0.0.tar.gz", hash = "sha256:57b49512356ca9fc9a2fa9a34a1057a8caeff7a28ea10f8fdcd1f9811cef7f39", size = 25701, upload-time = "2025-06-15T13:15:05.587Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ed/59/26ba31935553ee3d62c78540ae338b573fb4b8b4e9205fcb15a2e5714328/wireup-2.0.0-py3-none-any.whl", hash = "sha256:cef5408d3ae0eb612de46ee860e52f4d3afca7df3f28c3c2c75d229c5d52c9a0", size = 32624, upload-time = "2025-06-15T13:15:04.511Z" },
 ]
 
 [[package]]

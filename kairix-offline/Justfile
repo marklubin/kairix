@@ -1,6 +1,7 @@
 import "../Justfile"
 
-
+unit-test:
+    uv run pytest tests/unit
 
 run *FLAGS:
     dotenv uv run python offline.py {{FLAGS}}

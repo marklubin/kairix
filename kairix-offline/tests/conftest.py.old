@@ -34,9 +34,6 @@ sys.modules['rich'].print = print
 sys.modules['rich.logging'] = Mock()
 sys.modules['rich.logging'].RichHandler = Mock
 
-# Mock the external modules before importing knowledge_db_demo
-sys.modules['kairix_core'] = Mock()
-sys.modules['kairix_core.types'] = Mock()
 
 # Mock the agents module
 mock_agent = Mock()

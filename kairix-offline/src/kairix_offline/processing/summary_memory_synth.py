@@ -67,7 +67,7 @@ class SummaryMemorySynth:
 
         logger.info("\nCalling Model to generate embedding.")
 
-        py_array = self.embedder.encode(summary.summary_text)
+        numpy_array = self.embedder.encode(summary.summary_text)
         vector = numpy_array.tolist()
         embedding = Embedding(
             uid=chunk.idempotency_key,

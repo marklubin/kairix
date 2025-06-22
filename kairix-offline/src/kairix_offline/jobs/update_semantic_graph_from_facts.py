@@ -14,7 +14,7 @@ score_threshold = float(
     get_env_variable_or_raise("KAIRIX_SEMANTIC_EMBEDDING_SCORE_MERGE_THRESHOLD")
 )
 embedding_model = get_env_variable_or_raise("KAIRIX_SEMANTIC_EMBEDDING_MODEL")
-emedding_dims = float(get_env_variable_or_raise("KAIRIX_SEMANTIC_EMBEDDING_DIMS"))
+emedding_dims = int(get_env_variable_or_raise("KAIRIX_SEMANTIC_EMBEDDING_DIMS"))
 
 embedder = SentenceTransformer(embedding_model, truncate_dim=emedding_dims)
 
@@ -76,8 +76,8 @@ def upsert_linkage(s: Concept, t: Concept, linkage_type: str):
 
     types_to_linkages = dict()
 
-    for l in linkages:
-        types_to_linkages[l.linkage_type] = l
+    for linkage in linkages:
+        types_to_linkages[linkage.linkage_type] = linkage
 
     if linkage_type not in types_to_linkages:
         logger.info("Creating new relationship between Semantic Units.")

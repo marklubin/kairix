@@ -21,7 +21,6 @@ from kairix_offline.ui import kairirx_log_stream
 
 
 from kairix_offline.processing import _initialized, summary_memory_synthezier
-from kairix_offline.processing import _initialized, summary_memory_synthezier
 
 
 def with_streaming_logs(fn):

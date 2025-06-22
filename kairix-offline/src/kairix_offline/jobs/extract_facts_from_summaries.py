@@ -1,4 +1,8 @@
+import asyncio
+import itertools
+import os
 import uuid
+from typing import Iterable, Tuple
 
 from agents import Agent
 
@@ -6,7 +10,6 @@ from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.cache import CacheRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 
-import asyncio
 
 from kairix_core.types.neo4j import Summary
 from kairix_offline.commands.extract import ExtractionOptions
@@ -15,77 +18,73 @@ from kairix_offline.semantic_graph.agents import (
     user_profile_extractor,
     assistant_cognitive_extractor,
 )
-from kairix_offline.semantic_graph.types import Fact
+from kairix_offline.semantic_graph.types import Fact, Extract
 
 cache_runtime = CacheRuntime()
 logger = LoggingRuntime().logger
 agent_runtime = AgentRuntime()
 
+facts_cache = cache_runtime.extracted_facts
+extraction_processing_records = cache_runtime.extraction_processing_records
 
-async def do_extract(text: str, extraction_agents: list[Agent]) -> list[Fact]:
-    tasks_to_await = [agent_runtime.run(agent, text) for agent in extraction_agents]
-    logger.info("Starting concurrent extraction.")
-    results = await asyncio.gather(*tasks_to_await)
-    extractions = [r.final_output for r in results]
-    all_facts = []
+extraction_agents = [
+    world_facts_extractor,
+    user_profile_extractor,
+    assistant_cognitive_extractor,
+]
+
+
+max_concurrent_extractions = (
+    int(os.getenv("KAIRIX_SUMMARY_EXTRACTION_PARALLELISM")) or 5
+)
+
+semaphore = asyncio.Semaphore(max_concurrent_extractions)
+
+
+async def run_extraction(summary: Summary, agent: Agent) -> list[Fact]:
+    logger.info(
+        "Agent: %s, Summary: %s -  starting extraction.", agent.name, summary.uid
+    )
+
+    extraction_key = f"{agent.name}-{summary.uid}"
+
+    if extraction_key in extraction_processing_records:
+        logger.info("Extraction already processed for %s, continuing.", extraction_key)
+        return []
+
+    text: str = str(summary.summary_text)
+    async with semaphore:
+        results = await agent_runtime.run(agent, text)
+
+    extract: Extract = results.final_output
+    logger.info("Agent: %s, finished extraction.", agent.name)
     logger.info("Received extracted results. Preparing facts.")
 
-    for a, e in zip(extraction_agents, extractions):
-        logger.info(f"Inspecting extraction for agent {a.name}.")
+    if not extract.facts:
+        logger.warn("Received Extract with no facts.")
+    for fact in extract.facts:
+        facts_cache[str(uuid.uuid4())] = fact
 
-        if e and e.facts and len(e.facts) > 0:
-            logger.info(f"Exracted Facts: {str(e.facts)}")
-            all_facts.extend(e.facts)
-        else:
-            logger.warning("Extraction was empty.")
+    extraction_processing_records[extraction_key] = True
+    logger.info("Saved. Extracted %i new facts from summary", len(extract.facts))
 
-    return all_facts
+    return extract.facts
 
 
-async def extract_facts_from_summaries(options: ExtractionOptions) -> list[Fact]:
-    def generate_summaries(offset):
-        yield from [s for s in Summary.nodes.all()[offset:]]
+async def extract_facts_from_summaries(options: ExtractionOptions):
+    summaries = Summary.nodes.all()
 
-    result: list[Fact] = []
-    summaries = None
-    if options.is_process_all:
-        summaries = Summary.nodes.all()
-    else:
-        summaries = generate_summaries(options.offset)
+    if not options.is_process_all and options.offset:
+        summaries = summaries[options.offset :]
 
-    summary_cache = cache_runtime.completed_summaries
-    fact_cache = cache_runtime.extracted_facts
+    if not options.is_process_all and options.n:
+        summaries = summaries[: options.n]
 
-    new_summaries_processed = 0
-    while (summary := next(summaries, None)) is not None and (
-        options.is_process_all or (options.n and new_summaries_processed < options.n)
-    ):
-        if summary.uid in summary_cache:
-            logger.info("Found summary in cache, skipping extraction.")
-            continue
+    agent_cycle = itertools.cycle(extraction_agents)
+    extractions: Iterable[Tuple[Agent, Summary]] = zip(agent_cycle, summaries)
 
-        logger.info("Processing summary %s.", summary.uid)
+    tasks = [asyncio.create_task(run_extraction(s, a)) for a, s in extractions]
 
-        logger.info("No cached record for summary, extracting facts.")
-        facts = await do_extract(
-            summary.summary_text,
-            [
-                world_facts_extractor,
-                user_profile_extractor,
-                assistant_cognitive_extractor,
-            ],
-        )
-        logger.info("Extraction ended. Saving facts.")
-        for fact in facts:
-            fact_cache[str(uuid.uuid4())] = fact
+    await asyncio.gather(*tasks)
 
-        summary_cache[summary.uid] = "extracted"
-        new_summaries_processed += 1
-        logger.info("Saved. Extracted %i new facts from summary", len(facts))
-
-    logger.info(
-        "Processed %i new summaries, extracting %i facts.",
-        new_summaries_processed,
-        len(result),
-    )
-    return result
+    logger.info("Processed all requested summaries..")

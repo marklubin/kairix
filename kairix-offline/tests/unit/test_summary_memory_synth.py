@@ -33,7 +33,7 @@ class TestSummaryMemorySynth:
         """Mock embedder that returns predictable embeddings."""
         embedder = Mock()
         embedder.encode.return_value = MagicMock(tolist=lambda: [0.1, 0.2, 0.3])
-        embedder.model_card_data = Mock(model_name="test-model")
+        embedder.model_card_data = Mock(base_model="test-model")
         return embedder
 
     @pytest.fixture
@@ -280,7 +280,7 @@ class TestSummaryMemorySynth:
     def test_synthesize_memories_implementation_issues(
         self, mock_source_doc_class, mock_shard_class, mock_agent_class, synth
     ):
-        """Test synthesize_memories - NOTE: Implementation has issues with Chunk creation."""
+        """Test synthesize_memories with no documents."""
         # Setup
         mock_agent = Mock(name="test-agent")
         mock_agent_nodes = Mock()
@@ -288,18 +288,18 @@ class TestSummaryMemorySynth:
         mock_agent_class.nodes = mock_agent_nodes
         mock_agent_class.return_value = mock_agent
 
-        # This test will fail due to implementation issues
+        # No documents and no existing shards
         mock_source_doc_class.nodes.all.return_value = []
         mock_shard_class.nodes.all.return_value = []
 
-        # Execute - will fail due to Chunk creation without agent
+        # Execute
         result = synth.synthesize_memories("test-agent", "test-prefix")
 
-        # If implementation was fixed, we would verify:
+        # Verify
         mock_agent_nodes.first_or_none.assert_called_once_with(name="test-agent")
         mock_agent_class.assert_called_once_with(name="test-agent")
         mock_agent.save.assert_called_once()
-        assert result == []  # No documents, so no shards
+        assert result == ([], [])  # No documents, so no shards and no failures
 
     def test_get_idempotency_key(self, synth):
         """Test __get_idempotency_key generates consistent hashes."""
