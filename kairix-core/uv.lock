@@ -326,6 +326,7 @@ dependencies = [
     { name = "pydub" },
     { name = "rich" },
     { name = "sentence-transformers" },
+    { name = "wireup" },
 ]
 
 [package.dev-dependencies]
@@ -352,6 +353,7 @@ requires-dist = [
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "rich", specifier = ">=14.0.0" },
     { name = "sentence-transformers", specifier = ">=4.1.0" },
+    { name = "wireup", specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1427,4 +1429,16 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2b/fb/c492d6daa5ec067c2988ac80c61359ace5c4c674c532985ac5a123436cec/websockets-15.0.1-pp310-pypy310_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b359ed09954d7c18bbc1680f380c7301f92c60bf924171629c5db97febb12f04", size = 174155, upload-time = "2025-03-05T20:03:25.321Z" },
     { url = "https://files.pythonhosted.org/packages/68/a1/dcb68430b1d00b698ae7a7e0194433bce4f07ded185f0ee5fb21e2a2e91e/websockets-15.0.1-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:cad21560da69f4ce7658ca2cb83138fb4cf695a2ba3e475e0559e05991aa8122", size = 176884, upload-time = "2025-03-05T20:03:27.934Z" },
     { url = "https://files.pythonhosted.org/packages/fa/a8/5b41e0da817d64113292ab1f8247140aac61cbf6cfd085d6a0fa77f4984f/websockets-15.0.1-py3-none-any.whl", hash = "sha256:f7a866fbc1e97b5c617ee4116daaa09b722101d4a3c170c787450ba409f9736f", size = 169743, upload-time = "2025-03-05T20:03:39.41Z" },
+]
+
+[[package]]
+name = "wireup"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/59/09/0516c8659bac5a8734bd63f51c4c9152fc75b7f55d5a4bbb2eb51ff6df21/wireup-2.0.0.tar.gz", hash = "sha256:57b49512356ca9fc9a2fa9a34a1057a8caeff7a28ea10f8fdcd1f9811cef7f39", size = 25701, upload-time = "2025-06-15T13:15:05.587Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ed/59/26ba31935553ee3d62c78540ae338b573fb4b8b4e9205fcb15a2e5714328/wireup-2.0.0-py3-none-any.whl", hash = "sha256:cef5408d3ae0eb612de46ee860e52f4d3afca7df3f28c3c2c75d229c5d52c9a0", size = 32624, upload-time = "2025-06-15T13:15:04.511Z" },
 ]

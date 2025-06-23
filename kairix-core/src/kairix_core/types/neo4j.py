@@ -1,4 +1,3 @@
-
 from neomodel import (
     ArrayProperty,
     DateTimeProperty,
@@ -10,7 +9,7 @@ from neomodel import (
     StructuredNode,
     StructuredRel,
     VectorIndex,
-    IntegerProperty
+    IntegerProperty,
 )
 
 from kairix_core.types.vector_indexed import VectorIndexedNode
@@ -25,9 +24,9 @@ class SemanticLinkage(StructuredRel):
 
 class Concept(VectorIndexedNode):
     VECTOR_INDEX_CONFIG = {
-        'embedding': {  # property name
-            'dimensions': 128,
-            'similarity_function': 'cosine'  # or 'euclidean'
+        "embedding": {  # property name
+            "dimensions": 128,
+            "similarity_function": "cosine",  # or 'euclidean'
         }
     }
     semantic_id = StringProperty(unique_index=True, required=True)
@@ -43,9 +42,7 @@ class Concept(VectorIndexedNode):
         vector_index=VectorIndex(dimensions=128),
     )
 
-    link = Relationship("Concept",
-                           "semantic_linkage",
-                        model=SemanticLinkage)
+    link = Relationship("Concept", "semantic_linkage", model=SemanticLinkage)
 
     @staticmethod
     def _composite_key(name: str, type: str):
@@ -57,19 +54,18 @@ class Concept(VectorIndexedNode):
         return Concept.nodes.first_or_none(semantic_id=semantic_id)
 
     def __init__(self, **kwargs):
-        name = kwargs['name']
-        type_ = kwargs['type']
+        name = kwargs["name"]
+        type_ = kwargs["type"]
 
-        kwargs['semantic_id'] = self._composite_key(name, type_)
+        kwargs["semantic_id"] = self._composite_key(name, type_)
 
         # Call parent with all kwargs
         super().__init__(**kwargs)
 
 
 class StoredLog(StructuredNode):
-    uid = StringProperty(
-        unique_index=True, required=True
-    )  # Unique ID for the log entry
+    # Unique ID for the log entry
+    uid = StringProperty(unique_index=True, required=True)
     timestamp = DateTimeProperty(required=True)  # When the log occurred
     level = StringProperty(required=True)  # Log level: e.g., 'INFO', 'ERROR'
     source = StringProperty()  # Optional: what script/module/logger
@@ -113,6 +109,7 @@ class Summary(IdempotentNode):
     uid = StringProperty(unique_index=True, required=True)
     summary_text = StringProperty(required=True)
     extractions_performed = ArrayProperty(StringProperty(), default=[])
+    approximate_date = DateTimeProperty(required=False)
 
 
 class MemoryShard(IdempotentNode):
@@ -128,12 +125,11 @@ class MemoryShard(IdempotentNode):
     # Relationships
     embedding = Relationship("Embedding", "HAS_EMBEDDING", cardinality=One)
     agent = Relationship("Agent", "BELONGS_TO", cardinality=One)
-    source_document = Relationship("SourceDocument", "DERIVED_FROM", cardinality=One)
+    source_document = Relationship(
+        "SourceDocument", "DERIVED_FROM", cardinality=One)
     summary = Relationship("Summary", "HAS_SUMMARY", cardinality=One)
     relates = Relationship("MemoryShard", "RELATES")
 
 
 class TrackingNode(IdempotentNode):
-    uid = StringProperty(
-        unique_index=True, required=True
-    )
+    uid = StringProperty(unique_index=True, required=True)

@@ -42,10 +42,6 @@ semaphore = asyncio.Semaphore(max_concurrent_extractions)
 
 
 async def run_extraction(summary: Summary, agent: Agent) -> list[Fact]:
-    logger.info(
-        "Agent: %s, Summary: %s -  starting extraction.", agent.name, summary.uid
-    )
-
     extraction_key = f"{agent.name}-{summary.uid}"
 
     if extraction_key in extraction_processing_records:
@@ -53,7 +49,13 @@ async def run_extraction(summary: Summary, agent: Agent) -> list[Fact]:
         return []
 
     text: str = str(summary.summary_text)
+    logger.info(
+        "Agent: %s, Summary: %s - waiting for semaphore.", agent.name, summary.uid
+    )
     async with semaphore:
+        logger.info(
+            "Agent: %s, Summary: %s -  starting extraction.", agent.name, summary.uid
+        )
         results = await agent_runtime.run(agent, text)
 
     extract: Extract = results.final_output
@@ -63,7 +65,10 @@ async def run_extraction(summary: Summary, agent: Agent) -> list[Fact]:
     if not extract.facts:
         logger.warn("Received Extract with no facts.")
     for fact in extract.facts:
-        facts_cache[str(uuid.uuid4())] = fact
+        approximate_date = (
+            summary.approximate_date if summary.approximate_date else None
+        )
+        facts_cache[str(uuid.uuid4())] = (fact, approximate_date)
 
     extraction_processing_records[extraction_key] = True
     logger.info("Saved. Extracted %i new facts from summary", len(extract.facts))

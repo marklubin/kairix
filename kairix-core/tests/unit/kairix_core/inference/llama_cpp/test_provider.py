@@ -165,7 +165,7 @@ class TestLlamaCppProvider:
         mock_from_pretrained.side_effect = track_calls
         
         # Create provider
-        provider = LlamaCppProvider(("nh2-mistral", 1))
+        LlamaCppProvider(("nh2-mistral", 1))
         
         # Verify the model definition was passed correctly
         assert len(call_kwargs_list) == 1

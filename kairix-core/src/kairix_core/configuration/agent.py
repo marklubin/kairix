@@ -119,7 +119,7 @@ configuration_sets = {
                     default_model
                 ),
                 temperature=0.5,
-                max_tokens=4096
+                max_tokens=16000
             )
         },
     ),

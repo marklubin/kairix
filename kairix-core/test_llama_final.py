@@ -4,7 +4,6 @@ Final focused performance test for llama.cpp
 """
 
 import time
-import asyncio
 from llama_cpp import Llama
 import llama_cpp
 
@@ -133,8 +132,8 @@ print("\n" + "=" * 80)
 print("SUMMARY")
 print("=" * 80)
 print("\nKey observations:")
-print(f"- Model loads correctly on Metal GPU")
+print("- Model loads correctly on Metal GPU")
 print(f"- Basic inference takes ~{end - start:.1f}s") 
-print(f"- Your issue is likely the large context (8000) + long prompts")
-print(f"- Thread count doesn't affect GPU inference much")
+print("- Your issue is likely the large context (8000) + long prompts")
+print("- Thread count doesn't affect GPU inference much")
 print("\nRecommendations in the engineering report...")

@@ -84,7 +84,7 @@ for ctx_size in [512, 2048, 8192]:
             ],
             max_tokens=256
         ),
-        f"  Inference"
+        "  Inference"
     )
     del llama_ctx
 
@@ -110,7 +110,7 @@ for n_threads in [1, 4, 8]:
             ],
             max_tokens=256
         ),
-        f"  Inference"
+        "  Inference"
     )
     del llama_threads
 

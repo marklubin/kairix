@@ -63,7 +63,7 @@ class TestLlamaCppModel:
             frequency_penalty=0.3
         )
         
-        response = await model.sync_complete(
+        await model.sync_complete(
             system_instructions="Be concise",
             input="Test input",
             model_settings=settings
@@ -87,7 +87,7 @@ class TestLlamaCppModel:
         mock_schema.is_plain_text.return_value = False
         mock_schema.json_schema.return_value = {"type": "object", "properties": {"answer": {"type": "string"}}}
         
-        response = await model.sync_complete(
+        await model.sync_complete(
             system_instructions="Return JSON",
             input="What is 2+2?",
             model_settings=ModelSettings(),
@@ -180,7 +180,7 @@ class TestLlamaCppModel:
         
         with pytest.raises(NotImplementedError, match="Streaming not yet supported with llama.cpp"):
             # We need to call it as a generator
-            gen = model.stream_response(
+            model.stream_response(
                 system_instructions="Test",
                 input="Test",
                 model_settings=ModelSettings(),
@@ -244,7 +244,7 @@ class TestLlamaCppModel:
         mock_schema = Mock(spec=AgentOutputSchemaBase)
         mock_schema.is_plain_text.return_value = True
         
-        response = await model.sync_complete(
+        await model.sync_complete(
             system_instructions="Return plain text",
             input="What is 2+2?",
             model_settings=ModelSettings(),

@@ -58,7 +58,7 @@ async def async_inference(model, request_id):
         )
     
     start = time.time()
-    result = await asyncio.to_thread(sync_call)
+    await asyncio.to_thread(sync_call)
     elapsed = time.time() - start
     return elapsed
 
@@ -76,7 +76,7 @@ print(f"\nAverage async time: {sum(times)/len(times):.1f}s")
 
 print("\n" + "=" * 60)
 print("MEMORY USAGE:")
-print(f"- Each model uses ~3.8GB VRAM")
+print("- Each model uses ~3.8GB VRAM")
 print(f"- Total VRAM for pool: ~{3.8 * 3:.1f}GB")
-print(f"- Available on M4: 16GB")
+print("- Available on M4: 16GB")
 print("\nConclusion: Memory pressure likely causing slowdown")

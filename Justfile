@@ -1,4 +1,4 @@
-all: clean install fix mypy test
+all: clean install lint check test
 
 # Install dependencies using uv
 install:
@@ -12,37 +12,24 @@ test:
 test-file FILE:
     uv run pytest tests/{{FILE}}
 
-# Run linting with ruff
-fix:
-    uv run ruff check --fix .
+lint:
+    uv run ruff check --fix src/ tests/
+
+lint-unsafe:
+    uv run ruff check --fix --unsafe-fixes .
+
 
 # Check code without fixing (for CI)
 check:
-    uv run ruff check .
-    cd src && uv run mypy -p kairix_engine --warn-unused-ignores
-    uv run mypy tests/ --warn-unused-ignores
+    uv run ruff check src/ tests/
+    uv run ty check src/
+    uv run mypy src/
 
-# Run linting with unsafe fixes
-fix-unsafe:
-    uv run ruff check --fix --unsafe-fixes .
 
-# Run type checking with ty and async test validation
-typecheck:
-    uv run ty check src/ tests/
+start_db:
+    docker compose up -d
 
-# Run async test validation only
-async-check:
-    uv run python scripts/async_test_validator.py --src src --tests tests
 
-# Run async test validation in strict mode (requires quality tests)
-async-check-strict:
-    uv run python scripts/async_test_validator.py --src src --tests tests --strict --verbose
-
-# Run mypy type checking with async checking
-mypy:
-    uv run mypy src/  --warn-unused-ignores
-
-# Clean Python cache files
 clean:
     find . -type d -name ".venv" -exec rm -rf {} +
     find . -type f -name "uv.lock" -delete
@@ -54,29 +41,8 @@ clean:
     find . -type d -name ".pytest_cache" -exec rm -rf {} +
 
 
-# Show project structure
 tree:
     tree -I '__pycache__|*.pyc|.git'
 
-clear-source-documents:
-      echo "MATCH (n:SourceDocument) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password
-
-clear-agents:
-      echo "MATCH (n:Agent) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password
-
-clear-memory-shards:
-      echo "MATCH (n:MemoryShard) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password
-
-clear-summaries:
-      echo "MATCH (n:Summary) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password
-
-clear-embeddings:
-      echo "MATCH (n:Embedding) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password
-
-clear-neo4j: clear-embeddings clear-summaries clear-memory-shards clear-agents clear-source-documents
-      echo "Neo4j cleared!"
-
-mac-env:
-    pwd && cp env/mac.env .env
-default-env:
-    cp env/default.env .env
+clear-db-label LABEL:
+      echo "MATCH (n:{{LABEL}}) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password

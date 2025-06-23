@@ -6,7 +6,6 @@ Tests various configurations to identify the cause of slow inference.
 
 import time
 import asyncio
-import json
 from typing import Literal, Optional, List
 from pydantic import BaseModel, ConfigDict
 from llama_cpp import Llama
@@ -85,7 +84,7 @@ def test_context_sizes():
     
     for ctx_size in context_sizes:
         print(f"\nTesting n_ctx={ctx_size}")
-        start_load = time.time()
+        time.time()
         
         llama = Llama.from_pretrained(
             repo_id=MODEL_REPO,
@@ -98,7 +97,7 @@ def test_context_sizes():
         # Skip memory measurement for now
         
         start_inference = time.time()
-        response = llama.create_chat_completion(
+        llama.create_chat_completion(
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": USER_PROMPT}
@@ -133,7 +132,7 @@ def test_json_schema_impact():
     # Test without schema
     print("\nWithout JSON schema:")
     start = time.time()
-    response1 = llama.create_chat_completion(
+    llama.create_chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": USER_PROMPT}
@@ -146,7 +145,7 @@ def test_json_schema_impact():
     # Test with schema
     print("\nWith JSON schema:")
     start = time.time()
-    response2 = llama.create_chat_completion(
+    llama.create_chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT + "\nRespond with JSON."},
             {"role": "user", "content": USER_PROMPT}
@@ -184,14 +183,14 @@ async def test_async_overhead():
     # Test direct sync call
     print("\nDirect sync call:")
     start = time.time()
-    response = sync_inference()
+    sync_inference()
     sync_time = time.time() - start
     print(f"Time: {sync_time:.2f}s")
     
     # Test with asyncio.to_thread
     print("\nWith asyncio.to_thread:")
     start = time.time()
-    response = await asyncio.to_thread(sync_inference)
+    await asyncio.to_thread(sync_inference)
     async_time = time.time() - start
     print(f"Time: {async_time:.2f}s")
     print(f"Async overhead: {async_time - sync_time:.2f}s")
@@ -213,7 +212,7 @@ def test_multiple_inferences():
     times = []
     for i in range(5):
         start = time.time()
-        response = llama.create_chat_completion(
+        llama.create_chat_completion(
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": USER_PROMPT if i == 0 else f"{USER_PROMPT} Run {i}"}
@@ -247,7 +246,7 @@ def test_thread_configuration():
         )
         
         start = time.time()
-        response = llama.create_chat_completion(
+        llama.create_chat_completion(
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": USER_PROMPT}

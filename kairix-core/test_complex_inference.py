@@ -153,7 +153,7 @@ print(f"   Time: {time3:.1f}s")
 # Analysis
 print("\n" + "=" * 60)
 print("ANALYSIS:")
-print(f"- Base inference: ~2.2s")
+print("- Base inference: ~2.2s")
 print(f"- With long prompt: {time1:.1f}s ({time1/2.2:.1f}x base)")
 print(f"- With schema validation: {time2:.1f}s ({time2/2.2:.1f}x base)")
 print(f"- Schema overhead: {time2 - time1:.1f}s")
