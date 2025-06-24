@@ -1,7 +1,7 @@
 # Kairix Cognition Engine Justfile
 
 
-all: clean install fix typecheck test
+all: install fix typecheck test
 
 # Install dependencies using uv
 install:

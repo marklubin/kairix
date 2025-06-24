@@ -1,22 +1,31 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable, Optional
 
+from mypy.checkexpr import Iterable
 from neomodel import config as neomodel_config
 from neomodel import db
 from sentence_transformers import SentenceTransformer
 
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
 
+shard_index = {
+    "index" : "vector_index_MemoryShard_vector_address",
+    "content_key" : "node.shard_contents",
+    "content_transform": lambda x: x[9:]
 
-CYPHER_QUERY = """
-CALL db.index.vector.queryNodes('vector_index_MemoryShard_vector_address',\
-    $k, $query_vector)
-YIELD node, score 
-RETURN node.shard_contents AS content, score 
-ORDER BY score DESC
-"""
+}
+
+def query(content_key):
+    return f"""
+        CALL db.index.vector.queryNodes($index, $k, $query_vector)
+        YIELD node, score 
+        RETURN {content_key} AS content, score 
+        ORDER BY score DESC
+    """
 logger = logging.getLogger(__name__)
+
+ContentWithScore = tuple[Any, float]
 
 
 class StoreDB(ABC):
@@ -39,10 +48,13 @@ class DefaultStoreDB(StoreDB):
         return result  # type: ignore[no-any-return]
 
 
-class SummaryStore:
+class EmbeddedDataStore:
     def __init__(
         self,
         *,
+        index: str,
+        content_key: str,
+        content_transform: Optional[Callable[[str], str]],
         store_url: str | None = None,
         embedding_model: str = DEFAULT_EMBEDDING_MODEL,
         override_store: StoreDB | None = None,
@@ -57,23 +69,31 @@ class SummaryStore:
         else:
             raise ValueError("Must provide store_url or override_store")
 
-    def _vector_search(
-        self, query_vector: list[float], k: int = 2
-    ) -> list[tuple[str, float]]:
-        results, _ = self.store.cypher_query(
-            CYPHER_QUERY, {"k": k, "query_vector": query_vector}
-        )
-        return [
-            (shard_with_score[0][9:], shard_with_score[1])
-            for shard_with_score in results
-        ]
+        self.index = index
+        self.content_key = content_key
+        self.content_transform = content_transform
+
+    def _vector_search(self, query_vector: list[float], k: int = 2) \
+            -> Iterable[ContentWithScore]:
+
+        results, _ = self.store.cypher_query(query(self.content_key), {
+            'index': self.index,
+            "k": k,
+            "query_vector": query_vector,
+        })
+        for result in results:
+            content, score = result
+            if self.content_transform:
+                content = self.content_transform(content)
+
+            yield content, score
 
     def _get_embedding(self, text: str) -> list[float]:
         numpy_array = self.transformer.encode(text)
         logger.debug(f"Got embedding of length: {len(numpy_array)}.")
         return numpy_array.tolist()
 
-    def search(self, query: str, k: int = 2) -> list[tuple[str, float]]:
+    def search(self, query: str, k: int = 2) -> Iterable[ContentWithScore]:
         try:
             vect = self._get_embedding(query)
             return self._vector_search(query_vector=vect, k=k)

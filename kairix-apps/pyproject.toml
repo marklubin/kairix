@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
     "aiofiles>=24.1.0",
+    "contextualspellcheck>=0.4.4",
     "elevenlabs>=2.3.0",
     "fastrtc[stt,tts,vad]>=0.0.28",
     "gradio>=5.33.2",
@@ -50,6 +51,9 @@ src = ["src"]
 [tool.uv]
 package = true
 
+[tool.uv.sources]
+kairix-core = { path = "../kairix-core", editable = true }
+
 [tool.ruff.lint]
 select = [
     "E",    # pycodestyle
@@ -91,10 +95,6 @@ forward_ref_policy = "RESOLVE"
 # Check collection types deeply
 collection_check_strategy = "ALL_ITEMS"
 
-
-[tool.uv.sources]
-kairix-core = { path = "../kairix-core" }
-
 # Mypy configuration for better type checking
 [tool.mypy]
 python_version = "3.10"
@@ -119,6 +119,7 @@ mypy_path = "../kairix-core/src"
 
 [dependency-groups]
 dev = [
+    "pip>=25.1.1",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.0.0",
     "python-dotenv>=1.1.0",

@@ -2,11 +2,11 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from kairix_core.cognition.stores.summary_store import (
+from kairix_core.cognition.stores.embedded_data import (
     DEFAULT_EMBEDDING_MODEL,
     DefaultStoreDB,
     StoreDB,
-    SummaryStore,
+    EmbeddedDataStore,
 )
 
 
@@ -47,7 +47,7 @@ def summary_store(mock_store, mock_transformer):
     """Fixture providing a SummaryStore with mocked dependencies"""
     with patch("kairix_core.cognition.stores.summary_store.SentenceTransformer") as mock_st:
         mock_st.return_value = mock_transformer
-        return SummaryStore(override_store=mock_store)
+        return EmbeddedDataStore(override_store=mock_store)
 
 
 class TestDefaultStoreDB:
@@ -83,7 +83,7 @@ class TestSummaryStoreInitialization:
     @patch("kairix_core.cognition.stores.summary_store.SentenceTransformer")
     def test_init_with_override_store(self, mock_transformer, mock_store):
         """Test initialization with override_store"""
-        store = SummaryStore(override_store=mock_store)
+        store = EmbeddedDataStore(override_store=mock_store)
 
         assert store.store == mock_store
         mock_transformer.assert_called_once_with(DEFAULT_EMBEDDING_MODEL)
@@ -96,7 +96,7 @@ class TestSummaryStoreInitialization:
         mock_store_instance = Mock()
         mock_default_store_class.return_value = mock_store_instance
 
-        store = SummaryStore(store_url=test_url)
+        store = EmbeddedDataStore(store_url=test_url)
 
         mock_default_store_class.assert_called_once()
         mock_store_instance.configure.assert_called_once_with(test_url)
@@ -107,14 +107,14 @@ class TestSummaryStoreInitialization:
         """Test initialization with custom embedding model"""
         custom_model = "custom/model"
 
-        SummaryStore(override_store=mock_store, embedding_model=custom_model)
+        EmbeddedDataStore(override_store=mock_store, embedding_model=custom_model)
 
         mock_transformer.assert_called_once_with(custom_model)
 
     def test_init_without_store_or_url_raises_error(self):
         """Test that initialization without store or URL raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
-            SummaryStore()
+            EmbeddedDataStore()
 
         assert str(exc_info.value) == "Must provide store_url or override_store"
 
@@ -220,7 +220,7 @@ class TestCypherQuery:
 
     def test_cypher_query_format(self):
         """Test that the Cypher query is properly formatted"""
-        from kairix_core.cognition.stores.summary_store import CYPHER_QUERY
+        from kairix_core.cognition.stores.embedded_data import CYPHER_QUERY
 
         assert "vector_index_MemoryShard_vector_address" in CYPHER_QUERY
         assert "$k" in CYPHER_QUERY

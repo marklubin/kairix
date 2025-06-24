@@ -55,7 +55,7 @@ configuration_sets = {
                     "phi3.5:3.8b-mini-instruct-q4_0",  # Fast and accurate model
                 ),
                 temperature=0.8,  # Lower temperature for more focused responses
-                max_tokens=250,
+                max_tokens=500,
             ),
             "query_generator": AgentConfig(
                 name="query_generator",
@@ -73,16 +73,7 @@ configuration_sets = {
                     "phi3.5:3.8b-mini-instruct-q4_0",  # Fast and accurate model
                 ),
                 temperature=0.3,
-                max_tokens=100,
-            ),
-            "conversationalist": AgentConfig(
-                name="insight_extractor",
-                model=model_for_provider(
-                    "ollama-local",
-                    "phi3.5:3.8b-mini-instruct-q4_0",  # Fast and accurate model
-                ),
-                temperature=0.9,
-                max_tokens=250,
+                max_tokens=50,
             ),
             "default": AgentConfig(
                 name="default",

@@ -1,4 +1,4 @@
-from rich import pretty, print
+from rich import print
 from diskcache import  Index, FanoutCache
 class CacheRuntime:
     _instance = None

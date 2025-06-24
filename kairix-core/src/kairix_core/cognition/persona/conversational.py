@@ -42,7 +42,7 @@ class ConversationalPersona:
                 Persona Name: {self.persona_name}
                 User Name: {self.user_name}
                 Registered Perceptors: {len(self.perceptors)}
-                Actuating Model: {self.actuating_agent.model}
+                Actuating Model: {self.actuating_agent.name}
                 Reflection Perceptors: {len(self.reflection_perceptors)}
                 
                 Mark Lubin (supported by Claude)

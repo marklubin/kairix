@@ -5,13 +5,14 @@ from kairix_core.cognition.perceptor.environmental_context import (
 )
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.persona import ConversationalPersona
-from kairix_core.cognition.stores.summary_store import SummaryStore
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
+from kairix_core.runtime.neo4j import Neo4jRuntime
 
 logger = LoggingRuntime().logger
 
 agent_runtime = AgentRuntime()
+neo4j_runtime = Neo4jRuntime()
 
 class KairixEngine:
     @staticmethod
@@ -40,19 +41,15 @@ class KairixEngine:
         if not persona_name:
             raise ValueError("Failed to set persona name.")
 
-        store = SummaryStore(store_url=neo4j_url)
         insight = SummaryInsightPerceptor(
             agent_runtime,
-            memory_provider=lambda query, k: [
-                content for content, score in store.search(query, k)
-            ],
+            embedded_sumary_store= neo4j_runtime.embedded_memory_shard_store,
             k_memories=n_summaries,
         )
 
-        # Create environmental context perceptor
         environmental_content = EnvironmentalContextPerceptor(
             cache_duration_seconds=300
-        )  # 5 minute cache
+        )
 
         agent = Agent(
             name="conversationalist",
