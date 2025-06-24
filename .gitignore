@@ -7,7 +7,11 @@ data/**
 **/.data/**
 **/neo4j/**
 **/.neo4j/**
-
+**/.cache/**
+.cache
+.cache/*
+*.cache
+.cache*
 **/data/**
 kairix-offline/.env
 dist/**
