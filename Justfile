@@ -4,6 +4,25 @@ all: clean install lint check test
 install:
     uv sync
 
+
+set-env PLATFORM INF:
+    rm -f .env 
+    touch .env
+    echo "#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >> .env
+    echo "# Auto-generated Kairix Environment File" >> .env
+    echo "#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >> .env
+
+    echo "#~~~~~~~~~~~~~~~~~~[Base Config]~~~~~~~~~~~~~~~~~~~~" >> .env
+    cat $HOME/kairix/environments/base.env >> .env
+
+    echo "#~~~~~~~~~~~~~~~~~~[Platform Config]~~~~~~~~~~~~~~~~~~~~" >> .env
+    cat $HOME/kairix/environments/platform/{{PLATFORM}}.env >> .env
+
+    echo "#~~~~~~~~~~~~~~~~~~[Inference Config]~~~~~~~~~~~~~~~~~~~~" >> .env
+    cat $HOME/kairix/environments/inference/{{INF}}.env  >> .env
+
+
+
 # Run all tests
 test:
     uv run pytest tests/

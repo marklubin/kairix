@@ -1,6 +1,8 @@
 
 import logging
 
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn
+
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.neo4j import Neo4jRuntime
 from kairix_core.types.cognition import Stimulus, StimulusType
@@ -44,47 +46,37 @@ logger.info("Beginning Chat Loop.")
 
 
 async def main_loop():
-    # Use Live for the entire session
-    with Live(layout, console=console, refresh_per_second=5, screen=True) as live:
-        while True:
-            # Update left panel with current chat history
-            chat_text = "\n".join(chat_history)
-            layout["left"].update(
-                Panel(Text(chat_text), title="Chat", border_style="cyan")
-            )
-            live.update(layout)
 
-            # Get user input - this will appear at the bottom
-            live.stop()
-            user_input = console.input("\nΩß∫>\t")
-            live.start()
+    while True:
+        # Update left panel with current chat history
+        chat_text = "\n".join(chat_history)
 
-            # Add user input to history
-            chat_history.append(f"User: {user_input}")
+        user_input = console.input("\nΩß∫>\t")
 
-            # Update left panel with new input
-            chat_text = "\n".join(chat_history)
-            layout["left"].update(
-                Panel(Text(chat_text), title="Chat", border_style="cyan")
-            )
+        # Add user input to history
+        chat_history.append(f"User: {user_input}")
 
-            # Clear right panel for new response
-            layout["right"].update(
-                Panel(Text(""), title="Streaming", border_style="green")
-            )
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("Response {task.description}"),
+            TimeElapsedColumn(),
+        )
+
+        task_id = progress.add_task("get_response")
+
+
+        with progress as progress:
 
             i = 0
+            partial = ""
             async for partial in persona.react(
                 Stimulus(content=user_input, type=StimulusType.user_message)
             ):
-                layout["right"].update(
-                    Panel(Text(partial), title="Streaming", border_style="green")
-                )
-                live.update(layout)
-                i += 1
+                progress.update(task_id, description=partial)
 
-            # Add response to chat history
-            chat_history.append(f"AI: {partial}")
+        # Add response to chat history
+
+        chat_history.append(f"AI: {partial}")
 
 
 if __name__ == "__main__":

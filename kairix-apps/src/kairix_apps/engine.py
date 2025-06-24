@@ -18,7 +18,7 @@ class KairixEngine:
     def conversational_persona_for_environment() -> ConversationalPersona:
         import os
 
-        config_set_key = os.getenv("KAIRIX_AGENT_CONFIG_SET")
+        config_set_key = os.getenv("KAIRIX_AGENT_CONFIGURATION_SET_KEY")
         neo4j_url = os.getenv("NEO4J_URL")
         n_summaries_str = os.getenv("KAIRIX_N_SUMMARIES_PER_MESSAGE")
         n_summaries = int(n_summaries_str) if n_summaries_str else None

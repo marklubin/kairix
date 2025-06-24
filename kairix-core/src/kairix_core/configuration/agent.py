@@ -75,6 +75,15 @@ configuration_sets = {
                 temperature=0.3,
                 max_tokens=100,
             ),
+            "conversationalist": AgentConfig(
+                name="insight_extractor",
+                model=model_for_provider(
+                    "ollama-local",
+                    "phi3.5:3.8b-mini-instruct-q4_0",  # Fast and accurate model
+                ),
+                temperature=0.9,
+                max_tokens=250,
+            ),
             "default": AgentConfig(
                 name="default",
                 model=model_for_provider(
