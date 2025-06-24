@@ -10,7 +10,6 @@ from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.cache import CacheRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 
-
 from kairix_core.types.neo4j import Summary
 from kairix_offline.commands.extract import ExtractionOptions
 from kairix_offline.semantic_graph.agents import (
@@ -26,13 +25,15 @@ agent_runtime = AgentRuntime()
 
 facts_cache = cache_runtime.extracted_facts
 extraction_processing_records = cache_runtime.extraction_processing_records
+exceptions = cache_runtime.extraction_exceptions
+
+from rich.pretty import pretty_repr
 
 extraction_agents = [
     world_facts_extractor,
     user_profile_extractor,
     assistant_cognitive_extractor,
 ]
-
 
 max_concurrent_extractions = (
     int(os.getenv("KAIRIX_SUMMARY_EXTRACTION_PARALLELISM")) or 5
@@ -41,7 +42,7 @@ max_concurrent_extractions = (
 semaphore = asyncio.Semaphore(max_concurrent_extractions)
 
 
-async def run_extraction(summary: Summary, agent: Agent) -> list[Fact]:
+async def _run_internal(summary: Summary, agent: Agent) -> list[Fact]:
     extraction_key = f"{agent.name}-{summary.uid}"
 
     if extraction_key in extraction_processing_records:
@@ -74,6 +75,25 @@ async def run_extraction(summary: Summary, agent: Agent) -> list[Fact]:
     logger.info("Saved. Extracted %i new facts from summary", len(extract.facts))
 
     return extract.facts
+
+
+async def run_extraction(summary: Summary, agent: Agent):
+    try:
+        return await _run_internal(summary, agent)
+    except Exception as e:
+        exc_type = type(e)
+        if exc_type not in exceptions:
+            exceptions[exc_type] = []
+        logger.error(
+            "Encountered Exception while running extraction persisting: %s.", e
+        )
+
+        exception_log = (
+            f"Failured on Summary: {summary.uid}"
+            f" Agent: {agent.name} was: {pretty_repr(e)}"
+        )
+        exceptions[exc_type].append(exception_log)
+    return None
 
 
 async def extract_facts_from_summaries(options: ExtractionOptions):
