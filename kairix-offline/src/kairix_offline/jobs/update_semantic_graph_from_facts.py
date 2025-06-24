@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sentence_transformers import SentenceTransformer
 from torch.distributed.elastic.utils import get_env_variable_or_raise
 
@@ -19,9 +21,11 @@ emedding_dims = int(get_env_variable_or_raise("KAIRIX_SEMANTIC_EMBEDDING_DIMS"))
 embedder = SentenceTransformer(embedding_model, truncate_dim=emedding_dims)
 
 cache_runtime = CacheRuntime()
+facts_cache = cache_runtime.extracted_facts
+failed_facts = cache_runtime.failed_facts
 
 
-def upsert_concept(subject: Subject) -> Concept:
+def upsert_concept(subject: Subject, dt: datetime) -> Concept:
     logger.info(
         f"Creating or deduping Semantic unit for {subject.name}, type: {subject.type}."
     )
@@ -30,7 +34,7 @@ def upsert_concept(subject: Subject) -> Concept:
     # Case I - Exact Match Exists - We require that both id and type of unit match
     if maybe_concept:
         logger.debug("Found exact match of type. Returning.")
-        maybe_concept.occurences += 1
+        maybe_concept.encounters.append(dt)
         maybe_concept.save()
         return maybe_concept
 
@@ -46,7 +50,7 @@ def upsert_concept(subject: Subject) -> Concept:
         logger.debug(
             f"Found semantic match via embedding index, matched is Semantic ID = [green]{matched_concept.semantic_id}[\]"
         )
-        matched_concept.occurences = matched_concept.occurences + 1
+        matched_concept.encounters.append(dt)
         matched_concept.embedding = embedding
 
         # TODO considering adjusting embedding to weighted midpoint
@@ -60,13 +64,14 @@ def upsert_concept(subject: Subject) -> Concept:
         name=subject.name,
         type=subject.type,
         embedding=embedding,
+        encounters=[dt],
     )
 
     new_concept.save()
     return new_concept
 
 
-def upsert_linkage(s: Concept, t: Concept, linkage_type: str):
+def upsert_linkage(s: Concept, t: Concept, linkage_type: str, dt: datetime):
     logger.info(
         f"Handling relationship between {s.semantic_id} and {t.semantic_id}"
         f" described as {linkage_type}."
@@ -81,29 +86,33 @@ def upsert_linkage(s: Concept, t: Concept, linkage_type: str):
 
     if linkage_type not in types_to_linkages:
         logger.info("Creating new relationship between Semantic Units.")
-        s.link.connect(
+        created_linkage = s.link.connect(
             t,
             {
                 "linkage_type": linkage_type,
             },
         )
 
+        logger.info("Linkage connected, attaching approximate date of encounter.")
+        created_linkage.encounters.append(dt)
+        created_linkage.save()
+        logger.info("Linkage done.")
+
 
 def update_semantic_graph_from_facts():
-    fact_cache = cache_runtime.facts_to_process
-    facts = [fact_cache[k] for k in fact_cache]
+    try:
+        for k in facts_cache:
+            from rich import print
 
-    with neo4j.transaction():
-        try:
-            for fact in facts:
-                s_unit = upsert_concept(fact.s)
-                t_unit = upsert_concept(fact.t)
-                upsert_linkage(s_unit, t_unit, fact.relationship)
-            logger.info("Finished with facts commiting to db.")
-        except Exception as e:
-            logger.error(
-                "Encounter fatal error when persisting to db, rolling back.",
-                exc_info=e,
-            )
-            neo4j.rollback()
-            raise e
+            print(facts_cache[k])
+            fact, approximate_time = facts_cache[k]
+            s_unit = upsert_concept(fact.s, approximate_time)
+            t_unit = upsert_concept(fact.t, approximate_time)
+            upsert_linkage(s_unit, t_unit, fact.relationship, approximate_time)
+        logger.info("Finished with facts commiting to db.")
+    except Exception as e:
+        logger.error(
+            "Encounter fatal error when persisting to db, rolling back.",
+            exc_info=e,
+        )
+        failed_facts[k] = True

@@ -20,6 +20,7 @@ class SemanticLinkage(StructuredRel):
     updated_at = DateTimeProperty(default_now=True)
     linkage_type = StringProperty(required=True)
     weight: IntegerProperty(default=1)
+    encounters = ArrayProperty(DateTimeProperty(), default=[])
 
 
 class Concept(VectorIndexedNode):
@@ -34,7 +35,7 @@ class Concept(VectorIndexedNode):
     type = StringProperty(required=True)
     created_at = DateTimeProperty(default_now=True)
     updated_at = DateTimeProperty(default_now=True)
-    occurences = IntegerProperty(default=1)
+    encounters = ArrayProperty(DateTimeProperty(), default=[])
     embedding = ArrayProperty(
         FloatProperty(),
         required=True,

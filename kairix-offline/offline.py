@@ -48,7 +48,7 @@ async def main():
         if args.command == "extract":
             return await extract_facts_from_summaries(extract.selected(args))
 
-        if args.command == "write":
+        if args.command == "update":
             return update_semantic_graph_from_facts()
 
     raise Exception("Unknown command.")

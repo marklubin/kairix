@@ -28,11 +28,3 @@ class Neo4jRuntime:
     def __init__(self):
         neomodel_config.DATABASE_URL = _NEO4J_URL
         db.set_connection(_NEO4J_URL)
-
-
-    def transaction(self):
-        return db.transaction
-
-
-    def rollback(self):
-        return db.rollback()

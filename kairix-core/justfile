@@ -30,20 +30,6 @@ typecheck:
 
 
 
-gen-env:
-    uv run scripts/generate_env.py
-# Clean Python cache files
-clean:
-    find . -type d -name ".venv" -exec rm -rf {} +
-    find . -type d -name "uv.lock" -exec rm -rf {} +
-    find . -type d -name "__pycache__" -exec rm -rf {} +
-    find . -type f -name "*.pyc" -delete
-    find . -type f -name "*.pyo" -delete
-    find . -type f -name ".coverage" -delete
-    find . -type d -name "*.egg-info" -exec rm -rf {} +
-    find . -type d -name ".pytest_cache" -exec rm -rf {} +
-
-
 # Show project structure
 tree:
     tree -I '__pycache__|*.pyc|.git'

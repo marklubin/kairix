@@ -4,7 +4,7 @@ import logging
 
 from kairix_core.cognition import Perceptor
 from kairix_core.types.cognition import Perception, Stimulus, StimulusType
-from neomodel import config as neomodel_config
+import neomodel
 from neomodel import db
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class ConversationHistoryPerceptor(Perceptor):
     """
 
     def __init__(self, store_url: str, agent_id: str = "default", max_pairs: int = 10):
-        neomodel_config.DATABASE_URL = store_url
+        neomodel.config.DATABASE_URL = store_url
         db.set_connection(store_url)
         self.agent_id = agent_id
         self.max_pairs = max_pairs
