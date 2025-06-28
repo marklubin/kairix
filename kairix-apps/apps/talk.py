@@ -15,13 +15,14 @@ from fastrtc import (
     Stream,
     get_stt_model,
 )
+from kairix_core.runtime.agent import AgentRuntime
+from kairix_core.tts import ElevenLabsTTS
+from kairix_core.types.cognition import Stimulus, StimulusType
 from pydantic import BaseModel
 from rich import pretty
 from rich.logging import RichHandler
 
 from kairix_apps.engine import KairixEngine
-from kairix_core.tts import ElevenLabsTTS
-from kairix_core.types.cognition import Stimulus, StimulusType
 
 logging.basicConfig(level=logging.INFO)
 
@@ -54,13 +55,15 @@ tts = ElevenLabsTTS(
 
 persona = KairixEngine.conversational_persona_for_environment()
 
-phrase_triggers = ['-', ',', '.']
+
+phrase_triggers = ["-", ",", "."]
 
 
 def is_completed_phrase(tts_buffer):
-    return tts_buffer and (tts_buffer[-1] == ','
-                           or tts_buffer[-1] == '.'
-                           or tts_buffer[-1] == "-")
+    return tts_buffer and (
+        tts_buffer[-1] == "," or tts_buffer[-1] == "." or tts_buffer[-1] == "-"
+    )
+
 
 async def response(
     audio: tuple[int, np.ndarray],
@@ -78,17 +81,15 @@ async def response(
         messages.append({"role": "user", "content": prompt})
         yield AdditionalOutputs(messages)
 
-        messages.append({"role":"assistant", "content": "..."})
+        messages.append({"role": "assistant", "content": "..."})
 
         async for full, chunk in persona.react(Stimulus(prompt,
                                                         StimulusType.user_message)):
             logger.info(f"Got next chunk {chunk}.")
 
-
             logger.info("Emitting present full message")
-            messages[-1]['content'] = full
+            messages[-1]["content"] = full
             yield AdditionalOutputs(messages)
-
 
             tts_buffer += chunk
             logger.info(f"Present TTS Buffer is: {tts_buffer}")
@@ -101,12 +102,10 @@ async def response(
             else:
                 logger.info("No phrase ending detected, proceeding to next chunk.")
 
-
         if tts_buffer:
             logger.warning("TTS buffer unexpectedly empty.")
             async for audio in tts.stream_tts(tts_buffer):
                 yield audio
-
 
     except Exception as e:
         logger.error(f"Error in response handler: {e}", exc_info=True)
@@ -162,4 +161,5 @@ def _(webrtc_id: str):
 
 
 if __name__ == "__main__":
+    agent_runtime = AgentRuntime()
     stream.ui.launch(server_port=8000)

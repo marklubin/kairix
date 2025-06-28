@@ -153,11 +153,11 @@ class TestConversationalPersona:
         
         # Collect streaming response
         response_parts = []
-        async for chunk in persona.react(stimulus):
-            response_parts.append(chunk)
+        async for accumulated, chunk in persona.react(stimulus):
+            response_parts.append((accumulated, chunk))
         
-        # react() accumulates the response, so we get progressive strings
-        assert response_parts == ["Hello", "Hello there", "Hello there!"]
+        # react() now returns (accumulated, chunk) tuples
+        assert response_parts == [("Hello", "Hello"), ("Hello there", " there"), ("Hello there!", "!")]
         
         # Verify agent was called with proper configuration
         mock_agent_runtime.run_streamed.assert_called_once()
@@ -248,10 +248,10 @@ class TestConversationalPersona:
         )
         
         response_parts = []
-        async for chunk in persona.react(stimulus):
-            response_parts.append(chunk)
+        async for accumulated, chunk in persona.react(stimulus):
+            response_parts.append((accumulated, chunk))
         
-        assert response_parts[-1] == "AI is fascinating!"
+        assert response_parts[-1][0] == "AI is fascinating!"  # Check accumulated part
         
         # Reflection happens automatically - verify the reflection perceptor was called
         # Wait a bit for the async task to complete
@@ -261,10 +261,9 @@ class TestConversationalPersona:
         mock_conv_history.perceive.assert_called_once()
         reflection_stimulus = mock_conv_history.perceive.call_args[0][0]
         
-        # Verify it's a self_perception stimulus with the conversation
+        # Verify it's a self_perception stimulus with the assistant's response
         assert reflection_stimulus.type == StimulusType.self_perception
-        assert "Tell me about AI" in reflection_stimulus.content
-        assert "AI is fascinating!" in reflection_stimulus.content
+        assert reflection_stimulus.content == "AI is fascinating!"
     
     @pytest.mark.asyncio
     async def test_error_handling(self, mock_perceptors, mock_agent_runtime, mock_actuating_agent):
@@ -306,10 +305,10 @@ class TestConversationalPersona:
         persona.perceptors.remove(failing_perceptor)
         
         response_parts = []
-        async for chunk in persona.react(stimulus):
-            response_parts.append(chunk)
+        async for accumulated, chunk in persona.react(stimulus):
+            response_parts.append((accumulated, chunk))
         
-        assert response_parts[-1] == "Response"
+        assert response_parts[-1][0] == "Response"  # Check accumulated part
     
     @pytest.mark.asyncio
     async def test_event_parsing(self, mock_perceptors, mock_agent_runtime, mock_actuating_agent):
@@ -338,11 +337,11 @@ class TestConversationalPersona:
         stimulus = Stimulus(content="test", type=StimulusType.user_message)
         
         response_parts = []
-        async for chunk in persona.react(stimulus):
-            response_parts.append(chunk)
+        async for accumulated, chunk in persona.react(stimulus):
+            response_parts.append((accumulated, chunk))
         
         # Should accumulate content from raw_response_event types
-        assert response_parts == ["First", "First chunk", "First chunk continued"]
+        assert response_parts == [("First", "First"), ("First chunk", " chunk"), ("First chunk continued", " continued")]
     
     @pytest.mark.asyncio
     async def test_non_user_message_stimulus(self, mock_perceptors, mock_agent_runtime, mock_actuating_agent):
@@ -408,10 +407,10 @@ class TestConversationalPersona:
         )
         
         response_parts = []
-        async for chunk in persona.react(stimulus):
-            response_parts.append(chunk)
+        async for accumulated, chunk in persona.react(stimulus):
+            response_parts.append((accumulated, chunk))
         
-        assert response_parts[-1] == "Based on our previous discussion..."
+        assert response_parts[-1][0] == "Based on our previous discussion..."  # Check accumulated part
     
     def test_prompt_construction(self, mock_perceptors, mock_agent_runtime):
         """Test prompt construction with perceptions."""
@@ -454,10 +453,10 @@ class TestConversationalPersona:
         stimulus = Stimulus(content="Hello", type=StimulusType.user_message)
         
         response_parts = []
-        async for chunk in persona.react(stimulus):
-            response_parts.append(chunk)
+        async for accumulated, chunk in persona.react(stimulus):
+            response_parts.append((accumulated, chunk))
         
-        assert response_parts[-1] == "Response without perceptions"
+        assert response_parts[-1][0] == "Response without perceptions"  # Check accumulated part
         
         # Verify the message passed to run_streamed contains the user input
         message = mock_agent_runtime.run_streamed.call_args[0][1]

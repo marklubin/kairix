@@ -1,26 +1,35 @@
 import kairix_core.prompt.agent_prompts as prompts
 from agents import Agent
-
-from kairix_core.cognition.perceptor.conversation_history import ConversationHistoryPerceptor
+from kairix_core.cognition.perceptor.conversation_history import (
+    ConversationHistoryPerceptor,
+)
 from kairix_core.cognition.perceptor.environmental_context import (
     EnvironmentalContextPerceptor,
 )
-from kairix_core.cognition.perceptor.semantic_graph import SemanticGraphPerceptor
+from kairix_core.cognition.perceptor.incremental_reflection import (
+    IncrementalSummarizationPerceptor,
+)
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.persona import ConversationalPersona
+from kairix_core.prompt import system_instructions
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.neo4j import Neo4jRuntime
+from kairix_core.util.utils import get_or_raise
+from sentence_transformers import SentenceTransformer
 
 logger = LoggingRuntime().logger
 
 agent_runtime = AgentRuntime()
 neo4j_runtime = Neo4jRuntime()
 
+
 class KairixEngine:
     @staticmethod
     def conversational_persona_for_environment() -> ConversationalPersona:
         import os
+
+        os.system("clear")
 
         config_set_key = os.getenv("KAIRIX_AGENT_CONFIGURATION_SET_KEY")
         neo4j_url = os.getenv("NEO4J_URL")
@@ -44,6 +53,12 @@ class KairixEngine:
         if not persona_name:
             raise ValueError("Failed to set persona name.")
 
+        embedding_model = get_or_raise("KAIRIX_EMBEDDER_MODEL")
+        embedding_device = get_or_raise("KAIRIX_EMBEDDER_DEVICE")
+        embedding_transformer = SentenceTransformer(
+            embedding_model, device=embedding_device
+        )
+
         insight = SummaryInsightPerceptor(
             agent_runtime,
             embedded_sumary_store=neo4j_runtime.embedded_memory_shard_store,
@@ -57,6 +72,16 @@ class KairixEngine:
         conversation_history = ConversationHistoryPerceptor(
             agent_id=persona_name,
             window_size=20
+        )
+
+        incremental_summary = IncrementalSummarizationPerceptor(
+            runtime=agent_runtime,
+            summarization_interval=20,
+            agent=Agent(
+                name="incremental_summarizer",
+                instructions=system_instructions.self_reflective_summary_minimal,
+            ),
+            embedder=embedding_transformer,
         )
 
         agent = Agent(
@@ -74,10 +99,9 @@ class KairixEngine:
             perceptors=[
                 insight,
                 environmental_content,
-                conversation_history
+                conversation_history,
+                incremental_summary,
             ],
             actuating_agent=agent,
-            reflection_perceptors=[
-                conversation_history
-            ],
+            reflection_perceptors=[conversation_history, incremental_summary],
         )

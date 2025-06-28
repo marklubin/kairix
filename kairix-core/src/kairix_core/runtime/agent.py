@@ -7,17 +7,20 @@ inference providers, and execution environments. It supports multiple providers
 
 from agents import (
     Agent,
-    ModelSettings,
     ModelProvider,
+    ModelSettings,
     RunConfig,
     Runner,
     RunResult,
-    RunResultStreaming, set_default_openai_api, set_tracing_disabled,
+    RunResultStreaming,
+    set_default_openai_api,
+    set_tracing_disabled,
 )
+from agents.mcp import MCPServerSse, MCPServerSseParams
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 
-from kairix_core.configuration.agent import provider_mappings, configuration_sets
-from kairix_core.configuration.types import AgentConfigurationSet, ProviderName, AgentConfig
+from kairix_core.configuration.agent import configuration_sets, provider_mappings
+from kairix_core.configuration.types import AgentConfig, AgentConfigurationSet, ProviderName
 from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.util.utils import get_or_raise
 
@@ -27,6 +30,9 @@ logger = LoggingRuntime().logger
 def _get_environment_configuration_set():
     """Get configuration set from environment, with lazy evaluation."""
     return configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
+
+def _get_mcp_url():
+    return str(get_or_raise("KAIRIX_MCP_SERVER"))
 
 
 set_default_openai_api("chat_completions")
@@ -69,7 +75,11 @@ class AgentRuntime:
             
         self.configuration_set = configuration_set
         self.model_provider = MultiProvider(provider_map=MultiProviderMap())
-        self.model_provider.provider_map.set_mapping(available_provider_mappings) # type: ignore
+        self.model_provider.provider_map.set_mapping(available_provider_mappings)
+
+        mcp_params: MCPServerSseParams = {"url": _get_mcp_url()}
+
+        self.mcp_server = MCPServerSse(params=mcp_params)
 
     def _get_agent_config(self, agent: Agent) -> AgentConfig:
         """Get configuration for a specific agent.

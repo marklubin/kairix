@@ -2,9 +2,10 @@
 
 import pytest
 from unittest.mock import Mock, patch
+from rich import pretty
 
 from kairix_core.cognition.perceptor.conversation_history import ConversationHistoryPerceptor
-from kairix_core.types.cognition import Stimulus, StimulusType
+from kairix_core.types.cognition import Stimulus, StimulusType, Perception
 
 
 class TestConversationHistoryPerceptor:
@@ -14,247 +15,268 @@ class TestConversationHistoryPerceptor:
     def mock_db(self):
         """Mock the neomodel database."""
         with patch('kairix_core.cognition.perceptor.conversation_history.db') as mock_db:
+            # Default to empty results
             mock_db.cypher_query = Mock(return_value=([], {}))
             yield mock_db
     
     @pytest.fixture
-    def mock_neomodel_config(self):
-        """Mock neomodel config."""
-        with patch('kairix_core.cognition.perceptor.conversation_history.neomodel.config') as mock_config:
-            yield mock_config
+    def perceptor(self, mock_db):
+        """Create a perceptor instance with mocked database."""
+        return ConversationHistoryPerceptor(agent_id="test_agent", window_size=10)
     
-    def test_initialization(self, mock_db, mock_neomodel_config):
+    def test_initialization(self):
         """Test ConversationHistoryPerceptor initialization."""
         # Test with default values
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
-        
+        perceptor = ConversationHistoryPerceptor()
         assert perceptor.agent_id == "default"
-        assert perceptor.max_pairs == 10
-        assert perceptor._pending_user_message is None
-        mock_neomodel_config.DATABASE_URL = "bolt://localhost:7687"
-        mock_db.set_connection.assert_called_once_with("bolt://localhost:7687")
+        assert perceptor.window_size == 50
+        assert perceptor.transient_user_msg_buffer == ""
+        assert perceptor._cached_history is None
         
         # Test with custom values
-        mock_db.reset_mock()
         perceptor_custom = ConversationHistoryPerceptor(
-            store_url="bolt://custom:7687",
-            agent_id="test_agent",
-            max_pairs=20
+            agent_id="custom_agent",
+            window_size=100
         )
-        
-        assert perceptor_custom.agent_id == "test_agent"
-        assert perceptor_custom.max_pairs == 20
-        mock_db.set_connection.assert_called_once_with("bolt://custom:7687")
+        assert perceptor_custom.agent_id == "custom_agent"
+        assert perceptor_custom.window_size == 100
     
     @pytest.mark.asyncio
-    async def test_perceive_user_message(self, mock_db, mock_neomodel_config):
-        """Test perceive method with user_message stimulus."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
+    async def test_perceive_user_message(self, perceptor, mock_db):
+        """Test perceiving user messages."""
+        # Mock empty history
+        mock_db.cypher_query.return_value = ([], {})
         
-        # Test user message stimulus
         stimulus = Stimulus(
-            content="Hello, how are you?",
-            type=StimulusType.user_message
+            type=StimulusType.user_message,
+            content="Hello, how are you?"
         )
         
-        perceptions = await perceptor.perceive(stimulus)
+        result = await perceptor.perceive(stimulus)
         
-        # Should store message internally but return empty perceptions
-        assert perceptions == []
-        assert perceptor._pending_user_message == "Hello, how are you?"
+        # Should buffer the message
+        assert perceptor.transient_user_msg_buffer == "Hello, how are you?"
         
-        # Database should not be called for user messages
-        mock_db.cypher_query.assert_not_called()
+        # Should return perception with empty history
+        assert len(result) == 1
+        assert isinstance(result[0], Perception)
+        assert result[0].source == "conversation-history.v1"
+        assert result[0].content == pretty.pretty_repr([])
     
     @pytest.mark.asyncio
-    async def test_perceive_action_reflection(self, mock_db, mock_neomodel_config):
-        """Test perceive method with action_reflection stimulus."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
+    async def test_perceive_self_perception_with_buffer(self, perceptor, mock_db):
+        """Test perceiving self perception with buffered user message."""
+        # Mock empty initial history
+        mock_db.cypher_query.return_value = ([], {})
         
-        # Set up mock return value
-        mock_db.cypher_query.return_value = ([[5]], {})
-        
-        # First store a user message
+        # First, add a user message
         user_stimulus = Stimulus(
-            content="What's the weather?",
-            type=StimulusType.user_message
+            type=StimulusType.user_message,
+            content="What's the weather?"
         )
         await perceptor.perceive(user_stimulus)
         
-        # Create mock stimulus with action_reflection type
-        reflection_stimulus = Mock()
-        reflection_stimulus.type = Mock()
-        reflection_stimulus.type.value = "action_reflection"
-        reflection_stimulus.content = "The weather is sunny today."
-        
-        # Process reflection
-        perceptions = await perceptor.perceive(reflection_stimulus)
-        
-        # Should return empty perceptions
-        assert perceptions == []
-        assert perceptor._pending_user_message is None
-        
-        # Verify database call
-        mock_db.cypher_query.assert_called_once()
-        call_args = mock_db.cypher_query.call_args
-        assert call_args[0][0].strip().startswith("// Create new conversation pair")
-        assert call_args[0][1]["agent_id"] == "default"
-        assert call_args[0][1]["user_message"] == "What's the weather?"
-        assert call_args[0][1]["assistant_message"] == "The weather is sunny today."
-        assert call_args[0][1]["max_pairs"] == 10
-    
-    @pytest.mark.asyncio
-    async def test_perceive_other_stimulus_types(self, mock_db, mock_neomodel_config):
-        """Test perceive method with other stimulus types."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
-        
-        # Test with time_tick stimulus
-        stimulus = Stimulus(
-            content="2024-01-01T12:00:00",
-            type=StimulusType.time_tick
-        )
-        
-        perceptions = await perceptor.perceive(stimulus)
-        
-        # Should return empty and not affect state
-        assert perceptions == []
-        assert perceptor._pending_user_message is None
-        mock_db.cypher_query.assert_not_called()
-    
-    @pytest.mark.asyncio
-    async def test_action_reflection_without_pending_message(self, mock_db, mock_neomodel_config):
-        """Test action_reflection without a pending user message."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
-        
-        # Create reflection without user message
-        reflection_stimulus = Mock()
-        reflection_stimulus.type = Mock()
-        reflection_stimulus.type.value = "action_reflection"
-        reflection_stimulus.content = "This is a response."
-        
-        perceptions = await perceptor.perceive(reflection_stimulus)
-        
-        # Should return empty and not call database
-        assert perceptions == []
-        mock_db.cypher_query.assert_not_called()
-    
-    @pytest.mark.asyncio
-    async def test_get_recent_context(self, mock_db, mock_neomodel_config):
-        """Test retrieving recent conversation context."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
-        
-        # Mock database response
-        mock_db.cypher_query.return_value = ([
-            ["How are you?", "I'm doing well!"],
-            ["What's the weather?", "It's sunny today."],
-            ["Tell me a joke", "Why did the chicken cross the road?"]
-        ], {})
-        
-        # Test with default limit
-        context = await perceptor.get_recent_context()
-        
-        # Verify query
-        mock_db.cypher_query.assert_called_once()
-        call_args = mock_db.cypher_query.call_args
-        assert "MATCH (cp:ConversationPair {agent_id: $agent_id})" in call_args[0][0]
-        assert call_args[0][1]["agent_id"] == "default"
-        assert call_args[0][1]["limit"] == 10
-        
-        # Verify results are reversed (chronological order)
-        assert len(context) == 3
-        assert context[0] == {"user": "Tell me a joke", "assistant": "Why did the chicken cross the road?"}
-        assert context[1] == {"user": "What's the weather?", "assistant": "It's sunny today."}
-        assert context[2] == {"user": "How are you?", "assistant": "I'm doing well!"}
-    
-    @pytest.mark.asyncio
-    async def test_get_recent_context_with_custom_limit(self, mock_db, mock_neomodel_config):
-        """Test retrieving context with custom limit."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687", max_pairs=20)
-        
-        mock_db.cypher_query.return_value = ([
-            ["Message 1", "Response 1"],
-            ["Message 2", "Response 2"]
-        ], {})
-        
-        context = await perceptor.get_recent_context(limit=5)
-        
-        # Verify custom limit is used
-        call_args = mock_db.cypher_query.call_args
-        assert call_args[0][1]["limit"] == 5
-        
-        assert len(context) == 2
-    
-    @pytest.mark.asyncio
-    async def test_get_recent_context_empty(self, mock_db, mock_neomodel_config):
-        """Test retrieving context when no conversations exist."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
-        
-        mock_db.cypher_query.return_value = ([], {})
-        
-        context = await perceptor.get_recent_context()
-        
-        assert context == []
-    
-    @pytest.mark.asyncio
-    async def test_rolling_window_behavior(self, mock_db, mock_neomodel_config):
-        """Test that old conversations are deleted when limit is exceeded."""
-        perceptor = ConversationHistoryPerceptor(
-            store_url="bolt://localhost:7687",
-            max_pairs=3
-        )
-        
-        # Mock return showing 4 total pairs (one will be deleted)
-        mock_db.cypher_query.return_value = ([[4]], {})
-        
-        # Store a conversation pair
-        await perceptor.perceive(Stimulus(content="User message", type=StimulusType.user_message))
-        
-        reflection_stimulus = Mock()
-        reflection_stimulus.type = Mock()
-        reflection_stimulus.type.value = "action_reflection"
-        reflection_stimulus.content = "Assistant response"
-        
-        await perceptor.perceive(reflection_stimulus)
-        
-        # Verify the query includes deletion logic
-        call_args = mock_db.cypher_query.call_args
-        query = call_args[0][0]
-        assert "DELETE oldPair" in query
-        assert "$max_pairs" in query
-        assert call_args[0][1]["max_pairs"] == 3
-    
-    @pytest.mark.asyncio
-    async def test_special_character_handling(self, mock_db, mock_neomodel_config):
-        """Test handling of special characters in messages."""
-        perceptor = ConversationHistoryPerceptor(store_url="bolt://localhost:7687")
-        
+        # Mock the store operation to return count
         mock_db.cypher_query.return_value = ([[1]], {})
         
-        # Test with special characters
-        special_content = 'Hello "world"! How\'s it going? \n\t Special chars: $@#%'
+        # Then add assistant response
+        assistant_stimulus = Stimulus(
+            type=StimulusType.self_perception,
+            content="The weather is sunny."
+        )
+        result = await perceptor.perceive(assistant_stimulus)
         
-        await perceptor.perceive(Stimulus(content=special_content, type=StimulusType.user_message))
+        # Should clear the buffer
+        assert perceptor.transient_user_msg_buffer == ""
         
-        reflection_stimulus = Mock()
-        reflection_stimulus.type = Mock()
-        reflection_stimulus.type.value = "action_reflection"
-        reflection_stimulus.content = 'Response with "quotes" and \nnewlines'
+        # Should have stored the conversation pair
+        expected_query_params = {
+            "agent_id": "test_agent",
+            "user_message": "What's the weather?",
+            "assistant_message": "The weather is sunny."
+        }
         
-        await perceptor.perceive(reflection_stimulus)
+        # Find the store query call
+        store_call = None
+        for call in mock_db.cypher_query.call_args_list:
+            if "CREATE" in call[0][0]:
+                store_call = call
+                break
         
-        # Verify special characters are passed correctly
-        call_args = mock_db.cypher_query.call_args
-        assert call_args[0][1]["user_message"] == special_content
-        assert call_args[0][1]["assistant_message"] == 'Response with "quotes" and \nnewlines'
+        assert store_call is not None
+        assert store_call[0][1] == expected_query_params
+        
+        # Cache should be updated
+        assert len(perceptor._cached_history) == 1
+        assert perceptor._cached_history[0] == {
+            "user": "What's the weather?",
+            "assistant": "The weather is sunny."
+        }
+        
+        # Result should contain updated history
+        assert len(result) == 1
+        assert result[0].source == "conversation-history.v1"
     
-    def test_database_connection_initialization(self, mock_db, mock_neomodel_config):
-        """Test that database connection is properly initialized."""
-        store_url = "bolt://neo4j:password@localhost:7687"
+    @pytest.mark.asyncio
+    async def test_perceive_self_perception_without_buffer(self, perceptor, mock_db):
+        """Test perceiving self perception without buffered user message."""
+        # Initialize with empty history
+        mock_db.cypher_query.return_value = ([], {})
         
-        ConversationHistoryPerceptor(store_url=store_url)
+        with patch('kairix_core.cognition.perceptor.conversation_history.logger') as mock_logger:
+            assistant_stimulus = Stimulus(
+                type=StimulusType.self_perception,
+                content="Some response"
+            )
+            await perceptor.perceive(assistant_stimulus)
+            
+            # Should log warning
+            mock_logger.warning.assert_called_with(
+                "Transient user message unexpectedly empty upon receipt of self reflection."
+            )
+    
+    @pytest.mark.asyncio
+    async def test_perceive_other_stimulus_types(self, perceptor, mock_db):
+        """Test perceiving other stimulus types."""
+        mock_db.cypher_query.return_value = ([], {})
         
-        # Verify neomodel config is set
-        mock_neomodel_config.DATABASE_URL = store_url
+        with patch('kairix_core.cognition.perceptor.conversation_history.logger') as mock_logger:
+            stimulus = Stimulus(
+                type=StimulusType.world_event,
+                content="Some event"
+            )
+            result = await perceptor.perceive(stimulus)
+            
+            # Should log info
+            mock_logger.info.assert_called_with(
+                f"No action for Conversation History on stimulus of type {StimulusType.world_event}"
+            )
+            
+            # Should still return perception with current history
+            assert len(result) == 1
+            assert result[0].source == "conversation-history.v1"
+    
+    @pytest.mark.asyncio
+    async def test_multiple_user_messages_warning(self, perceptor, mock_db):
+        """Test warning when multiple user messages are received."""
+        mock_db.cypher_query.return_value = ([], {})
         
-        # Verify connection is established
-        mock_db.set_connection.assert_called_once_with(store_url)
+        # First user message
+        await perceptor.perceive(Stimulus(
+            type=StimulusType.user_message,
+            content="First message"
+        ))
+        
+        with patch('kairix_core.cognition.perceptor.conversation_history.logger') as mock_logger:
+            # Second user message without assistant response
+            await perceptor.perceive(Stimulus(
+                type=StimulusType.user_message,
+                content=" Second message"
+            ))
+            
+            # Should log warning
+            mock_logger.warning.assert_called_with(
+                "Invocation of additional user message with transient outstanding,"
+                " ambiguous behavior. Assuming additivity."
+            )
+            
+            # Should concatenate messages
+            assert perceptor.transient_user_msg_buffer == "First message Second message"
+    
+    @pytest.mark.asyncio
+    async def test_load_history_from_db(self, perceptor, mock_db):
+        """Test loading history from database."""
+        # Mock database results
+        mock_db.cypher_query.return_value = ([
+            ["Hello", "Hi there"],
+            ["How are you?", "I'm doing well"],
+            ["What's new?", "Not much"]
+        ], {})
+        
+        history = await perceptor._load_history_from_db()
+        
+        # Should reverse order (DB returns DESC, we want chronological)
+        assert history == [
+            {"user": "What's new?", "assistant": "Not much"},
+            {"user": "How are you?", "assistant": "I'm doing well"},
+            {"user": "Hello", "assistant": "Hi there"}
+        ]
+        
+        # Verify query parameters
+        mock_db.cypher_query.assert_called_once()
+        call_args = mock_db.cypher_query.call_args[0]
+        assert call_args[1]["agent_id"] == "test_agent"
+        assert call_args[1]["limit"] == 10
+    
+    @pytest.mark.asyncio
+    async def test_get_recent_context(self, perceptor, mock_db):
+        """Test getting recent context."""
+        # Mock some history
+        mock_db.cypher_query.return_value = ([
+            ["Message 1", "Response 1"],
+            ["Message 2", "Response 2"],
+            ["Message 3", "Response 3"]
+        ], {})
+        
+        # Get all context
+        context = await perceptor.get_recent_context()
+        assert len(context) == 3
+        
+        # Get limited context
+        context_limited = await perceptor.get_recent_context(limit=2)
+        assert len(context_limited) == 2
+        assert context_limited == [
+            {"user": "Message 2", "assistant": "Response 2"},
+            {"user": "Message 1", "assistant": "Response 1"}
+        ]
+    
+    @pytest.mark.asyncio
+    async def test_window_size_enforcement(self, perceptor, mock_db):
+        """Test that window size is enforced in cache."""
+        # Start with empty history
+        mock_db.cypher_query.return_value = ([], {})
+        perceptor.window_size = 3  # Small window for testing
+        
+        # Add multiple conversation pairs
+        for i in range(5):
+            # Add user message
+            await perceptor.perceive(Stimulus(
+                type=StimulusType.user_message,
+                content=f"Message {i}"
+            ))
+            
+            # Mock store operation
+            mock_db.cypher_query.return_value = ([[i+1]], {})
+            
+            # Add assistant response
+            await perceptor.perceive(Stimulus(
+                type=StimulusType.self_perception,
+                content=f"Response {i}"
+            ))
+        
+        # Cache should only have last 3 items
+        assert len(perceptor._cached_history) == 3
+        assert perceptor._cached_history[0]["user"] == "Message 2"
+        assert perceptor._cached_history[2]["user"] == "Message 4"
+    
+    @pytest.mark.asyncio
+    async def test_perception_always_returned(self, perceptor, mock_db):
+        """Test that perception is always returned regardless of stimulus type."""
+        mock_db.cypher_query.return_value = ([], {})
+        
+        stimulus_types = [
+            StimulusType.user_message,
+            StimulusType.self_perception,
+            StimulusType.world_event,
+            StimulusType.execution_attempt,
+            StimulusType.time_tick
+        ]
+        
+        for stim_type in stimulus_types:
+            stimulus = Stimulus(type=stim_type, content="Test")
+            result = await perceptor.perceive(stimulus)
+            
+            assert len(result) == 1
+            assert isinstance(result[0], Perception)
+            assert result[0].source == "conversation-history.v1"
+            assert isinstance(result[0].content, str)

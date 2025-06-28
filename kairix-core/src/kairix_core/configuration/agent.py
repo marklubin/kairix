@@ -1,7 +1,6 @@
 import os
 
 from agents import OpenAIProvider, ModelProvider
-from torch.cuda import temperature
 
 from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig
 from kairix_core.configuration.utils import model_for_provider

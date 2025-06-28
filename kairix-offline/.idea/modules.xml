@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../environments/.idea/environments.iml" filepath="$PROJECT_DIR$/../environments/.idea/environments.iml" />
       <module fileurl="file://$PROJECT_DIR$/../kairix-core/.idea/kairix-core.iml" filepath="$PROJECT_DIR$/../kairix-core/.idea/kairix-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/../kairix-apps/.idea/kairix-engine.iml" filepath="$PROJECT_DIR$/../kairix-apps/.idea/kairix-engine.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/kairix-offline.iml" filepath="$PROJECT_DIR$/.idea/kairix-offline.iml" />

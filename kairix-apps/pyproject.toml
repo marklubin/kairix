@@ -14,6 +14,7 @@ dependencies = [
     "gradio>=5.33.2",
     "httpx>=0.28.1",
     "kairix-core",
+    "mcpm>=1.12.0",
     "mypy>=1.16.1",
     "neomodel>=5.5.0",
     "openai>=1.86.0",

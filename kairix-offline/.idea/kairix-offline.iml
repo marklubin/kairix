@@ -11,6 +11,7 @@
     <orderEntry type="module" module-name="kairix-core" />
     <orderEntry type="module" module-name="stores" />
     <orderEntry type="module" module-name="kairix-engine" />
+    <orderEntry type="module" module-name="environments" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />

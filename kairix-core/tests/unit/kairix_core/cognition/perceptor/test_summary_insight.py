@@ -170,8 +170,8 @@ class TestSummaryInsightPerceptor:
         # Verify perceptions (should have unique sentences)
         assert len(perceptions) > 0
         for perception in perceptions:
-            assert perception.source == "summary_insight_v2"
-            assert perception.confidence == 1.0
+            assert perception.source == "summary_insight_memory"
+            assert perception.confidence in [0.9, 0.8]  # Should match the search scores
     
     @pytest.mark.asyncio
     async def test_perceive_non_user_message(self, mock_runtime, mock_embedded_store, mock_spacy_nlp):
@@ -332,9 +332,12 @@ class TestSummaryInsightPerceptor:
             stimulus = Stimulus(content="I want to learn programming", type=StimulusType.user_message)
             perceptions = await perceptor.perceive(stimulus)
         
-        # Should only have one perception despite processing two identical sentences
-        assert len(perceptions) == 1
-        assert str(perceptions[0].content) == "I want to learn Python."
+        # With use_full_memories=True, we get both memories back (no deduplication)
+        assert len(perceptions) == 2
+        assert perceptions[0].content == memory1
+        assert perceptions[0].confidence == 0.9
+        assert perceptions[1].content == memory2
+        assert perceptions[1].confidence == 0.8
     
     @pytest.mark.asyncio
     async def test_multiple_insights_from_single_memory(self, mock_runtime, mock_embedded_store, mock_spacy_nlp):
@@ -393,15 +396,10 @@ class TestSummaryInsightPerceptor:
             stimulus = Stimulus(content="I want to learn to code", type=StimulusType.user_message)
             perceptions = await perceptor.perceive(stimulus)
         
-        # Should have 3 unique sentences as insights
-        assert len(perceptions) == 3
-        insight_contents = {str(p.content) for p in perceptions}
-        expected_contents = {
-            "I love to learn new things.",
-            "Coding is fun.",
-            "Python helps you learn quickly."
-        }
-        assert insight_contents == expected_contents
+        # With use_full_memories=True, we get the full memory, not individual sentences
+        assert len(perceptions) == 1
+        assert perceptions[0].content == memory
+        assert perceptions[0].confidence == 0.9
     
     def test_pos_filtering(self, mock_runtime, mock_embedded_store, mock_spacy_nlp):
         """Test that only specific POS tags are included in keywords."""

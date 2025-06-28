@@ -74,15 +74,15 @@ class SummaryInsightPerceptor(Perceptor):
 
         perceptions: List[Perception] = []
         if self.use_full_memories:
-            for insight in self.embedded_summary_store.search(' '.join(keywords), self.k_memories):
+            for content, score in self.embedded_summary_store.search(' '.join(keywords), self.k_memories):
                 perceptions.append(
                     Perception(
-                        content=insight,
+                        content=content,
                         source="summary_insight_memory",
-                        confidence=1.0,
+                        confidence=score,
                     )
                 )
-                logger.info(f"Attaching Insight: {insight}")
+                logger.info(f"Attaching Insight: {content}")
 
         else:
             insight_sentences = set()
@@ -100,7 +100,7 @@ class SummaryInsightPerceptor(Perceptor):
             for insight in insight_sentences:
                 perceptions.append(
                     Perception(
-                        content=insight,
+                        content=str(insight),
                         source="summary_insight_sentence",
                         confidence=1.0,
                     )

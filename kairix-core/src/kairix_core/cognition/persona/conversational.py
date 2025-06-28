@@ -17,14 +17,14 @@ logger = logging.getLogger(__name__)
 
 class ConversationalPersona:
     def __init__(
-        self,
-        *,
-        persona_name: str,
-        user_name: str,
-        runtime: AgentRuntime,
-        perceptors: List[Perceptor],
-        actuating_agent: Agent,
-        reflection_perceptors: List[Perceptor],
+            self,
+            *,
+            persona_name: str,
+            user_name: str,
+            runtime: AgentRuntime,
+            perceptors: List[Perceptor],
+            actuating_agent: Agent,
+            reflection_perceptors: List[Perceptor],
     ):
         self.persona_name = persona_name
         self.user_name = user_name
@@ -48,6 +48,10 @@ class ConversationalPersona:
                 Mark Lubin (supported by Claude)
                 Niteshift.ai DBA Apiana Systems, 2025. Los Angeles and San Francisco in California.
         """)
+
+    async def connect(self):
+        for server in self.actuating_agent.mcp_servers:
+            await  server.connect()
 
     async def _converse(self, stimulus: Stimulus, perceptions: list[Perception]) -> AsyncIterator[str]:
         logger.info("Preparing %d perceptions.", len(perceptions))
