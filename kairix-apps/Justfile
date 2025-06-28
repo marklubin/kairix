@@ -119,3 +119,12 @@ test-all-envs:
         echo "────────────────────"; \
         ENV=$$env uv run python run_agent_tests.py --env $$env --test info || true; \
     done
+
+run-app APP *ARGS:
+  dotenv uv run python apps/{{APP}}.py {{ARGS}}
+
+debug-app APP *ARGS:
+    dotenv uv run python -m pudb apps/{{APP}}.py {{ARGS}}
+
+
+

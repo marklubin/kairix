@@ -1,8 +1,11 @@
 import kairix_core.prompt.agent_prompts as prompts
 from agents import Agent
+
+from kairix_core.cognition.perceptor.conversation_history import ConversationHistoryPerceptor
 from kairix_core.cognition.perceptor.environmental_context import (
     EnvironmentalContextPerceptor,
 )
+from kairix_core.cognition.perceptor.semantic_graph import SemanticGraphPerceptor
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.persona import ConversationalPersona
 from kairix_core.runtime.agent import AgentRuntime
@@ -43,12 +46,17 @@ class KairixEngine:
 
         insight = SummaryInsightPerceptor(
             agent_runtime,
-            embedded_sumary_store= neo4j_runtime.embedded_memory_shard_store,
+            embedded_sumary_store=neo4j_runtime.embedded_memory_shard_store,
             k_memories=n_summaries,
         )
 
         environmental_content = EnvironmentalContextPerceptor(
             cache_duration_seconds=300
+        )
+
+        conversation_history = ConversationHistoryPerceptor(
+            agent_id=persona_name,
+            window_size=20
         )
 
         agent = Agent(
@@ -57,11 +65,19 @@ class KairixEngine:
                 agent_name=persona_name, user_name=user_name
             ),
         )
+
+        logger.info("Spawning Persona...")
         return ConversationalPersona(
             persona_name=persona_name,
             user_name=user_name,
             runtime=agent_runtime,
-            perceptors=[insight, environmental_content],
+            perceptors=[
+                insight,
+                environmental_content,
+                conversation_history
+            ],
             actuating_agent=agent,
-            reflection_perceptors=[],
+            reflection_perceptors=[
+                conversation_history
+            ],
         )

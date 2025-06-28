@@ -1,8 +1,14 @@
+"""Runtime for executing AI agents with proper configuration.
+
+This module provides a singleton runtime that manages agent configurations,
+inference providers, and execution environments. It supports multiple providers
+(OpenAI, Ollama, llama.cpp) and handles both sync and async execution modes.
+"""
 
 from agents import (
     Agent,
     ModelSettings,
-    OpenAIProvider,
+    ModelProvider,
     RunConfig,
     Runner,
     RunResult,
@@ -13,33 +19,72 @@ from agents.models.multi_provider import MultiProvider, MultiProviderMap
 from kairix_core.configuration.agent import provider_mappings, configuration_sets
 from kairix_core.configuration.types import AgentConfigurationSet, ProviderName, AgentConfig
 from kairix_core.runtime.logging import LoggingRuntime
-from kairix_core.util.environment import get_or_raise
+from kairix_core.util.utils import get_or_raise
 
 logger = LoggingRuntime().logger
 
-environment_configuration_set = configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
+# Delay environment variable access until runtime
+def _get_environment_configuration_set():
+    """Get configuration set from environment, with lazy evaluation."""
+    return configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
 
 
 set_default_openai_api("chat_completions")
 set_tracing_disabled(True)
 
 class AgentRuntime:
+    """Singleton runtime for executing AI agents.
+    
+    Manages agent configurations and provider mappings, ensuring consistent
+    execution across the application. Uses the singleton pattern to maintain
+    a single runtime instance.
+    
+    Attributes:
+        configuration_set: The active configuration set with agent configs
+        model_provider: Multi-provider instance for inference routing
+    """
     _instance = None
 
     def __new__(cls, *args, **kwargs):
+        """Ensure only one instance of AgentRuntime exists."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self,
-                 configuration_set: AgentConfigurationSet=environment_configuration_set,
-                 available_provider_mappings: dict[ProviderName,OpenAIProvider]= provider_mappings
+                 configuration_set: AgentConfigurationSet | None = None,
+                 available_provider_mappings: dict[ProviderName,ModelProvider] | None = None
                  ):
+        """Initialize the agent runtime.
+        
+        Args:
+            configuration_set: Configuration set with agent definitions
+            available_provider_mappings: Mapping of provider names to implementations
+        """
+        # Use provided values or get from environment
+        if configuration_set is None:
+            configuration_set = _get_environment_configuration_set()
+        if available_provider_mappings is None:
+            available_provider_mappings = provider_mappings
+            
         self.configuration_set = configuration_set
         self.model_provider = MultiProvider(provider_map=MultiProviderMap())
         self.model_provider.provider_map.set_mapping(available_provider_mappings) # type: ignore
 
-    def _get_agent_config(self, agent: Agent)-> AgentConfig:
+    def _get_agent_config(self, agent: Agent) -> AgentConfig:
+        """Get configuration for a specific agent.
+        
+        Looks up agent-specific configuration, falling back to default if not found.
+        
+        Args:
+            agent: The agent to get configuration for
+            
+        Returns:
+            Agent configuration
+            
+        Raises:
+            ValueError: If no configuration found for agent and no default exists
+        """
         if agent.name in self.configuration_set.agent_configs:
             logger.info("Found explicit config for agent.")
             return self.configuration_set.agent_configs[agent.name]

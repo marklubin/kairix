@@ -8,7 +8,9 @@ dependencies = [
     "aiofiles>=24.1.0",
     "contextualspellcheck>=0.4.4",
     "elevenlabs>=2.3.0",
+    "fastapi>=0.115.13",
     "fastrtc[stt,tts,vad]>=0.0.28",
+    "ffprobe>=0.5",
     "gradio>=5.33.2",
     "httpx>=0.28.1",
     "kairix-core",
@@ -16,11 +18,13 @@ dependencies = [
     "neomodel>=5.5.0",
     "openai>=1.86.0",
     "openai-agents>=0.0.17",
+    "pudb>=2025.1",
     "pydantic>=2.11.7",
     "pydub>=0.25.1",
     "pyyaml>=6.0.2",
     "sentence-transformers>=4.1.0",
     "ty>=0.0.1a9",
+    "uvicorn>=0.34.3",
 ]
 
 [project.optional-dependencies]

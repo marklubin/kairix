@@ -2,19 +2,15 @@ from __future__ import annotations
 
 import logging
 
+from neomodel import db
+from rich import pretty
+
 from kairix_core.cognition import Perceptor
 from kairix_core.types.cognition import Perception, Stimulus, StimulusType
-import neomodel
-from neomodel import db
 
 logger = logging.getLogger(__name__)
 
 
-# TODO - @claude - this needs to be fixed to use sqlite as data store and have seperate
-#  perceptors for
-# Providing short-term contextual memory history and saving each message pair. The stored
-# model for
-# mssage should unify across the stack
 class ConversationHistoryPerceptor(Perceptor):
     """
     A perceptor that stores conversation history in Neo4j.
@@ -26,40 +22,52 @@ class ConversationHistoryPerceptor(Perceptor):
     This creates a rolling conversation history in the database.
     """
 
-    def __init__(self, store_url: str, agent_id: str = "default", max_pairs: int = 10):
-        neomodel.config.DATABASE_URL = store_url
-        db.set_connection(store_url)
+    def __init__(self, agent_id: str = "default", window_size: int = 50):
         self.agent_id = agent_id
-        self.max_pairs = max_pairs
-        self._pending_user_message: str | None = None
+        self.window_size = window_size
+        self.transient_user_msg_buffer = ""
+        self._cached_history: list[dict[str, str]] | None = None
 
     async def perceive(self, stimulus: Stimulus) -> list[Perception]:
-        """Process conversation stimuli and store in database."""
+        # Load history from DB only on first access
+        if self._cached_history is None:
+            self._cached_history = await self._load_history_from_db()
 
         if stimulus.type == StimulusType.user_message:
-            # Store user message temporarily
-            self._pending_user_message = stimulus.content
-            logger.debug(f"Stored pending user message: {stimulus.content[:50]}...")
+            if self.transient_user_msg_buffer:
+                logger.warning("Invocation of additional user message with transient outstanding,"
+                           " ambiguous behavior. Assuming additivity.")
+            self.transient_user_msg_buffer += stimulus.content
 
-        elif stimulus.type.value == "action_reflection":
-            # Store the conversation pair when we get the assistant response
-            if self._pending_user_message:
-                await self._store_conversation_pair(
-                    self._pending_user_message, stimulus.content
-                )
-                self._pending_user_message = None
+        elif stimulus.type == StimulusType.self_perception:
+            if self.transient_user_msg_buffer:
+                user_message = self.transient_user_msg_buffer
+                self.transient_user_msg_buffer = ""  # Clear buffer after use
+                await self._store_conversation_pair(user_message, stimulus.content)
+                # Update cache with new pair
+                self._cached_history.append({
+                    "user": user_message,
+                    "assistant": stimulus.content
+                })
+                # Keep only window_size most recent items
+                if len(self._cached_history) > self.window_size:
+                    self._cached_history = self._cached_history[-self.window_size:]
             else:
-                logger.warning(
-                    "Received action_reflection without pending user message"
-                )
+                logger.warning("Transient user message unexpectedly empty upon receipt of self reflection.")
 
-        # This perceptor doesn't generate perceptions, it just stores data
-        return []
+        else:
+            logger.info(f"No action for Conversation History on stimulus of type {stimulus.type}")
+
+        return [Perception("conversation-history.v1",
+                           pretty.pretty_repr(self._cached_history))]
+
+
+
 
     async def _store_conversation_pair(
         self, user_message: str, assistant_message: str
     ) -> None:
-        """Store a conversation pair in Neo4j and maintain rolling window."""
+        """Store a conversation pair in Neo4j."""
 
         query = """
         // Create new conversation pair
@@ -70,17 +78,10 @@ class ConversationHistoryPerceptor(Perceptor):
             timestamp: datetime()
         })
         
+        // Count total pairs for this agent
         WITH m
-        
-        // Get all conversation pairs for this agent
         MATCH (cp:ConversationPair {agent_id: $agent_id})
-        WITH cp ORDER BY cp.timestamp DESC
-        WITH collect(cp) as allPairs
-        
-        // Delete old pairs beyond max_pairs limit
-        FOREACH (oldPair IN allPairs[$max_pairs..] | DELETE oldPair)
-        
-        RETURN size(allPairs) as total_pairs
+        RETURN count(cp) as total_pairs
         """
 
         results, _ = db.cypher_query(
@@ -89,7 +90,6 @@ class ConversationHistoryPerceptor(Perceptor):
                 "agent_id": self.agent_id,
                 "user_message": user_message,
                 "assistant_message": assistant_message,
-                "max_pairs": self.max_pairs,
             },
         )
 
@@ -97,11 +97,8 @@ class ConversationHistoryPerceptor(Perceptor):
             total = results[0][0]
             logger.info(f"Stored conversation pair. Total pairs: {total}")
 
-    async def get_recent_context(
-        self, limit: int | None = None
-    ) -> list[dict[str, str]]:
-        """Retrieve recent conversation pairs from the database."""
-
+    async def _load_history_from_db(self) -> list[dict[str, str]]:
+        """Load conversation history from database on first access."""
         query = """
         MATCH (cp:ConversationPair {agent_id: $agent_id})
         RETURN cp.user_message as user, cp.assistant_message as assistant
@@ -110,9 +107,21 @@ class ConversationHistoryPerceptor(Perceptor):
         """
 
         results, _ = db.cypher_query(
-            query, {"agent_id": self.agent_id, "limit": limit or self.max_pairs}
+            query, {"agent_id": self.agent_id, "limit": self.window_size}
         )
 
         # Convert results to dict format and return in chronological order
         pairs = [{"user": row[0], "assistant": row[1]} for row in results]
         return list(reversed(pairs))
+
+    async def get_recent_context(
+        self, limit: int | None = None
+    ) -> list[dict[str, str]]:
+        """Retrieve recent conversation pairs from cache."""
+        if self._cached_history is None:
+            self._cached_history = await self._load_history_from_db()
+        
+        if limit is None:
+            return self._cached_history
+        else:
+            return self._cached_history[-limit:]

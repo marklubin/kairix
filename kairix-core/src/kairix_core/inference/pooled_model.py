@@ -22,6 +22,7 @@ class PooledModel(Model):
         if not self._queue:
             await self.initialize_with_pool()
 
+        assert self._queue is not None, "Queue must be initialized"
         logger.info(f"Getting model from pool. Pool size: {self._queue.qsize()}")
         model = await self._queue.get()
 
@@ -30,6 +31,7 @@ class PooledModel(Model):
             return await asyncio.to_thread(model.sync_complete, *args, **kwargs)
         finally:
             logger.info("Returing model.")
+            assert self._queue is not None, "Queue must be initialized"
             await self._queue.put(model)
             logger.info(f"Pool size: {self._queue.qsize()}")
 

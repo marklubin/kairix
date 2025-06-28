@@ -22,9 +22,7 @@ POS_TO_INCLUDE = [
     "ADJ"
 ]
 
-disabled_pipes = [
-
-]
+disabled_pipes: list[str] = []
 
 
 
@@ -44,6 +42,7 @@ class SummaryInsightPerceptor(Perceptor):
         self.embedded_summary_store = embedded_sumary_store
         self.runtime = runtime
         self.k_memories = k_memories
+        self.use_full_memories = True
 
         # See: https://spacy.io/models TODO:DO the nlp once and use as perceptor input
         self.nlp = self._load_nlp()
@@ -70,30 +69,43 @@ class SummaryInsightPerceptor(Perceptor):
         keywords = self.generate_terms(user_input)
 
 
-        logger.info(f"Focusing on keywords: {','.join(keywords)}")
+        logger.info(f"Focusing on keywords: {' '.join(keywords)}")
         logger.info(f"Gathering top {self.k_memories} memories.")
 
-        insight_sentences = set()
-        for memory,_ in self.embedded_summary_store.search(' '.join(keywords), self.k_memories):
-            memory_doc = self.nlp(memory)
-            for ent in memory_doc.ents:
-                if ent.lemma_ in keywords:
-                    insight_sentences.add(ent.sent)
-            for token in memory_doc:
-                if token.lemma_ in keywords:
-                    insight_sentences.add(token.sent)
-
-        logger.info(f"Extracted {len(insight_sentences)} from summaries.")
         perceptions: List[Perception] = []
-        for insight in insight_sentences:
-            perceptions.append(
-                Perception(
-                    content=insight,
-                    source="summary_insight_v2",
-                    confidence=1.0,
+        if self.use_full_memories:
+            for insight in self.embedded_summary_store.search(' '.join(keywords), self.k_memories):
+                perceptions.append(
+                    Perception(
+                        content=insight,
+                        source="summary_insight_memory",
+                        confidence=1.0,
+                    )
                 )
-            )
-            logger.info(f"Attaching Insight: {insight}")
+                logger.info(f"Attaching Insight: {insight}")
+
+        else:
+            insight_sentences = set()
+            for memory,_ in self.embedded_summary_store.search(' '.join(keywords), self.k_memories):
+                memory_doc = self.nlp(memory)
+                for ent in memory_doc.ents:
+                    if ent.lemma_ in keywords:
+                        insight_sentences.add(ent.sent)
+                for token in memory_doc:
+                    if token.lemma_ in keywords:
+                        insight_sentences.add(token.sent)
+
+            logger.info(f"Extracted {len(insight_sentences)} from summaries.")
+
+            for insight in insight_sentences:
+                perceptions.append(
+                    Perception(
+                        content=insight,
+                        source="summary_insight_sentence",
+                        confidence=1.0,
+                    )
+                )
+                logger.info(f"Attaching Insight: {insight}")
         return perceptions
 
     async def _run_insights(self, prompts: List[str]) -> List[str]:

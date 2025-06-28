@@ -20,16 +20,17 @@ logger = LoggingRuntime().logger
 shard_index = {
     "index" : "vector_index_MemoryShard_vector_address",
     "content_key" : "node.shard_contents",
-    "content_transform": lambda x: x[9:],
+    "content_transform": lambda x: x[9:], # type: ignore
     "store_url": _NEO4J_URL
 
 }
 
 concept_index = {
     "index": "vector_index_Concept_embedding",
-    "content_key":"node",
+    "content_key":"node.semantic_id",
     "content_transform" : None,
-    "store_url": _NEO4J_URL
+    "store_url": _NEO4J_URL,
+    "embedding_dims": 128
 }
 
 class Neo4jRuntime:
@@ -45,5 +46,5 @@ class Neo4jRuntime:
         neomodel_config.DATABASE_URL = _NEO4J_URL
         db.set_connection(_NEO4J_URL)
 
-        self.embedded_memory_shard_store = EmbeddedDataStore(**shard_index)
-        self.embedded_concept_store = EmbeddedDataStore(**concept_index)
+        self.embedded_memory_shard_store = EmbeddedDataStore(**shard_index)  # type: ignore[call-arg]
+        self.embedded_concept_store = EmbeddedDataStore(**concept_index)  # type: ignore[call-arg]

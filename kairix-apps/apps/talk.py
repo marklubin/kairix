@@ -15,24 +15,20 @@ from fastrtc import (
     Stream,
     get_stt_model,
 )
-from kairix_core.tts import ElevenLabsTTS
-from kairix_core.types.cognition import Stimulus, StimulusType
 from pydantic import BaseModel
 from rich import pretty
 from rich.logging import RichHandler
 
 from kairix_apps.engine import KairixEngine
+from kairix_core.tts import ElevenLabsTTS
+from kairix_core.types.cognition import Stimulus, StimulusType
 
 logging.basicConfig(level=logging.INFO)
 
-logging.getLogger().setLevel(logging.DEBUG)
-logging.getLogger("fastrtc").setLevel(logging.WARN)
-logging.getLogger("gradio").setLevel(logging.DEBUG)
 
 pretty.install()
 
 logger = logging.getLogger()
-logger.propagate = True
 logger.addHandler(RichHandler())
 
 
@@ -58,6 +54,13 @@ tts = ElevenLabsTTS(
 
 persona = KairixEngine.conversational_persona_for_environment()
 
+phrase_triggers = ['-', ',', '.']
+
+
+def is_completed_phrase(tts_buffer):
+    return tts_buffer and (tts_buffer[-1] == ','
+                           or tts_buffer[-1] == '.'
+                           or tts_buffer[-1] == "-")
 
 async def response(
     audio: tuple[int, np.ndarray],
@@ -66,23 +69,44 @@ async def response(
     current_messages = current_messages or []
     messages = [{"role": d["role"], "content": d["content"]} for d in current_messages]
 
+    tts_buffer = ""
+
+    os.system("clear")
     try:
         prompt = stt.stt(audio)
         logger.info(f"Transcribed: {prompt}")
         messages.append({"role": "user", "content": prompt})
         yield AdditionalOutputs(messages)
 
-        response_text = ""
-        async for chunk in persona.react(Stimulus(prompt, StimulusType.user_message)):
-            response_text += chunk
+        messages.append({"role":"assistant", "content": "..."})
 
-        messages.append({"role": "assistant", "content": response_text})
-        yield AdditionalOutputs(messages)
-        logger.info("Received LLM response starting TTS.")
+        async for full, chunk in persona.react(Stimulus(prompt,
+                                                        StimulusType.user_message)):
+            logger.info(f"Got next chunk {chunk}.")
 
-        # Convert text to speech
-        async for audio in tts.stream_tts(response_text):
-            yield audio
+
+            logger.info("Emitting present full message")
+            messages[-1]['content'] = full
+            yield AdditionalOutputs(messages)
+
+
+            tts_buffer += chunk
+            logger.info(f"Present TTS Buffer is: {tts_buffer}")
+
+            if is_completed_phrase(tts_buffer):
+                logger.info("Deteected Phrase Completion Rendering Audio...")
+                async for audio in tts.stream_tts(tts_buffer):
+                    yield audio
+                tts_buffer = ""
+            else:
+                logger.info("No phrase ending detected, proceeding to next chunk.")
+
+
+        if tts_buffer:
+            logger.warning("TTS buffer unexpectedly empty.")
+            async for audio in tts.stream_tts(tts_buffer):
+                yield audio
+
 
     except Exception as e:
         logger.error(f"Error in response handler: {e}", exc_info=True)
@@ -98,7 +122,7 @@ stream = Stream(
     handler=ReplyOnPause(
         response,
         algo_options=AlgoOptions(
-            audio_chunk_duration=2, started_talking_threshold=1, speech_threshold=1
+            audio_chunk_duration=1, started_talking_threshold=.5, speech_threshold=.1
         ),
     ),
     additional_outputs_handler=lambda old, new: new,

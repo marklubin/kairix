@@ -1,3 +1,9 @@
+"""Neo4j graph database models using neomodel ORM.
+
+This module defines all the graph nodes and relationships used in the Kairix system,
+including vector-indexed nodes for semantic search capabilities.
+"""
+
 from neomodel import (
     ArrayProperty,
     DateTimeProperty,
@@ -12,18 +18,50 @@ from neomodel import (
     IntegerProperty,
 )
 
-from kairix_core.types.vector_indexed import VectorIndexedNode
-
 
 class SemanticLinkage(StructuredRel):
+    """Relationship representing semantic connections between concepts.
+    
+    Attributes:
+        created_at: When the linkage was first created
+        updated_at: When the linkage was last modified
+        linkage_type: Type of semantic relationship (e.g., 'synonym', 'related')
+        weight: Strength of the relationship
+        encounters: Timestamps when this linkage was referenced
+    """
     created_at = DateTimeProperty(default_now=True)
     updated_at = DateTimeProperty(default_now=True)
     linkage_type = StringProperty(required=True)
-    weight: IntegerProperty(default=1)
+    weight = IntegerProperty(default=1)
     encounters = ArrayProperty(DateTimeProperty(), default=[])
 
 
-class Concept(VectorIndexedNode):
+    def score(self, relevance_score: float):
+        return relevance_score * (
+                len(self.start_node().encounters)
+                + len(self.end_node().encounters)
+                + int(self.weight))
+
+    def phrase(self):
+        return f"{self.start_node().name} {self.linkage_type} {self.end_node().name}"
+
+
+
+class Concept(StructuredNode):
+    """Vector-indexed node representing a semantic concept.
+    
+    Concepts are the building blocks of the semantic graph, representing
+    entities, ideas, or relationships that can be linked semantically.
+    
+    Attributes:
+        semantic_id: Unique identifier (format: 'type://name')
+        name: Human-readable name of the concept
+        type: Category/type of the concept
+        created_at: When the concept was first created
+        updated_at: When the concept was last modified
+        encounters: Timestamps when this concept was referenced
+        embedding: 128-dimensional vector representation for similarity search
+    """
     VECTOR_INDEX_CONFIG = {
         "embedding": {  # property name
             "dimensions": 128,

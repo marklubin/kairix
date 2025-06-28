@@ -29,6 +29,11 @@ dependencies = [
     "wireup>=2.0.0",
     "spacy>=3.8.7",
     "textblob>=0.19.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "sse-starlette>=1.6.0",
+    "debugpy>=1.8.14",
+    "dynaconf>=3.2.11",
 ]
 
 

@@ -9,13 +9,6 @@ from sentence_transformers import SentenceTransformer
 
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
 
-shard_index = {
-    "index" : "vector_index_MemoryShard_vector_address",
-    "content_key" : "node.shard_contents",
-    "content_transform": lambda x: x[9:]
-
-}
-
 def query(content_key):
     return f"""
         CALL db.index.vector.queryNodes($index, $k, $query_vector)
@@ -57,9 +50,11 @@ class EmbeddedDataStore:
         content_transform: Optional[Callable[[str], str]],
         store_url: str | None = None,
         embedding_model: str = DEFAULT_EMBEDDING_MODEL,
+        embedding_dims: int = 768,
         override_store: StoreDB | None = None,
     ):
-        self.transformer = SentenceTransformer(embedding_model)
+        self.transformer = SentenceTransformer(embedding_model,
+                                         truncate_dim=embedding_dims)
 
         if override_store is not None:
             self.store = override_store

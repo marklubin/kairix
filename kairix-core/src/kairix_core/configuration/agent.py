@@ -1,6 +1,7 @@
 import os
 
 from agents import OpenAIProvider, ModelProvider
+from torch.cuda import temperature
 
 from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig
 from kairix_core.configuration.utils import model_for_provider
@@ -95,8 +96,9 @@ configuration_sets = {
                 name="conversationalist",
                 model=model_for_provider(
                     "ollama-remote",
-                    "qwen3:4b"
-                ),
+                    "gemma3:12b-it-qat"),
+                max_tokens=256,
+                temperature=0.8,
             ),
             "query_generator": AgentConfig(
                 name="query_generator",

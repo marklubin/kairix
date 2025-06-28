@@ -15,7 +15,7 @@ _model_definitions = {
 
 class LlamaCppProvider(ModelProvider):
     def __init__(self, *args: Tuple[str, int]):
-        self.model_and_pool_size: list[Tuple[str, int]] = args
+        self.model_and_pool_size: list[Tuple[str, int]] = list(args)
         for model, pool_size in self.model_and_pool_size:
             if model not in _model_definitions:
                 raise ValueError(f"No model definition for {model}.")
@@ -27,7 +27,7 @@ class LlamaCppProvider(ModelProvider):
     def populate(self):
         for model, pool_size in self.model_and_pool_size:
             model_pool = [
-                LlamaCppModel(llama=Llama.from_pretrained(
+                LlamaCppModel(llama=Llama.from_pretrained(  # type: ignore[call-arg]
                     n_gpu_layers=-1,  # Fixed parameter name
                     flash_attn=True,
                     n_ctx=8000,

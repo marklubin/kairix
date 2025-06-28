@@ -1,3 +1,10 @@
+"""Abstract interface and factory for inference providers.
+
+This module defines the common interface for all inference providers
+(OpenAI, Ollama, llama.cpp, etc.) and provides a factory function
+to create the appropriate provider based on environment configuration.
+"""
+
 import abc
 import logging
 import os
@@ -5,17 +12,19 @@ import uuid
 from abc import ABC
 from typing import TypedDict
 
-from kairix_core.util.environment import get_or_raise
+from kairix_core.util.utils import get_or_raise
 
 logger = logging.getLogger(__name__)
 
 
 class ModelParams(TypedDict):
+    """Parameters for model configuration."""
     model: str
     use_quantization: bool
 
 
 class InferenceParams(TypedDict):
+    """Parameters for inference request."""
     requested_tokens: int
     temperature: float
     chat_template: str
@@ -24,17 +33,45 @@ class InferenceParams(TypedDict):
 
 
 class InferenceProvider(ABC):
+    """Abstract base class for all inference providers."""
+    
     @abc.abstractmethod
     def predict(self, content: str, inference_params: InferenceParams):
+        """Generate a prediction based on input content.
+        
+        Args:
+            content: The input text to process
+            inference_params: Parameters controlling the inference
+            
+        Returns:
+            Generated text response
+        """
         raise NotImplementedError()
 
 
 class MockInferenceProvider(InferenceProvider):
+    """Mock provider for testing that returns random UUIDs."""
+    
     def predict(self, content: str, inference_params: InferenceParams):
+        """Return a random UUID instead of actual inference."""
         return str(uuid.uuid4())
 
 
 def get_inference_provider_for_environement(model_parameters: ModelParams):
+    """Factory function to create inference provider based on environment.
+    
+    Reads KAIRIX_INFERENCE_PROVIDER environment variable to determine
+    which provider to instantiate.
+    
+    Args:
+        model_parameters: Model configuration parameters
+        
+    Returns:
+        Configured inference provider instance
+        
+    Raises:
+        KeyError: If required environment variables are missing
+    """
     provider = get_or_raise("KAIRIX_INFERENCE_PROVIDER")
 
     if provider == "mock":

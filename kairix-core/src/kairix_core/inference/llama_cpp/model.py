@@ -2,8 +2,7 @@ import uuid
 
 from agents import  TResponseInputItem, ModelSettings, Tool, AgentOutputSchemaBase, ModelResponse, Usage
 from llama_cpp import Llama, ChatCompletionRequestSystemMessage, \
-    ChatCompletionRequestUserMessage, ChatCompletionRequestResponseFormat, CreateChatCompletionResponse, \
-    ChatCompletionResponseChoice, ChatCompletionResponseMessage
+    ChatCompletionRequestUserMessage, ChatCompletionRequestResponseFormat, ChatCompletionResponseChoice, ChatCompletionResponseMessage
 from openai.types.responses import ResponseOutputMessage, ResponseOutputText
 
 
@@ -13,12 +12,12 @@ class LlamaCppModel:
         self.llama = llama
 
     def _get_input(self, input: str | list[TResponseInputItem]) -> str:
-        if type(input) is str:
+        if isinstance(input, str):
             return input
 
         assert len(input) > 0
-        assert "content" in input[0]
-        return str(input[0]["content"])
+        # TResponseInputItem is a complex type, we'll just convert to string
+        return str(input[0])
 
     def sync_complete(self,
                       system_instructions: str | None,
@@ -32,7 +31,7 @@ class LlamaCppModel:
 
         system_message = ChatCompletionRequestSystemMessage(role="system", content=system_instructions)
         user_message = ChatCompletionRequestUserMessage(role="user", content=input_content)
-        messages = [system_message, user_message]
+        messages: list[ChatCompletionRequestSystemMessage | ChatCompletionRequestUserMessage] = [system_message, user_message]
 
         response_format = ChatCompletionRequestResponseFormat(type="text")
 
@@ -56,15 +55,22 @@ class LlamaCppModel:
 
         kwargs["response_format"] = response_format
 
-        raw_response: CreateChatCompletionResponse = (
-            self.llama.create_chat_completion(messages,
-                                              None,  # fn
-                                              None,  # call
-                                              None,  # tools
+        raw_response = self.llama.create_chat_completion(
+            messages,  # type: ignore[arg-type]
+            None,  # fn
+            None,  # call
+            None,  # tools
+            **kwargs
+        )
+        
+        # Handle streaming response type
+        if hasattr(raw_response, '__iter__') and not isinstance(raw_response, dict):
+            # If it's a streaming response, we need to collect it
+            raise NotImplementedError("Streaming response not supported in sync_complete")
+        
+        raw_response = raw_response  # type: ignore[assignment]
 
-                                              **kwargs))
-
-        choices: list[ChatCompletionResponseChoice] = raw_response['choices']
+        choices: list[ChatCompletionResponseChoice] = raw_response['choices']  # type: ignore[index]
 
         if not choices or len(choices) == 0 or not choices[0] or not choices[0]['message']:
             raise Exception("illegal response from inference, no choices provided")
@@ -74,7 +80,10 @@ class LlamaCppModel:
         if "content" not in response_message:
             raise Exception("Response was missisng content.")
 
-        openai_output_text = ResponseOutputText(text=response_message["content"], type="output_text", annotations=[])
+        content = response_message.get("content", "")
+        if content is None:
+            content = ""
+        openai_output_text = ResponseOutputText(text=content, type="output_text", annotations=[])
         openai_output_message = ResponseOutputMessage(id=f"llama::{str(uuid.uuid4())}",
                                                       role="assistant",
                                                       content=[openai_output_text],

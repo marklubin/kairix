@@ -53,7 +53,6 @@ class ConversationalPersona:
         logger.info("Preparing %d perceptions.", len(perceptions))
         message = prompts.conversationalist_message_template_v2(perceptions, stimulus.content)
 
-        logger.debug("Prepared message: %s", message)
         i = 0
 
         async for event in self.runner.run_streamed(self.actuating_agent, message).stream_events():
@@ -62,7 +61,7 @@ class ConversationalPersona:
                 yield event.data.delta
                 i += 1
 
-    async def react(self, stimulus: Stimulus) -> AsyncIterator[str]:
+    async def react(self, stimulus: Stimulus) -> AsyncIterator[tuple[str, str]]:
         logger.info(f"Responding to stimulus of type: {stimulus.type}.")
 
         coroutines = [p.perceive(stimulus) for p in self.perceptors]
@@ -79,17 +78,18 @@ class ConversationalPersona:
 
             full_response = ""
             async for chunk in self._converse(stimulus, perceptions):
-                full_response = full_response + chunk
-                yield full_response
+                full_response += str(chunk)
+                yield full_response, chunk
 
-            message_turn = self.message_turn_formatter.format_turn(stimulus.content, full_response)
-
-            reflection_stimulus = Stimulus(content=message_turn, type=StimulusType.self_perception)
-
+            logger.info("Response completed, preparing for self reflection/")
+            reflection_stimulus = Stimulus(content=full_response, type=StimulusType.self_perception)
             reflection_tasks = set()
             for reflector in self.reflection_perceptors:
+                logger.info(f"Instanting non-realtime task for reflection "
+                            f"{str(reflector.__class__)}")
                 task = asyncio.create_task(reflector.perceive(reflection_stimulus))
                 reflection_tasks.add(task)
-                task.add_done_callback(reflection_tasks.discard)
+                task.add_done_callback(lambda _: logger.info((f"Non-realtime reflection"
+                                                              f" for {str(reflector.__class__)} completed.")))
         else:
             raise NotImplementedError("Unsupported stimulus. Unable to respond.")
