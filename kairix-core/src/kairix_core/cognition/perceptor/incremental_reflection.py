@@ -22,7 +22,7 @@ class IncrementalSummarizationPerceptor(Perceptor):
                  agent: Agent,
                  runtime: AgentRuntime,
                  embedder: SentenceTransformer,
-                 summarization_interval: int = 1, ):
+                 summarization_interval: int = 20):
         self.summarization_interval = summarization_interval
         self._pending_messages: list[str] = []
         self.agent = agent
@@ -44,7 +44,7 @@ class IncrementalSummarizationPerceptor(Perceptor):
 
             text_to_summarize = "\n".join(self._pending_messages)
             self._pending_messages = []
-            label = f"incremental-reflection-v1.{datetime.datetime.now(tz=utc)}"
+            label = f"incremental-reflection-v1.{self.agent.name}.{datetime.datetime.now(tz=utc)}"
 
             try:
                 logger.info("Invoking summarization agent.")
@@ -54,7 +54,8 @@ class IncrementalSummarizationPerceptor(Perceptor):
                 embedding = self.embedder.encode(summary).tolist()
                 logger.info("Embedding completed. Persisting.")
 
-                shard  = MemoryShard(uid=str(uuid.uuid4()),
+
+                shard  = MemoryShard(uid=label,
                                      shard_contents= summary,
                                      vector_address= embedding)
                 self.last_summary = summary

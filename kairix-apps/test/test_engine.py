@@ -1,2 +1,1 @@
-import pytest
 from src.kairix_apps.engine import *  # Importing all from the source module

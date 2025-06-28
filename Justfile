@@ -1,10 +1,4 @@
 all: clean install lint check test
-
-# Install dependencies using uv
-install:
-    uv sync
-
-
 set-env PLATFORM INF:
     rm -f .env 
     touch .env
@@ -21,7 +15,11 @@ set-env PLATFORM INF:
     echo "#~~~~~~~~~~~~~~~~~~[Inference Config]~~~~~~~~~~~~~~~~~~~~" >> .env
     cat $HOME/kairix/environments/inference/{{INF}}.env  >> .env
 
+mcp-add SERVER:
+   uv run mcpm add --target %kairix {{SERVER}}
 
+mcp-server:
+    uv run mcpm router on
 
 # Run all tests
 test:
@@ -47,6 +45,10 @@ check:
 
 start_db:
     docker compose up -d
+
+install:
+    uv sync
+    uv run python -c "from kairix_core.runtime.neo4j import Neo4jRuntime; Neo4jRuntime().install()"
 
 
 clean:

@@ -1,0 +1,159 @@
+import type { STTProvider, STTState, STTConfig } from './types';
+import { BrowserSTTProvider } from './providers/BrowserSTTProvider';
+import { WhisperSTTProvider } from './providers/WhisperSTTProvider';
+
+export class STTService {
+  private provider: STTProvider;
+  private config: STTConfig;
+  private stateListeners: ((state: STTState) => void)[] = [];
+  private currentState: STTState = { status: 'idle' };
+  private isRecording = false;
+  private currentMessageId: string | null = null; // Track which message triggered TTS interruption
+
+  constructor(config?: Partial<STTConfig>) {
+    this.config = {
+      provider: 'browser',
+      language: 'en-US',
+      continuous: false,
+      interimResults: true,
+      autoSubmit: true,
+      ...config
+    };
+
+    this.provider = this.createProvider(this.config.provider);
+  }
+
+  private createProvider(providerName: string): STTProvider {
+    switch (providerName) {
+      case 'browser': {
+        const provider = new BrowserSTTProvider(
+          this.config.language,
+          this.config.continuous,
+          this.config.interimResults
+        );
+        // Set up interim result handler
+        provider.onInterimResult = (transcript) => {
+          this.setState({ status: 'listening', interimTranscript: transcript });
+        };
+        return provider;
+      }
+      case 'whisper': {
+        const provider = new WhisperSTTProvider();
+        return provider;
+      }
+      default:
+        throw new Error(`Unknown STT provider: ${providerName}`);
+    }
+  }
+
+  setProvider(providerName: string): void {
+    this.abort();
+    this.provider = this.createProvider(providerName);
+    this.config.provider = providerName;
+  }
+
+  onStateChange(listener: (state: STTState) => void): () => void {
+    this.stateListeners.push(listener);
+    return () => {
+      this.stateListeners = this.stateListeners.filter(l => l !== listener);
+    };
+  }
+
+  private setState(state: STTState): void {
+    this.currentState = state;
+    this.stateListeners.forEach(listener => listener(state));
+  }
+
+  getState(): STTState {
+    return this.currentState;
+  }
+
+  async toggleRecording(): Promise<string | null> {
+    if (this.isRecording) {
+      return this.stopRecording();
+    } else {
+      await this.startRecording();
+      return null;
+    }
+  }
+
+  async startRecording(messageId?: string): Promise<void> {
+    if (this.isRecording) {
+      console.warn('Already recording');
+      return;
+    }
+
+    try {
+      this.isRecording = true;
+      this.currentMessageId = messageId || null;
+      this.setState({ status: 'listening' });
+      await this.provider.startRecording();
+    } catch (error) {
+      this.isRecording = false;
+      this.currentMessageId = null;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.setState({ status: 'error', error: errorMessage });
+      throw error;
+    }
+  }
+
+  async stopRecording(): Promise<string> {
+    if (!this.isRecording) {
+      throw new Error('Not recording');
+    }
+
+    try {
+      this.setState({ status: 'processing' });
+      const transcript = await this.provider.stopRecording();
+      this.isRecording = false;
+      
+      if (transcript) {
+        this.setState({ status: 'transcribed', transcript });
+      } else {
+        this.setState({ status: 'idle' });
+      }
+      
+      this.currentMessageId = null;
+      
+      return transcript;
+    } catch (error) {
+      this.isRecording = false;
+      this.currentMessageId = null;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.setState({ status: 'error', error: errorMessage });
+      throw error;
+    }
+  }
+
+  abort(): void {
+    if (this.isRecording) {
+      this.provider.abort();
+      this.isRecording = false;
+      this.currentMessageId = null;
+      this.setState({ status: 'idle' });
+    }
+  }
+
+  getCurrentMessageId(): string | null {
+    return this.currentMessageId;
+  }
+
+  updateConfig(config: Partial<STTConfig>): void {
+    this.config = { ...this.config, ...config };
+    
+    if (config.provider && config.provider !== this.provider.name) {
+      this.setProvider(config.provider);
+    } else if (config.language || config.continuous !== undefined || config.interimResults !== undefined) {
+      // Recreate provider with new settings
+      this.provider = this.createProvider(this.config.provider);
+    }
+  }
+
+  getConfig(): STTConfig {
+    return { ...this.config };
+  }
+
+  isAutoSubmitEnabled(): boolean {
+    return this.config.autoSubmit ?? true;
+  }
+}

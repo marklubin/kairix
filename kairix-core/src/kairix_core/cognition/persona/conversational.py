@@ -80,13 +80,13 @@ class ConversationalPersona:
         if stimulus.type == StimulusType.user_message:
             logger.info("Responding to user message by conversing.")
 
-            full_response = ""
+            accumulated = ""
             async for chunk in self._converse(stimulus, perceptions):
-                full_response += str(chunk)
-                yield full_response, chunk
+                accumulated += str(chunk)
+                yield accumulated, chunk
 
             logger.info("Response completed, preparing for self reflection/")
-            reflection_stimulus = Stimulus(content=full_response, type=StimulusType.self_perception)
+            reflection_stimulus = Stimulus(content=accumulated, type=StimulusType.self_perception)
             reflection_tasks = set()
             for reflector in self.reflection_perceptors:
                 logger.info(f"Instanting non-realtime task for reflection "

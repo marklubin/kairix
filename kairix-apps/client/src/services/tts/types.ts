@@ -1,0 +1,36 @@
+export interface TTSProvider {
+  name: string;
+  speak(text: string, options?: TTSOptions): Promise<void>;
+  stop(): void;
+  getVoices(): Promise<TTSVoice[]>;
+  isSupported(): boolean;
+}
+
+export interface TTSOptions {
+  voice?: string;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+}
+
+export interface TTSVoice {
+  id: string;
+  name: string;
+  lang: string;
+}
+
+export type TTSState = 
+  | { status: 'waiting' }
+  | { status: 'buffering'; text: string }
+  | { status: 'rendering'; text: string }
+  | { status: 'playing'; text: string }
+  | { status: 'error'; error: string };
+
+export interface TTSConfig {
+  provider: string;
+  voice?: string;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  elevenLabsApiKey?: string;
+}

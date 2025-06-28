@@ -159,7 +159,8 @@ class MemoryShard(IdempotentNode):
         required=True,
         index=True,
         vector_index=VectorIndex(dimensions=768),
-    )
+    ),
+    created_at = DateTimeProperty(default_now=True, required=False)
 
     # Relationships
     embedding = Relationship("Embedding", "HAS_EMBEDDING", cardinality=One)

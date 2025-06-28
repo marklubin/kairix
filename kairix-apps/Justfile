@@ -126,5 +126,13 @@ run-app APP *ARGS:
 debug-app APP *ARGS:
     dotenv uv run python -m pudb apps/{{APP}}.py {{ARGS}}
 
+server:
+    dotenv uv run python src/kairix_apps/server.py
 
+
+[working-directory: 'client']
+client:
+  npm install
+  npm run build
+  npm run dev
 

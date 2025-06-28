@@ -4,5 +4,3 @@ import "../Justfile"
 run CMD +ARGS:
   dotenv uv run apps/{{CMD}}.py  {{ARGS}}
 
-install-labels:
-    uv run python -c "from neomodel import db;db.install_all_labels()"

@@ -1,0 +1,41 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "rich",
+# ]
+# ///
+
+
+from rich.console import Console
+from rich.theme import Theme
+from os import system as s
+import urllib.request
+import time
+
+python_theme = Theme(
+    {
+        "y": "#00FF00 bold",
+        "b": "#FF00FF",
+    }
+)
+
+console = Console(theme=python_theme)
+
+
+console.print("[y]Starting[/y] [b]Kai[/b][y]rix[/y]...")
+s("docker compose up")
+s("dotenv  -e kairix-apps/.env uv run --directory kairix-apps src/kairix_apps/server.py > server.logs 2>&1 &")
+
+
+console.print("Waiting for server to start...")
+c = 0
+while c < 6:
+    try:
+        console.print("Attempting to connect to server again..")
+        code = urllib.request.urlopen("http://localhost:8000/v1/models").getcode
+        assert code == 200
+    except Exception as e:
+        console.print(e)
+        c += 1
+        time.sleep(5)

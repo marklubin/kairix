@@ -1,12 +1,6 @@
 
-from rich.layout import Layout
 from rich import print
-
-
-
-
-
-
+from rich.layout import Layout
 
 
 def main():

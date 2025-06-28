@@ -89,6 +89,8 @@ class KairixEngine:
             instructions=prompts.conversationalist_instruction_template_v1(
                 agent_name=persona_name, user_name=user_name
             ),
+            mcp_servers=[agent_runtime.mcp_server]
+
         )
 
         logger.info("Spawning Persona...")
@@ -103,5 +105,8 @@ class KairixEngine:
                 incremental_summary,
             ],
             actuating_agent=agent,
-            reflection_perceptors=[conversation_history, incremental_summary],
+            reflection_perceptors=[
+                conversation_history,
+                incremental_summary
+            ],
         )

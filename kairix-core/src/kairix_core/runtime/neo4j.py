@@ -5,6 +5,8 @@ from neomodel import db
 from kairix_core.cognition.stores.embedded_data import EmbeddedDataStore
 from kairix_core.runtime.logging import LoggingRuntime
 
+from  kairix_core.types.neo4j import * # noqa
+
 _NEO4J_URL = "bolt://neo4j:password@cayucos.thrush-escalator.ts.net:7687"
 
 
@@ -48,3 +50,7 @@ class Neo4jRuntime:
 
         self.embedded_memory_shard_store = EmbeddedDataStore(**shard_index)  # type: ignore[call-arg]
         self.embedded_concept_store = EmbeddedDataStore(**concept_index)  # type: ignore[call-arg]
+
+
+    def install(self):
+        db.install_all_labels()

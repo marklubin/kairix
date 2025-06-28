@@ -1,5 +1,9 @@
+from kairix_core.runtime.logging import LoggingRuntime
+
+logger = LoggingRuntime().logger
+
+
 import json
-import logging
 import os
 
 import gradio as gr
@@ -19,19 +23,8 @@ from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.tts import ElevenLabsTTS
 from kairix_core.types.cognition import Stimulus, StimulusType
 from pydantic import BaseModel
-from rich import pretty
-from rich.logging import RichHandler
 
 from kairix_apps.engine import KairixEngine
-
-logging.basicConfig(level=logging.INFO)
-
-
-pretty.install()
-
-logger = logging.getLogger()
-logger.addHandler(RichHandler())
-
 
 # Load .env file if not already loaded by justfile
 if not os.environ.get("ELEVENLABS_API_KEY") and not load_dotenv():
@@ -51,6 +44,8 @@ stt = get_stt_model()
 tts = ElevenLabsTTS(
     api_key=elevenlabs_api_key,
 )
+
+
 
 
 persona = KairixEngine.conversational_persona_for_environment()
@@ -112,6 +107,7 @@ async def response(
         # Yield error message
         messages.append({"role": "assistant", "content": f"Error: {e!s}"})
         yield AdditionalOutputs(messages)
+
 
 
 chatbot = gr.Chatbot(type="messages")
