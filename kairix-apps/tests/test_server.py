@@ -86,16 +86,34 @@ def client(mock_persona):
         yield c
 
 
-def test_health_check(client):
+@pytest.fixture
+def auth_headers():
+    """Return authentication headers for API calls."""
+    return {"X-API-Key": "LosAngeles>Springfield"}
+
+
+def test_health_check(client, auth_headers):
     """Test health endpoint."""
-    response = client.get("/health")
+    response = client.get("/health", headers=auth_headers)
     assert response.status_code == 200
     assert response.json() == {"status": "healthy", "service": "kairix-api"}
 
 
-def test_list_models(client):
+def test_unauthorized_access(client):
+    """Test endpoints without API key return 401."""
+    # Test without header
+    response = client.get("/health")
+    assert response.status_code == 422  # FastAPI returns 422 for missing required header
+    
+    # Test with wrong API key
+    response = client.get("/health", headers={"X-API-Key": "wrong-key"})
+    assert response.status_code == 401
+    assert "Invalid API key" in response.json()["detail"]
+
+
+def test_list_models(client, auth_headers):
     """Test models list endpoint."""
-    response = client.get("/v1/models")
+    response = client.get("/v1/models", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["object"] == "list"
@@ -103,7 +121,7 @@ def test_list_models(client):
     assert data["data"][0]["id"] == "kairix-conversational"
 
 
-def test_chat_completion_non_streaming(client):
+def test_chat_completion_non_streaming(client, auth_headers):
     """Test non-streaming chat completion."""
     request = {
         "model": "kairix-conversational",
@@ -113,7 +131,7 @@ def test_chat_completion_non_streaming(client):
         "stream": False
     }
     
-    response = client.post("/v1/chat/completions", json=request)
+    response = client.post("/v1/chat/completions", json=request, headers=auth_headers)
     assert response.status_code == 200
     
     data = response.json()
@@ -123,7 +141,7 @@ def test_chat_completion_non_streaming(client):
     assert data["choices"][0]["message"]["content"] == "Hello from Kairix!"
 
 
-def test_chat_completion_streaming(client):
+def test_chat_completion_streaming(client, auth_headers):
     """Test streaming chat completion."""
     request = {
         "model": "kairix-conversational",
@@ -133,7 +151,7 @@ def test_chat_completion_streaming(client):
         "stream": True
     }
     
-    response = client.post("/v1/chat/completions", json=request)
+    response = client.post("/v1/chat/completions", json=request, headers=auth_headers)
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
     
@@ -155,7 +173,7 @@ def test_chat_completion_streaming(client):
     assert content == "Hello from Kairix!"
 
 
-def test_chat_completion_with_tools(client):
+def test_chat_completion_with_tools(client, auth_headers):
     """Test chat completion with tool usage."""
     request = {
         "model": "kairix-conversational",
@@ -180,11 +198,11 @@ def test_chat_completion_with_tools(client):
         "stream": False
     }
     
-    response = client.post("/v1/chat/completions", json=request)
+    response = client.post("/v1/chat/completions", json=request, headers=auth_headers)
     assert response.status_code == 200
 
 
-def test_realtime_audio_stub(client):
+def test_realtime_audio_stub(client, auth_headers):
     """Test realtime audio endpoint stub."""
     request = {
         "audio_data": None,
@@ -192,21 +210,21 @@ def test_realtime_audio_stub(client):
         "sample_rate": 16000
     }
     
-    response = client.post("/v1/audio/realtime", json=request)
+    response = client.post("/v1/audio/realtime", json=request, headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "not_implemented"
     assert "not yet implemented" in data["message"]
 
 
-def test_realtime_audio_stream_not_implemented(client):
+def test_realtime_audio_stream_not_implemented(client, auth_headers):
     """Test that streaming audio returns 501."""
-    response = client.post("/v1/audio/realtime/stream")
+    response = client.post("/v1/audio/realtime/stream", headers=auth_headers)
     assert response.status_code == 501
     assert "not yet implemented" in response.json()["detail"].lower()
 
 
-def test_chat_completion_error_handling(client, mock_persona):
+def test_chat_completion_error_handling(client, mock_persona, auth_headers):
     """Test error handling in chat completion."""
     # Patch the global wrapped_persona to simulate an error
     with patch("kairix_apps.server.wrapped_persona") as mock_wrapped:

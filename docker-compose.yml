@@ -1,56 +1,9 @@
 version: '3.8'
 
 services:
-  # MCPM service - Model Context Protocol Manager
-  mcpm:
-    image: nixos/nix:latest
-    container_name: mcpm
-    volumes:
-      - .:/app                           # Mount current directory
-      - mcpm-config:/root/.mcpm          # Persist MCPM configuration
-      - nix-store:/nix/store             # Cache Nix packages
-    working_dir: /app
-    ports:
-      - "3000:3000"                      # Expose MCPM router service
-    environment:
-      # Neo4j connection (set by launcher script)
-      - NEO4J_URL=${NEO4J_URL:-}
-      # Forward host environment variables for MCP servers
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      # Comma-separated list of MCP servers to pre-install
-      # Example: "github.com/modelcontextprotocol/server1,github.com/modelcontextprotocol/server2"
-      - MCP_SERVERS_TO_INSTALL=${MCP_SERVERS_TO_INSTALL:-}
-    command: >
-      bash -c "
-      # Enter Nix development shell and run MCPM setup
-      nix develop --experimental-features 'nix-command flakes' --command bash -c '
-      # Create kairix profile if it doesn't exist
-      mcpm profile list | grep -q kairix || mcpm profile add kairix
-      
-      # Switch to kairix profile
-      mcpm profile use kairix
-      
-      # Install predefined servers if not already installed
-      IFS=\",\" read -ra SERVERS <<< \"$${MCP_SERVERS_TO_INSTALL}\"
-      for server in \"$${SERVERS[@]}\"; do
-        mcpm list | grep -q \"$$server\" || mcpm add \"$$server\"
-      done
-      
-      # Configure router without authentication
-      uv run mcpm router set --no-auth
-      
-      # Start the MCPM router service
-      mcpm router on --host 0.0.0.0 --port 3000
-      
-      # Keep container running
-      tail -f /dev/null
-      '
-      "
-
   # Neo4j database service - only starts when using local Neo4j
   neo4j:
-    image: neo4j:5-community
+    image: neo4j:latest
     container_name: kairix-neo4j
     profiles: ["with-neo4j"]             # Only starts with --profile with-neo4j
     ports:
@@ -81,7 +34,3 @@ services:
       # Enable procedures unrestricted for vector operations
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*,genai.*
       - NEO4J_dbms_security_procedures_allowlist=apoc.*,genai.*
-
-volumes:
-  mcpm-config:    # Persistent MCPM configuration
-  nix-store:      # Nix package cache

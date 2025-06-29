@@ -9,7 +9,7 @@ export class ElevenLabsTTSProvider implements TTSProvider {
   private isPlaying = false;
   private currentAudio: HTMLAudioElement | null = null;
 
-  constructor(apiKey: string = '', voiceId: string = '21m00Tcm4TlvDq8ikWAM', modelId: string = 'eleven_monolingual_v1') {
+  constructor(apiKey: string = '', voiceId: string = '0NkECxcbkydDMspBKvQp', modelId: string = 'eleven_monolingual_v1') {
     this.apiKey = apiKey;
     this.voiceId = voiceId;
     this.modelId = modelId;

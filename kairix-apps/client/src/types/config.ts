@@ -17,11 +17,7 @@ export const ENDPOINTS: Endpoint[] = [
     url: "http://localhost:8000/v1",
     apiKey: ""
   },
-  {
-    name: "OpenAI",
-    url: "https://api.openai.com/v1",
-    apiKey: "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"
-  },
+
   {
     name: "Ollama (Kairix)",
     url: "https://ollama.kairix.net/v1",

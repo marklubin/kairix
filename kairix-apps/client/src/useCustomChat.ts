@@ -5,6 +5,7 @@ import { ENDPOINTS } from './types/config';
 import { ChatStorage } from './lib/storage';
 import { useTTS } from './contexts/TTSContext';
 import { useSTT } from './contexts/STTContext';
+import { authenticatedFetch } from './lib/authenticatedFetch';
 
 export function useCustomChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,7 +48,7 @@ export function useCustomChat() {
           headers['Authorization'] = `Bearer ${selectedEndpoint.apiKey}`;
         }
 
-        const response = await fetch(`${selectedEndpoint.url}/models`, {
+        const response = await authenticatedFetch(`${selectedEndpoint.url}/models`, {
           headers,
         });
 
@@ -74,27 +75,6 @@ export function useCustomChat() {
     fetchModels();
   }, [selectedEndpoint]);
 
-  // Handle auto-submit when STT transcription completes
-  const lastTranscriptRef = useRef<string>('');
-  useEffect(() => {
-    if (sttState.status === 'transcribed' && sttState.transcript && sttState.transcript !== lastTranscriptRef.current) {
-      lastTranscriptRef.current = sttState.transcript;
-      setInput(sttState.transcript);
-      
-      // Auto-submit if enabled
-      if (sttService.isAutoSubmitEnabled()) {
-        // Small delay to ensure input state is updated, then trigger a form submit
-        setTimeout(() => {
-          // Create and dispatch a synthetic form submit event
-          const form = document.querySelector('form');
-          if (form) {
-            form.requestSubmit();
-          }
-        }, 50);
-      }
-    }
-  }, [sttState, sttService]);
-
   const handleSTTToggle = useCallback(async () => {
     try {
       if (sttState.status === 'listening') {
@@ -114,15 +94,17 @@ export function useCustomChat() {
     }
   }, [sttState, sttService, isTTSEnabled, ttsService]);
 
-  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e?: React.FormEvent, overrideInput?: string) => {
     e?.preventDefault();
     
-    if (!input.trim() || isLoading) return;
+    const messageContent = overrideInput || input;
+    
+    if (!messageContent.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: messageContent,
     };
 
     // Add user message to UI
@@ -163,7 +145,7 @@ export function useCustomChat() {
       const contextMessages = ChatStorage.getContextMessages([...messages, userMessage]);
 
       // Call the selected endpoint with streaming
-      const response = await fetch(`${selectedEndpoint.url}/chat/completions`, {
+      const response = await authenticatedFetch(`${selectedEndpoint.url}/chat/completions`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -255,6 +237,33 @@ export function useCustomChat() {
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value);
   }, []);
+
+  // Handle STT state changes - stream text directly to input
+  useEffect(() => {
+    console.log('STT State changed:', sttState);
+    
+    // Stream interim results directly to input box
+    if (sttState.status === 'listening' && sttState.interimTranscript) {
+      console.log('Streaming interim transcript:', sttState.interimTranscript);
+      setInput(sttState.interimTranscript);
+    }
+    
+    // Handle final transcription
+    if (sttState.status === 'transcribed' && sttState.transcript) {
+      console.log('Final transcript:', sttState.transcript);
+      setInput(sttState.transcript);
+      
+      // Auto-submit if enabled
+      if (sttService.isAutoSubmitEnabled()) {
+        // Small delay to ensure input state is updated
+        setTimeout(() => {
+          console.log('Auto-submitting with input:', sttState.transcript);
+          // Pass the transcript directly to handleSubmit
+          handleSubmit(undefined, sttState.transcript);
+        }, 100);
+      }
+    }
+  }, [sttState, sttService, handleSubmit]);
 
   const handleEndpointChange = useCallback((endpoint: Endpoint) => {
     setSelectedEndpoint(endpoint);

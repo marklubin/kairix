@@ -127,7 +127,7 @@ export function STTOverlay({ sttState, onStop }: STTOverlayProps) {
           </p>
           
           {/* Show interim transcript if available */}
-          {sttState.interimTranscript && (
+          {sttState.status === 'listening' && sttState.interimTranscript && (
             <p className="text-white/50 text-sm mt-4 max-w-md mx-auto">
               "{sttState.interimTranscript}"
             </p>

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import type { Message } from "ai"
 import type { STTState } from "@/services/stt/types"
-import { VolumeIndicator } from "./volume-indicator"
 
 interface ChatProps {
   messages: Message[]
@@ -108,25 +107,19 @@ export function Chat({
           </div>
           
           {/* Push to Talk Button */}
-          <div className="relative">
-            <Button
-              type="button"
-              size="icon"
-              variant={sttState.status === 'listening' ? "destructive" : "outline"}
-              onClick={onSTTToggle}
-              disabled={isGenerating || sttState.status === 'processing'}
-              className="relative"
-            >
-              {sttState.status === 'listening' ? (
-                <MicOff className="h-4 w-4" />
-              ) : (
-                <Mic className="h-4 w-4" />
-              )}
-            </Button>
-            {sttState.status === 'listening' && (
-              <VolumeIndicator className="absolute -top-8 left-1/2 -translate-x-1/2" />
+          <Button
+            type="button"
+            size="icon"
+            variant={sttState.status === 'listening' ? "destructive" : "outline"}
+            onClick={onSTTToggle}
+            disabled={isGenerating || sttState.status === 'processing'}
+          >
+            {sttState.status === 'listening' ? (
+              <MicOff className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
             )}
-          </div>
+          </Button>
 
           {/* Send/Stop Button */}
           {isGenerating ? (

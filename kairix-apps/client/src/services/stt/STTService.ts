@@ -14,7 +14,7 @@ export class STTService {
     this.config = {
       provider: 'browser',
       language: 'en-US',
-      continuous: false,
+      continuous: true,  // Enable continuous mode for streaming
       interimResults: true,
       autoSubmit: true,
       ...config
@@ -60,6 +60,7 @@ export class STTService {
   }
 
   private setState(state: STTState): void {
+    console.log('STTService setState:', state);
     this.currentState = state;
     this.stateListeners.forEach(listener => listener(state));
   }
@@ -98,18 +99,29 @@ export class STTService {
   }
 
   async stopRecording(): Promise<string> {
-    if (!this.isRecording) {
-      throw new Error('Not recording');
+    // More lenient check - if we're in listening state, we can stop
+    if (!this.isRecording && this.currentState.status !== 'listening') {
+      console.warn('Attempted to stop recording but not in recording state');
+      return '';
     }
 
     try {
       this.setState({ status: 'processing' });
-      const transcript = await this.provider.stopRecording();
+      
+      // Only try to stop the provider if it's actually recording
+      let transcript = '';
+      if (this.isRecording) {
+        transcript = await this.provider.stopRecording();
+      }
+      
+      console.log('STTService received transcript:', transcript);
       this.isRecording = false;
       
       if (transcript) {
+        console.log('Setting state to transcribed with:', transcript);
         this.setState({ status: 'transcribed', transcript });
       } else {
+        console.log('No transcript, setting state to idle');
         this.setState({ status: 'idle' });
       }
       

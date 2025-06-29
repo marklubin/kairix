@@ -77,46 +77,48 @@ export function RecordingIndicator({ sttState }: RecordingIndicatorProps) {
   if (sttState.status === 'idle') return null;
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed top-20 left-0 right-0 flex justify-center z-50 pointer-events-none">
       <div className={cn(
-        "px-6 py-3 rounded-full shadow-lg backdrop-blur-md",
-        "flex items-center gap-3 transition-all duration-300",
+        "px-6 py-3 rounded-full shadow-lg backdrop-blur-md pointer-events-auto",
+        "flex flex-col items-center gap-2 transition-all duration-300",
         sttState.status === 'listening' && "bg-red-500/90 text-white",
         sttState.status === 'processing' && "bg-blue-500/90 text-white",
         sttState.status === 'transcribed' && "bg-green-500/90 text-white",
         sttState.status === 'error' && "bg-red-600/90 text-white"
       )}>
-        {/* Volume indicator bars */}
-        {sttState.status === 'listening' && isAnalyzing && (
-          <div className="flex items-center gap-1 h-6">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "w-1 bg-white rounded-full transition-all duration-100",
-                  volumeLevel > i * 20 ? "opacity-100" : "opacity-30"
-                )}
-                style={{
-                  height: volumeLevel > i * 20 
-                    ? `${Math.min(24, 8 + (volumeLevel - i * 20) * 0.8)}px` 
-                    : '4px'
-                }}
-              />
-            ))}
+        <div className="flex items-center gap-3">
+          {/* Volume indicator bars */}
+          {sttState.status === 'listening' && isAnalyzing && (
+            <div className="flex items-center gap-1 h-6">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-1 bg-white rounded-full transition-all duration-100",
+                    volumeLevel > i * 20 ? "opacity-100" : "opacity-30"
+                  )}
+                  style={{
+                    height: volumeLevel > i * 20 
+                      ? `${Math.min(24, 8 + (volumeLevel - i * 20) * 0.8)}px` 
+                      : '4px'
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Status text */}
+          <div className="font-medium text-center">
+            {sttState.status === 'listening' && 'Recording... (Press again to stop)'}
+            {sttState.status === 'processing' && 'Processing speech...'}
+            {sttState.status === 'transcribed' && 'Transcription complete'}
+            {sttState.status === 'error' && `Error: ${sttState.error}`}
           </div>
-        )}
-        
-        {/* Status text */}
-        <div className="font-medium">
-          {sttState.status === 'listening' && 'Recording... (Press again to stop)'}
-          {sttState.status === 'processing' && 'Processing speech...'}
-          {sttState.status === 'transcribed' && 'Transcription complete'}
-          {sttState.status === 'error' && `Error: ${sttState.error}`}
         </div>
 
-        {/* Interim transcript */}
+        {/* Interim transcript - separate row below */}
         {sttState.status === 'listening' && sttState.interimTranscript && (
-          <div className="max-w-xs text-sm opacity-80 truncate">
+          <div className="max-w-md text-sm opacity-80 text-center px-4">
             "{sttState.interimTranscript}"
           </div>
         )}

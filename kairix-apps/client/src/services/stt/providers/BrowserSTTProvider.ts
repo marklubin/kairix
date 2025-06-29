@@ -5,6 +5,7 @@ export class BrowserSTTProvider implements STTProvider {
   private recognition: any; // SpeechRecognition type not available in all environments
   private isRecording = false;
   private finalTranscript = '';
+  private allTranscript = ''; // Track all text recognized so far
   private currentResolve: ((transcript: string) => void) | null = null;
   private currentReject: ((error: Error) => void) | null = null;
 
@@ -23,21 +24,28 @@ export class BrowserSTTProvider implements STTProvider {
 
     // Set up event handlers
     this.recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      this.finalTranscript = '';
+      let allText = '';
+      let finalText = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Build complete transcript from all results
+      for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
+        allText += transcript + ' ';
+        
         if (event.results[i].isFinal) {
-          this.finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
+          finalText += transcript + ' ';
         }
       }
 
-      // Call interim result callback if provided
-      if (this.onInterimResult && interimTranscript) {
-        this.onInterimResult(interimTranscript);
+      // Update transcripts
+      this.allTranscript = allText.trim();
+      if (finalText) {
+        this.finalTranscript = finalText.trim();
+      }
+
+      // Always call callback with complete text so far
+      if (this.onInterimResult) {
+        this.onInterimResult(this.allTranscript);
       }
     };
 
@@ -52,9 +60,11 @@ export class BrowserSTTProvider implements STTProvider {
     };
 
     this.recognition.onend = () => {
+      console.log('Recognition ended, all transcript:', this.allTranscript);
       this.isRecording = false;
       if (this.currentResolve) {
-        this.currentResolve(this.finalTranscript);
+        // Return all recognized text, not just final
+        this.currentResolve(this.allTranscript || this.finalTranscript);
         this.currentResolve = null;
         this.currentReject = null;
       }
@@ -70,14 +80,17 @@ export class BrowserSTTProvider implements STTProvider {
       throw new Error('Already recording');
     }
 
+    console.log('BrowserSTTProvider: Starting recording');
     this.isRecording = true;
     this.finalTranscript = '';
+    this.allTranscript = '';
     this.recognition.start();
   }
 
   async stopRecording(): Promise<string> {
     if (!this.isRecording) {
-      throw new Error('Not recording');
+      console.warn('BrowserSTTProvider: stopRecording called but not recording');
+      return this.finalTranscript || '';
     }
 
     return new Promise((resolve, reject) => {

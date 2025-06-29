@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from kairix_core.api.adapters.openai import OpenAIAdapter
@@ -22,6 +22,16 @@ agent_runtime = AgentRuntime()
 # Global instances
 adapter: OpenAIAdapter | None = None
 wrapped_persona: Any = None  # PersonaWrapper instance
+
+# API Key configuration
+API_KEY = "LosAngeles>Springfield"
+
+
+async def verify_api_key(x_api_key: str = Header(...)):
+    """Verify the API key from X-API-Key header."""
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return x_api_key
 
 
 @asynccontextmanager
@@ -41,7 +51,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             persona = KairixEngine.conversational_persona_for_environment()
             logger.info("Persona created successfully")
             
-
             # Create adapter
             adapter = OpenAIAdapter(persona)
             logger.info("OpenAI adapter initialized successfully")
@@ -68,15 +77,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
-async def health_check():
+async def health_check(api_key: str = Depends(verify_api_key)):
     """Health check endpoint."""
     return {"status": "healthy", "service": "kairix-api"}
 
 
 @app.options("/v1/models")
 @app.get("/v1/models")
-async def list_models() -> dict[str, Any]:
+async def list_models(api_key: str = Depends(verify_api_key)) -> dict[str, Any]:
     """List available models."""
     models = [
         Model(
@@ -90,7 +100,7 @@ async def list_models() -> dict[str, Any]:
 
 
 @app.post("/v1/chat/completions")
-async def create_chat_completion(request: CreateChatCompletionRequest) -> Any:
+async def create_chat_completion(request: CreateChatCompletionRequest, api_key: str = Depends(verify_api_key)) -> Any:
     """Create a chat completion with streaming support."""
     logger.info(f"Received chat completion request: model={request.model}, stream={request.stream}")
     
@@ -146,7 +156,7 @@ if __name__ == "__main__":
     
     uvicorn.run(
         app, 
-        host="127.0.0.1", 
+        host="0.0.0.0", 
         port=8000,
         log_level="info",
         access_log=True

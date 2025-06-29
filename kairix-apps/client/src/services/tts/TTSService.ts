@@ -16,7 +16,8 @@ export class TTSService {
 
   constructor(config?: Partial<TTSConfig>) {
     this.config = {
-      provider: 'browser',
+      provider: 'elevenlabs',
+      voice: '0NkECxcbkydDMspBKvQp', // Apiana voice
       rate: 1.0,
       pitch: 1.0,
       volume: 1.0,
