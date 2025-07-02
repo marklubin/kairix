@@ -20,6 +20,7 @@ export interface TTSVoice {
 }
 
 export type TTSState = 
+  | { status: 'idle' }
   | { status: 'waiting' }
   | { status: 'buffering'; text: string }
   | { status: 'rendering'; text: string }
@@ -33,4 +34,5 @@ export interface TTSConfig {
   pitch?: number;
   volume?: number;
   elevenLabsApiKey?: string;
+  bufferWordCount?: number;
 }

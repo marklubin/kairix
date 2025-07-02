@@ -34,7 +34,7 @@ def upsert_concept(subject: Subject, dt: datetime) -> Concept:
     # Case I - Exact Match Exists - We require that both id and type of unit match
     if maybe_concept:
         logger.debug("Found exact match of type. Returning.")
-        maybe_concept.encounters.append(dt)
+        maybe_concept.observations.append(dt)
         maybe_concept.save()
         return maybe_concept
 
@@ -94,7 +94,7 @@ def upsert_linkage(s: Concept, t: Concept, linkage_type: str, dt: datetime):
         )
 
         logger.info("Linkage connected, attaching approximate date of encounter.")
-        created_linkage.encounters.append(dt)
+        created_linkage.observations.append(dt)
         created_linkage.save()
         logger.info("Linkage done.")
 

@@ -68,6 +68,10 @@ export class STTService {
   getState(): STTState {
     return this.currentState;
   }
+  
+  resetState(): void {
+    this.setState({ status: 'idle' });
+  }
 
   async toggleRecording(): Promise<string | null> {
     if (this.isRecording) {

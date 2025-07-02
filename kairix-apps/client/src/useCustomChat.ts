@@ -48,8 +48,19 @@ export function useCustomChat() {
           headers['Authorization'] = `Bearer ${selectedEndpoint.apiKey}`;
         }
 
-        const response = await authenticatedFetch(`${selectedEndpoint.url}/models`, {
+        // Models endpoint also needs /v1 prefix
+        const modelsUrl = selectedEndpoint.url.includes('/v1')
+          ? `${selectedEndpoint.url}/models`
+          : `${selectedEndpoint.url}/v1/models`;
+          
+        const response = await authenticatedFetch(modelsUrl, {
           headers,
+          onRetryAttempt: (attempt, _e, _w) => {
+            console.log(`Retrying models fetch (attempt ${attempt}/3)...`);
+          },
+          onMaxRetriesReached: (error) => {
+            console.error('Failed to fetch models after 3 attempts:', error);
+          },
         });
 
         if (response.ok) {
@@ -76,21 +87,47 @@ export function useCustomChat() {
   }, [selectedEndpoint]);
 
   const handleSTTToggle = useCallback(async () => {
+    console.log('handleSTTToggle called, current STT state:', sttState);
+    
     try {
       if (sttState.status === 'listening') {
+        console.log('Stopping STT recording...');
         // Stop recording and get transcript
-        await sttService.stopRecording();
+        const transcript = await sttService.stopRecording();
+        console.log('STT stopped, transcript:', transcript);
       } else {
+        console.log('Starting STT recording...');
+        
+        // Check if browser supports speech recognition
+        if (!(window as any).SpeechRecognition && !(window as any).webkitSpeechRecognition) {
+          console.error('Speech recognition not supported in this browser');
+          alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+          return;
+        }
+        
         // Interrupt TTS when starting STT
         if (isTTSEnabled && currentAssistantMessageIdRef.current) {
+          console.log('Interrupting TTS for message:', currentAssistantMessageIdRef.current);
           ttsService.interruptMessage(currentAssistantMessageIdRef.current);
         }
         
         // Start recording
+        console.log('Calling sttService.startRecording...');
         await sttService.startRecording(currentAssistantMessageIdRef.current || undefined);
+        console.log('STT recording started successfully');
       }
     } catch (error) {
       console.error('STT toggle error:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message, error.stack);
+        
+        // Check for common permission errors
+        if (error.message.includes('Permission denied') || error.message.includes('NotAllowedError')) {
+          alert('Microphone permission denied. Please allow microphone access and try again.');
+        } else {
+          alert(`Speech recognition error: ${error.message}`);
+        }
+      }
     }
   }, [sttState, sttService, isTTSEnabled, ttsService]);
 
@@ -145,7 +182,12 @@ export function useCustomChat() {
       const contextMessages = ChatStorage.getContextMessages([...messages, userMessage]);
 
       // Call the selected endpoint with streaming
-      const response = await authenticatedFetch(`${selectedEndpoint.url}/chat/completions`, {
+      // Chat completions always needs /v1 prefix
+      const chatUrl = selectedEndpoint.url.includes('/v1') 
+        ? `${selectedEndpoint.url}/chat/completions`
+        : `${selectedEndpoint.url}/v1/chat/completions`;
+      
+      const response = await authenticatedFetch(chatUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -159,6 +201,25 @@ export function useCustomChat() {
           stream: true, // Enable streaming
         }),
         signal: abortControllerRef.current.signal,
+        onRetryAttempt: (attempt, error, nextDelay) => {
+          console.log(`Retry attempt ${attempt} after error:`, error.message);
+          console.log(`Waiting ${nextDelay / 1000} seconds before next attempt...`);
+          // Update the assistant message to show retry status
+          setMessages(prev => prev.map(msg => 
+            msg.id === assistantMessageId 
+              ? { ...msg, content: `Connection failed. Retrying (attempt ${attempt}/3)... Please wait ${Math.round(nextDelay / 1000)} seconds.` }
+              : msg
+          ));
+        },
+        onMaxRetriesReached: (error) => {
+          console.error('Max retries reached:', error);
+          // Restore the user's message to the input box
+          setInput(messageContent);
+          // Remove both the user and assistant messages that were added
+          setMessages(prev => prev.filter(msg => 
+            msg.id !== userMessage.id && msg.id !== assistantMessageId
+          ));
+        },
       });
 
       if (!response.ok) {
@@ -216,12 +277,19 @@ export function useCustomChat() {
         console.log('Request aborted');
       } else {
         console.error('Error calling API:', error);
-        // Update the assistant message with error
-        setMessages(prev => prev.map(msg => 
-          msg.id === assistantMessageId 
-            ? { ...msg, content: `Sorry, I encountered an error with ${selectedEndpoint.name}. Please try again.` }
-            : msg
-        ));
+        // Only update the assistant message with error if the messages still exist
+        // (they would have been removed if max retries were reached)
+        setMessages(prev => {
+          const assistantMessageExists = prev.some(msg => msg.id === assistantMessageId);
+          if (assistantMessageExists) {
+            return prev.map(msg => 
+              msg.id === assistantMessageId 
+                ? { ...msg, content: `Sorry, I encountered an error with ${selectedEndpoint.name}. Please try again.` }
+                : msg
+            );
+          }
+          return prev;
+        });
       }
     } finally {
       setIsLoading(false);
@@ -260,7 +328,14 @@ export function useCustomChat() {
           console.log('Auto-submitting with input:', sttState.transcript);
           // Pass the transcript directly to handleSubmit
           handleSubmit(undefined, sttState.transcript);
+          // Reset STT state to idle after submission to prevent repeated submits
+          sttService.resetState();
         }, 100);
+      } else {
+        // If not auto-submitting, still reset to idle after a delay
+        setTimeout(() => {
+          sttService.resetState();
+        }, 500);
       }
     }
   }, [sttState, sttService, handleSubmit]);

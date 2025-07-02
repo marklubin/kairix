@@ -2,7 +2,6 @@
 
 import os
 import functools
-import asyncio
 
 def silent(func):
   """Decorator that silences all stdout/stderr output from a function."""

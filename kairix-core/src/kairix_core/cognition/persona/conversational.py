@@ -2,15 +2,15 @@ import asyncio
 import logging
 from typing import List, AsyncIterator
 
-from agents import Agent
 from openai.types.responses import ResponseTextDeltaEvent
 
 from ..perceptor import Perceptor
-from kairix_core.types.cognition import Stimulus, Perception, StimulusType
+from kairix_core.types.cognition import Stimulus, Perception, StimulusType, K_Agent
 from kairix_core.util.utils import MessageTurnFormatter
 
 from kairix_core.prompt import agent_prompts as prompts
 from kairix_core.runtime.agent import AgentRuntime
+from ...types.environmental_context import PersonaEnvironment
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class ConversationalPersona:
             user_name: str,
             runtime: AgentRuntime,
             perceptors: List[Perceptor],
-            actuating_agent: Agent,
+            actuating_agent: K_Agent,
             reflection_perceptors: List[Perceptor],
     ):
         self.persona_name = persona_name
@@ -64,6 +64,14 @@ class ConversationalPersona:
                 logger.debug(f"Chunk {i}, yielding from stream")
                 yield event.data.delta
                 i += 1
+
+    async def environment_updated(self, environment: PersonaEnvironment):
+        logger.info("Received environment update. Trigger async updates.")
+        for p in self.perceptors:
+            task = asyncio.create_task(p.on_environment_changed(environment))
+            task.add_done_callback(lambda _: logger.info("Processed environmental update."))
+
+
 
     async def react(self, stimulus: Stimulus) -> AsyncIterator[tuple[str, str]]:
         logger.info(f"Responding to stimulus of type: {stimulus.type}.")

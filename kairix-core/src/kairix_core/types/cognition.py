@@ -6,10 +6,17 @@ including stimuli (inputs) and perceptions (processed outputs).
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypeAlias, Any
+
+from agents import Agent
 from rich.console import Console
 from rich.panel import Panel
 
+
+K_Agent: TypeAlias= Agent[Any]
+
 console = Console()
+
 
 
 class StimulusType(Enum):
@@ -27,6 +34,7 @@ class StimulusType(Enum):
     time_tick = "time_tick"
     world_event = "world_event"
     self_perception = "self_perception"
+    location_tracking_heartbeat = "location_tracking_heartbeat"
 
 
 @dataclass
@@ -37,6 +45,7 @@ class Stimulus:
         content: The actual content/payload of the stimulus
         type: The type of stimulus for routing to appropriate perceptors
     """
+
     content: str
     type: StimulusType
 

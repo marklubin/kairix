@@ -1,8 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Iterable
 
-from mypy.checkexpr import Iterable
 from neomodel import config as neomodel_config
 from neomodel import db
 from sentence_transformers import SentenceTransformer

@@ -1,6 +1,5 @@
 import datetime
 import logging
-import uuid
 from typing import List
 
 from pytz import utc  # type: ignore[import-untyped]
@@ -9,17 +8,17 @@ from sentence_transformers import SentenceTransformer
 from kairix_core.cognition import Perceptor
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.cache import CacheRuntime
-from kairix_core.types.cognition import Stimulus, Perception, StimulusType
-from kairix_core.types.neo4j import Agent, MemoryShard
+from kairix_core.types.cognition import Stimulus, Perception, StimulusType, K_Agent
+from kairix_core.types.neo4j import MemoryShard
 
 logger = logging.getLogger(__name__)
 cache = CacheRuntime().summarization_errors
 
 
-class IncrementalSummarizationPerceptor(Perceptor):
+class IncrementalReflectionPerceptor(Perceptor):
 
     def __init__(self, *,
-                 agent: Agent,
+                 agent: K_Agent,
                  runtime: AgentRuntime,
                  embedder: SentenceTransformer,
                  summarization_interval: int = 20):

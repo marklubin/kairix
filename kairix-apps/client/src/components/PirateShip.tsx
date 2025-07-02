@@ -162,47 +162,47 @@ export function PirateShip() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-black via-purple-900/20 to-blue-900/30 p-4 sm:p-6 md:p-8">
-      <div className="text-center max-w-4xl w-full relative">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-black via-purple-900/20 to-blue-900/30 p-2">
+      <div className="text-center w-full max-w-[400px] relative">
         {/* Cyberpunk ASCII Art with City Skyline, Palm Trees, and Pirate Ship */}
-        <div className="overflow-x-auto mb-8">
-          <pre className="text-xs md:text-sm font-mono leading-none relative inline-block min-w-[600px]">
+        <div className="overflow-x-auto mb-4">
+          <pre className="text-[0.5rem] font-mono leading-none relative inline-block">
           <div className="inline-block">
             <div>
-              <span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span>
+              <span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span><span className="text-red-500">-</span><span className="text-orange-500">-</span><span className="text-yellow-500">-</span><span className="text-green-500">-</span><span className="text-blue-500">-</span><span className="text-purple-500">-</span><span className="text-pink-500">-</span>
             </div>
             <div className="flex">
               <span className="text-red-500">|</span>
               <span className="text-cyan-400 animate-pulse">
-{`  ▓▓  ▓▓    ▓▓▓▓    ▓▓▓▓▓  ▓▓▓▓▓▓   ▓▓▓▓▓  ▓▓  ▓▓  `}
+{`▓▓ ▓▓  ▓▓▓▓  ▓▓▓▓▓ ▓▓▓▓▓▓ ▓▓▓▓▓ ▓▓ ▓▓`}
               </span>
               <span className="text-pink-500">|</span>
             </div>
             <div className="flex">
               <span className="text-orange-500">|</span>
               <span className="text-cyan-400 animate-pulse">
-{`  ▓▓ ▓▓    ▓▓  ▓▓    ▓▓    ▓▓  ▓▓    ▓▓    ▓▓  ▓▓  `}
+{`▓▓▓▓   ▓▓  ▓▓   ▓▓   ▓▓  ▓▓   ▓▓   ▓▓ ▓▓`}
               </span>
               <span className="text-purple-500">|</span>
             </div>
             <div className="flex">
               <span className="text-yellow-500">|</span>
               <span className="text-cyan-400 animate-pulse">
-{`  ▓▓▓▓     ▓▓▓▓▓▓    ▓▓    ▓▓▓▓▓     ▓▓     ▓▓▓▓   `}
+{`▓▓▓▓   ▓▓▓▓▓▓   ▓▓   ▓▓▓▓▓    ▓▓    ▓▓▓▓ `}
               </span>
               <span className="text-red-500">|</span>
             </div>
             <div className="flex">
               <span className="text-green-500">|</span>
               <span className="text-cyan-400 animate-pulse">
-{`  ▓▓ ▓▓    ▓▓  ▓▓    ▓▓    ▓▓  ▓▓    ▓▓    ▓▓  ▓▓  `}
+{`▓▓ ▓▓  ▓▓  ▓▓   ▓▓   ▓▓  ▓▓   ▓▓   ▓▓ ▓▓`}
               </span>
               <span className="text-orange-500">|</span>
             </div>
             <div className="flex">
               <span className="text-blue-500">|</span>
               <span className="text-cyan-400 animate-pulse">
-{`  ▓▓  ▓▓   ▓▓  ▓▓   ▓▓▓▓▓  ▓▓  ▓▓   ▓▓▓▓▓  ▓▓  ▓▓  `}
+{`▓▓ ▓▓  ▓▓  ▓▓  ▓▓▓▓▓ ▓▓  ▓▓  ▓▓▓▓▓ ▓▓ ▓▓`}
               </span>
               <span className="text-yellow-500">|</span>
             </div>
@@ -211,31 +211,31 @@ export function PirateShip() {
             </div>
           </div>
           <span className="text-yellow-400 animate-bounce">
-{`        __
-       (o )   WINDSURF RUBBER DUCKY BAND
-      <(_)>   ♪ ♫ ♪ ♫ ♪ ♫ ♪`}
+{`
+   (o )  DUCKY BAND
+  <(_ )>  ♪ ♫ ♪`}
           </span>
           <span className="text-orange-500">
-{`                        |>
-                        |
-                      __|__
-                     |_____|
-                     | ⚡ |
-                     |_____|`}
+{`            |>
+            |
+          __|__
+         |_____|
+         | ⚡ |
+         |_____|`}
           </span>
           <span className="text-cyan-300">
-{`              _______|_____|_______
-              \\                   /
-        ^^ ^^ \\    SINKING     / ^^ ^^
-      ^^   ^^  \\               /  ^^   ^^
-        ^^       \\_____________/       ^^
-                  \\___________/`}
+{`      ___|_____|___
+      \\          /
+   ^^ \\SINKING / ^^
+  ^^   \\      /  ^^
+    ^^  \\____/  ^^
+         \\__/`}
           </span>
           <span className="text-blue-400 animate-pulse">
-{`         PACIFIC OCEAN - FARALLON ISLANDS
-             ~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`}
+{`    PACIFIC OCEAN
+   ~~~~~~~~~~~~~~~
+  ~~~~~~~~~~~~~~~~~
+ ~~~~~~~~~~~~~~~~~~~`}
           </span>
         </pre>
         </div>
@@ -292,7 +292,7 @@ export function PirateShip() {
           .wave-line:nth-child(11) { animation-delay: 3.5s; }
         `}} />
         
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 leading-relaxed relative">
+        <h1 className="text-base font-bold mb-4 leading-relaxed relative">
           <span className="wave-line bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
             The WINDSURF RUBBER DUCKY band
           </span>
@@ -318,7 +318,7 @@ export function PirateShip() {
           </span>
         </h1>
         
-        <p className="text-lg mt-8">
+        <p className="text-sm mt-4">
           <span className="text-yellow-300 animate-pulse">The rubber duckies play </span>
           <span className="text-cyan-300">their final </span>
           <span className="text-pink-400">windsurf </span>
@@ -328,7 +328,7 @@ export function PirateShip() {
         {!hasPlayed && (
           <button
             onClick={playMelody}
-            className="mt-6 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all animate-pulse"
+            className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-full hover:from-purple-600 hover:to-pink-600 transition-all animate-pulse"
           >
             🎵 Play Dramatic Melody 🎵
           </button>

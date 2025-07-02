@@ -83,57 +83,63 @@ export function STTOverlay({ sttState, onStop }: STTOverlayProps) {
   const pulseScale = 1 + (volumeLevel / 100) * 0.3;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
-      <div className="text-center">
-        {/* Big red button */}
-        <button
-          onClick={onStop}
-          disabled={sttState.status === 'processing'}
-          className={cn(
-            "relative w-32 h-32 rounded-full bg-red-500 hover:bg-red-600",
-            "flex items-center justify-center transition-all duration-150",
-            "shadow-2xl hover:shadow-red-500/50",
-            sttState.status === 'processing' && "opacity-50 cursor-not-allowed"
-          )}
-          style={{
-            transform: `scale(${sttState.status === 'listening' ? pulseScale : 1})`,
-          }}
-        >
-          {/* Outer ring animation */}
-          {sttState.status === 'listening' && (
-            <>
-              <div className="absolute inset-0 rounded-full bg-red-400 animate-ping" />
-              <div 
-                className="absolute inset-0 rounded-full bg-red-400 opacity-30"
-                style={{
-                  transform: `scale(${1 + volumeLevel / 200})`,
-                  transition: 'transform 0.1s ease-out'
-                }}
-              />
-            </>
-          )}
-          
-          {/* Icon */}
-          <Mic className="w-12 h-12 text-white relative z-10" />
-        </button>
+    <>
+      <div data-testid="stt-overlay" className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+        <div className="text-center">
+          {/* Big red button */}
+          <button
+            onClick={onStop}
+            disabled={sttState.status === 'processing'}
+            className={cn(
+              "relative w-32 h-32 rounded-full bg-red-500 hover:bg-red-600",
+              "flex items-center justify-center transition-all duration-150",
+              "shadow-2xl hover:shadow-red-500/50",
+              sttState.status === 'processing' && "opacity-50 cursor-not-allowed"
+            )}
+            style={{
+              transform: `scale(${sttState.status === 'listening' ? pulseScale : 1})`,
+            }}
+          >
+            {/* Outer ring animation */}
+            {sttState.status === 'listening' && (
+              <>
+                <div className="absolute inset-0 rounded-full bg-red-400 animate-ping" />
+                <div 
+                  className="absolute inset-0 rounded-full bg-red-400 opacity-30"
+                  style={{
+                    transform: `scale(${1 + volumeLevel / 200})`,
+                    transition: 'transform 0.1s ease-out'
+                  }}
+                />
+              </>
+            )}
+            
+            {/* Icon */}
+            <Mic className="w-12 h-12 text-white relative z-10" />
+          </button>
 
-        {/* Status text */}
-        <div className="mt-8 space-y-2">
-          <p className="text-white text-xl font-medium">
-            {sttState.status === 'listening' ? 'Listening...' : 'Processing...'}
-          </p>
-          <p className="text-white/70 text-sm">
-            {sttState.status === 'listening' ? 'Click to stop recording' : 'Please wait...'}
-          </p>
-          
-          {/* Show interim transcript if available */}
-          {sttState.status === 'listening' && sttState.interimTranscript && (
-            <p className="text-white/50 text-sm mt-4 max-w-md mx-auto">
-              "{sttState.interimTranscript}"
+          {/* Status text */}
+          <div className="mt-8 space-y-2">
+            <p className="text-white text-xl font-medium">
+              {sttState.status === 'listening' ? 'Listening...' : 'Processing...'}
             </p>
-          )}
+            <p className="text-white/70 text-sm">
+              {sttState.status === 'listening' ? 'Click to stop recording' : 'Please wait...'}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* Interim transcript on separate layer */}
+      {sttState.status === 'listening' && sttState.interimTranscript && (
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[100] pointer-events-none">
+          <div className="bg-black/90 backdrop-blur-sm rounded-lg px-6 py-3 max-w-2xl">
+            <p className="text-white/80 text-base">
+              {sttState.interimTranscript}
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

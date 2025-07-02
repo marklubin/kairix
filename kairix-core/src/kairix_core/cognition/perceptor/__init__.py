@@ -4,6 +4,8 @@ from kairix_core.types.cognition import Stimulus, Perception
 
 __all__ = ["Perceptor"]
 
+from kairix_core.types.environmental_context import PersonaEnvironment
+
 
 class Perceptor(ABC):
     """
@@ -24,4 +26,7 @@ class Perceptor(ABC):
         Returns:
             List of perceptions generated from the stimulus
         """
+        pass
+
+    async def on_environment_changed(self, context: PersonaEnvironment):
         pass

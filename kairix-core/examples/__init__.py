@@ -1,1 +1,0 @@
-"""Example code demonstrating kairix-core usage."""

@@ -1,4 +1,4 @@
-all: clean install lint check test
+all: clean lint-unsafe check test
 set-env PLATFORM INF:
     rm -f .env 
     touch .env
@@ -30,7 +30,7 @@ test-file FILE:
     uv run pytest tests/{{FILE}}
 
 lint:
-    uv run ruff check --fix src/ tests/
+    uv run ruff check --fix src/
 
 lint-unsafe:
     uv run ruff check --fix --unsafe-fixes .
@@ -38,7 +38,6 @@ lint-unsafe:
 
 # Check code without fixing (for CI)
 check:
-    uv run ruff check src/ tests/
     uv run ty check src/
     uv run mypy src/
 

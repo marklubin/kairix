@@ -59,6 +59,7 @@ export function Sidebar({
         )}
         size="icon"
         variant="outline"
+        data-testid="sidebar-settings-button"
       >
         <Settings className="h-4 w-4" />
       </Button>
@@ -77,6 +78,7 @@ export function Sidebar({
             onClick={() => setIsOpen(false)}
             size="icon"
             variant="ghost"
+            data-testid="sidebar-close-button"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -267,6 +269,27 @@ export function Sidebar({
                   className="w-full"
                   disabled={!isEnabled}
                 />
+              </div>
+
+              {/* Buffer Word Count */}
+              <div>
+                <label htmlFor="tts-buffer-words" className="text-sm font-medium mb-2 block">
+                  Buffer Words: {ttsConfig.bufferWordCount || 10}
+                </label>
+                <input
+                  id="tts-buffer-words"
+                  type="range"
+                  min="1"
+                  max="50"
+                  step="1"
+                  value={ttsConfig.bufferWordCount || 10}
+                  onChange={(e) => updateTTSConfig({ bufferWordCount: parseInt(e.target.value) })}
+                  className="w-full"
+                  disabled={!isEnabled}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Number of words to buffer before speaking (lower = less delay, higher = smoother)
+                </p>
               </div>
             </div>
           </div>

@@ -29,7 +29,7 @@ services:
       # Memory configuration for better performance with embeddings
       - NEO4J_server_memory_pagecache_size=512M
       - NEO4J_server_memory_heap_initial__size=512M
-      - NEO4J_server_memory_heap_max__size=2G
+      - NEO4J_server_memory_heap_max__size=8G
 
       # Enable procedures unrestricted for vector operations
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*,genai.*

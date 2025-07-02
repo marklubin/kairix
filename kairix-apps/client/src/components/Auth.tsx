@@ -18,7 +18,7 @@ export function Auth() {
     <div className="h-screen w-screen flex items-center justify-center bg-background">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 px-6">
         <input
-          type="password"
+          type="text"
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder="Enter access key"

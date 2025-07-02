@@ -22,6 +22,7 @@ export class TTSService {
       pitch: 1.0,
       volume: 1.0,
       elevenLabsApiKey: 'sk_f84893b970e13c43c23063f92abbcbc760698537780b5bfd',
+      bufferWordCount: 10,
       ...config
     };
 
@@ -70,6 +71,36 @@ export class TTSService {
     return lastChar === ',' || lastChar === '.' || lastChar === '-';
   }
 
+  // Count words in the buffer
+  private countWords(text: string): number {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  }
+
+  // Check if buffer has a pause condition (punctuation)
+  private hasPauseCondition(buffer: string): boolean {
+    // Check for common pause punctuation
+    return /[.!?;,\-—:]\s*$/.test(buffer);
+  }
+
+  // Check if buffer contains a paragraph break
+  private hasParagraphBreak(text: string): boolean {
+    // Check for double newlines, or newline followed by whitespace and another newline
+    return /\n\s*\n/.test(text);
+  }
+
+  // Check if buffer is ready to be processed
+  private shouldProcessBuffer(buffer: string): boolean {
+    const wordCount = this.countWords(buffer);
+    const hasPause = this.hasPauseCondition(buffer);
+    
+    // Process if:
+    // 1. We have at least bufferWordCount words AND a pause condition, OR
+    // 2. We have a completed phrase (legacy check for backward compatibility), OR
+    // 3. We have a paragraph break (always process on paragraph breaks)
+    const minWordCount = this.config.bufferWordCount || 10;
+    return (wordCount >= minWordCount && hasPause) || this.isCompletedPhrase(buffer) || this.hasParagraphBreak(buffer);
+  }
+
   // Process streaming text input
   processStreamingText(text: string, messageId?: string): void {
     if (!text) return;
@@ -88,14 +119,14 @@ export class TTSService {
     this.buffer += text;
     this.setState({ status: 'buffering', text: this.buffer });
 
-    // Check if we have a completed phrase
-    if (this.isCompletedPhrase(this.buffer)) {
-      // Process the buffer immediately
+    // Check if buffer is ready to be processed
+    if (this.shouldProcessBuffer(this.buffer)) {
+      // Process the buffer
       this.queue.push(this.buffer);
       this.buffer = ''; // Clear buffer after queuing
       this.processQueue();
     }
-    // No timeout - just wait for stop chars or explicit finish
+    // Wait for buffering conditions or explicit finish
   }
 
 

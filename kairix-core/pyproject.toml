@@ -3,7 +3,7 @@ requires = ["uv_build>=0.7.8"]
 build-backend = "uv_build"
 
 [project]
-name = "kairix-core"
+name = "kairix_core"
 version = "0.1.0"
 description = "Core functionality for Kairix"
 readme = "README.md"
@@ -16,7 +16,6 @@ dependencies = [
     "httpx>=0.28.1",
     "neomodel>=5.5.0",
     "openai>=1.86.0",
-    "openai-agents>=0.0.17",
     "pydub>=0.25.1",
     "rich>=14.0.0",
     "sentence-transformers>=4.1.0",
@@ -24,8 +23,6 @@ dependencies = [
     "neomodel>=5.5.0",
     "chatformat>=1.2",
     "huggingface-hub>=0.32.4",
-    "llama-cpp-python @https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.4-metal/llama_cpp_python-0.3.4-cp310-cp310-macosx_11_0_arm64.whl ; sys_platform== 'darwin' and platform_machine == 'arm64'",
-    "llama-cpp-python @https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.4-cu121/llama_cpp_python-0.3.4-cp310-cp310-linux_x86_64.whl ; sys_platform == 'linux' and platform_machine == 'x86_64'",
     "wireup>=2.0.0",
     "spacy>=3.8.7",
     "textblob>=0.19.0",
@@ -37,6 +34,9 @@ dependencies = [
     "opentelemetry-api>=1.34.1",
     "opentelemetry-sdk>=1.34.1",
     "opentelemetry-instrumentation-logging>=0.55b1",
+    "openai-agents<0.1.0",
+    "diskcache>=5.6.3",
+    "llama-cpp-python>=0.3.9",
 ]
 
 
@@ -73,3 +73,6 @@ strict_equality = true
 enable_error_code = ["unused-awaitable", "redundant-expr", "truthy-bool"]
 # Ignore missing imports for external packages
 ignore_missing_imports = true
+# Explicit namespace packages
+namespace_packages = true
+explicit_package_bases = true

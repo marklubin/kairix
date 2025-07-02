@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import kairix_core.prompt.agent_prompts as prompts
 from agents import Agent
 from kairix_core.cognition.perceptor.conversation_history import (
@@ -7,7 +9,7 @@ from kairix_core.cognition.perceptor.environmental_context import (
     EnvironmentalContextPerceptor,
 )
 from kairix_core.cognition.perceptor.incremental_reflection import (
-    IncrementalSummarizationPerceptor,
+    IncrementalReflectionPerceptor,
 )
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.persona import ConversationalPersona
@@ -17,6 +19,9 @@ from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.neo4j import Neo4jRuntime
 from kairix_core.util.utils import get_or_raise
 from sentence_transformers import SentenceTransformer
+
+if TYPE_CHECKING:
+    from kairix_core.types.cognition import K_Agent
 
 logger = LoggingRuntime().logger
 
@@ -74,17 +79,18 @@ class KairixEngine:
             window_size=20
         )
 
-        incremental_summary = IncrementalSummarizationPerceptor(
+        reflection_agent: K_Agent = Agent(
+            name="incremental_reflection",
+            instructions=system_instructions.self_reflective_summary_minimal)
+
+        incremental_reflection = IncrementalReflectionPerceptor(
             runtime=agent_runtime,
             summarization_interval=20,
-            agent=Agent(
-                name="incremental_summarizer",
-                instructions=system_instructions.self_reflective_summary_minimal,
-            ),
+            agent=reflection_agent,
             embedder=embedding_transformer,
         )
 
-        agent = Agent(
+        conversational_agent: K_Agent = Agent(
             name="conversationalist",
             instructions=prompts.conversationalist_instruction_template_v1(
                 agent_name=persona_name, user_name=user_name
@@ -102,11 +108,11 @@ class KairixEngine:
                 insight,
                 environmental_content,
                 conversation_history,
-                incremental_summary,
+                incremental_reflection,
             ],
-            actuating_agent=agent,
+            actuating_agent=conversational_agent,
             reflection_perceptors=[
                 conversation_history,
-                incremental_summary
+                incremental_reflection
             ],
         )

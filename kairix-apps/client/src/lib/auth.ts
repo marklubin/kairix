@@ -11,7 +11,3 @@ export function setApiKey(key: string): void {
 export function hasApiKey(): boolean {
   return !!getStoredApiKey();
 }
-
-export function clearAuth(): void {
-  localStorage.removeItem(AUTH_KEY);
-}

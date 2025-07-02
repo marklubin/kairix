@@ -8,7 +8,6 @@ from neomodel import (
     ArrayProperty,
     DateTimeProperty,
     FloatProperty,
-    JSONProperty,
     One,
     Relationship,
     StringProperty,
@@ -23,23 +22,21 @@ class SemanticLinkage(StructuredRel):
     """Relationship representing semantic connections between concepts.
     
     Attributes:
-        created_at: When the linkage was first created
-        updated_at: When the linkage was last modified
+        related_at: When the linkage was first created
         linkage_type: Type of semantic relationship (e.g., 'synonym', 'related')
         weight: Strength of the relationship
-        encounters: Timestamps when this linkage was referenced
+        observations: Timestamps when this linkage was referenced
     """
-    created_at = DateTimeProperty(default_now=True)
-    updated_at = DateTimeProperty(default_now=True)
+    related_at = DateTimeProperty(default_now=True)
     linkage_type = StringProperty(required=True)
     weight = IntegerProperty(default=1)
-    encounters = ArrayProperty(DateTimeProperty(), default=[])
+    observations = ArrayProperty(DateTimeProperty(), default=[])
 
 
     def score(self, relevance_score: float):
         return relevance_score * (
-                len(self.start_node().encounters)
-                + len(self.end_node().encounters)
+                len(self.start_node().observations)
+                + len(self.end_node().observations)
                 + int(self.weight))
 
     def phrase(self):
@@ -72,7 +69,6 @@ class Concept(StructuredNode):
     name = StringProperty(required=True)
     type = StringProperty(required=True)
     created_at = DateTimeProperty(default_now=True)
-    updated_at = DateTimeProperty(default_now=True)
     encounters = ArrayProperty(DateTimeProperty(), default=[])
     embedding = ArrayProperty(
         FloatProperty(),
@@ -102,16 +98,6 @@ class Concept(StructuredNode):
         super().__init__(**kwargs)
 
 
-class StoredLog(StructuredNode):
-    # Unique ID for the log entry
-    uid = StringProperty(unique_index=True, required=True)
-    timestamp = DateTimeProperty(required=True)  # When the log occurred
-    level = StringProperty(required=True)  # Log level: e.g., 'INFO', 'ERROR'
-    source = StringProperty()  # Optional: what script/module/logger
-    message = StringProperty()  # Raw log message (short)
-    details = JSONProperty()
-
-
 class Agent(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
 
@@ -133,17 +119,6 @@ class SourceDocument(IdempotentNode):
     content = StringProperty(required=True)
 
 
-class Embedding(IdempotentNode):
-    uid = StringProperty(unique_index=True, required=True)
-    embedding_model = StringProperty(index=True, required=True)
-    vector = ArrayProperty(
-        FloatProperty(),
-        required=True,
-        index=True,
-        vector_index=VectorIndex(dimensions=768),
-    )
-
-
 class Summary(IdempotentNode):
     uid = StringProperty(unique_index=True, required=True)
     summary_text = StringProperty(required=True)
@@ -152,24 +127,24 @@ class Summary(IdempotentNode):
 
 
 class MemoryShard(IdempotentNode):
+    VECTOR_INDEX_CONFIG = {
+        "vector_address": {  # property name
+            "dimensions": 128,
+            "similarity_function": "cosine",  # or 'euclidean'
+        }
+    }
     uid = StringProperty(unique_index=True, required=True)
     shard_contents = StringProperty(required=True)
     vector_address = ArrayProperty(
         FloatProperty(),
         required=True,
         index=True,
-        vector_index=VectorIndex(dimensions=768),
-    ),
+        vector_index=VectorIndex(dimensions=128),
+    )
+
     created_at = DateTimeProperty(default_now=True, required=False)
 
-    # Relationships
-    embedding = Relationship("Embedding", "HAS_EMBEDDING", cardinality=One)
     agent = Relationship("Agent", "BELONGS_TO", cardinality=One)
     source_document = Relationship(
         "SourceDocument", "DERIVED_FROM", cardinality=One)
     summary = Relationship("Summary", "HAS_SUMMARY", cardinality=One)
-    relates = Relationship("MemoryShard", "RELATES")
-
-
-class TrackingNode(IdempotentNode):
-    uid = StringProperty(unique_index=True, required=True)

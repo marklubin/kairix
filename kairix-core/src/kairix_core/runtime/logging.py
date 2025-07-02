@@ -1,3 +1,9 @@
+import logging
+import os
+from imaplib import Response_code
+from logging import Handler, FileHandler
+
+
 class LoggingRuntime:
     _instance = None
 
@@ -15,20 +21,9 @@ class LoggingRuntime:
 
         from rich.console import Console
         from rich.logging import RichHandler
-        from rich.style import Style
-        from opentelemetry.instrumentation.logging import LoggingInstrumentor
-
-        #
-        # from uvicorn.config import Config
-        #
-        # Config.configure_logging = lambda _:\
-        #     Console().print("🔪Bypassing uvicorn logging hijack.",
-        #                   style=Style(color="hot_pink3", bgcolor="aquamarine1", bold=True, encircle=True))
-        # #trace.set_tracer_provider(TracerProvider())
-        #LoggingInstrumentor().instrument(set_logging_context=True)
 
         self.logger = logging.getLogger(logger_name)
-        #self.tracer = trace.get_tracer(logger_name)
+
 
         self.console = Console(width=200)
         self.rich_handler = RichHandler(
@@ -48,3 +43,34 @@ class LoggingRuntime:
             datefmt= LoggingRuntime.DTF,
             handlers=[self.rich_handler],
             level="INFO")
+
+
+        self.wirelog = self._init_wirelog()
+
+
+
+    def _init_wirelog(self):
+
+        def request(message, *args):
+            logger.info(f"""
+            HTTP REQUEST BODY>
+            
+                {message}
+            
+            
+            """)
+
+        def response(message, args):
+            logger.info(F"""
+            HTTP RESPONSE BODY>
+            
+            {message}
+
+            
+        """)
+        logger = logging.getLogger("kairix-server-wirelog")
+        logger.setLevel("DEBUG")
+        logger.request = request
+        logger.response = response
+
+        return logger

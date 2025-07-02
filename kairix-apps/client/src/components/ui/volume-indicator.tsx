@@ -73,7 +73,7 @@ export function VolumeIndicator({ className }: VolumeIndicatorProps) {
   }, []);
 
   return (
-    <div className={cn("flex items-center gap-0.5", className)}>
+    <div data-testid="volume-indicator" className={cn("flex items-center gap-0.5", className)}>
       {[...Array(4)].map((_, i) => (
         <div
           key={i}

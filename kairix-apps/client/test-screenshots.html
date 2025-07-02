@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Flow Test Screenshots</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .status-bar {
+      background: #2a2a2a;
+      border-bottom: 1px solid #3a3a3a;
+      padding: 8px 16px;
+      display: flex;
+      gap: 24px;
+      font-size: 12px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: gray;
+    }
+    
+    .status-dot.active {
+      animation: pulse 1s infinite;
+    }
+    
+    .status-dot.green { background: #10b981; }
+    .status-dot.red { background: #ef4444; }
+    .status-dot.yellow { background: #f59e0b; }
+    .status-dot.cyan { background: #06b6d4; }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .main-container {
+      flex: 1;
+      display: flex;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+    }
+    
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .message {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+    }
+    
+    .message.user {
+      justify-content: flex-end;
+    }
+    
+    .message-content {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #2a2a2a;
+    }
+    
+    .message.user .message-content {
+      background: #3b82f6;
+    }
+    
+    .input-area {
+      padding: 20px;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    
+    textarea {
+      flex: 1;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #e0e0e0;
+      padding: 12px;
+      border-radius: 8px;
+      resize: none;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      background: #2563eb;
+    }
+    
+    .mic-button {
+      background: #ef4444;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    
+    .mic-button:hover {
+      background: #dc2626;
+    }
+    
+    .sidebar {
+      width: 300px;
+      background: #2a2a2a;
+      border-left: 1px solid #3a3a3a;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .sidebar h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #f0f0f0;
+    }
+    
+    .setting-group {
+      margin-bottom: 24px;
+    }
+    
+    .setting-group h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: #a0a0a0;
+    }
+    
+    .setting-row {
+      margin-bottom: 12px;
+    }
+    
+    label {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    
+    select, input[type="range"] {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      color: #e0e0e0;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    
+    .recording-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    .recording-content {
+      text-align: center;
+      color: white;
+    }
+    
+    .recording-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #ef4444;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: recording-pulse 2s infinite;
+    }
+    
+    @keyframes recording-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    
+    .volume-bars {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    
+    .volume-bar {
+      width: 8px;
+      background: white;
+      animation: volume-animation 0.5s infinite;
+    }
+    
+    .volume-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+    .volume-bar:nth-child(2) { height: 30px; animation-delay: 0.1s; }
+    .volume-bar:nth-child(3) { height: 40px; animation-delay: 0.2s; }
+    .volume-bar:nth-child(4) { height: 30px; animation-delay: 0.3s; }
+    
+    @keyframes volume-animation {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    
+    .settings-button {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      background: #3a3a3a;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+    }
+    
+    .error-message {
+      color: #ef4444;
+      font-size: 12px;
+      margin-left: 120px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span>TTS:</span>
+      <div class="status-dot" id="tts-status"></div>
+      <span id="tts-text">IDLE</span>
+    </div>
+    <div class="status-item">
+      <span>STT:</span>
+      <div class="status-dot" id="stt-status"></div>
+      <span id="stt-text">IDLE</span>
+    </div>
+    <div class="error-message hidden" id="error-text"></div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Chat Area -->
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <!-- Messages will be added here -->
+      </div>
+      
+      <div class="input-area">
+        <textarea placeholder="Type a message..." rows="1" id="message-input"></textarea>
+        <button class="mic-button" id="mic-button" title="Push to talk">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+        </button>
+        <button id="send-button">Send</button>
+      </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar hidden" id="sidebar">
+      <h2>Settings</h2>
+      
+      <div class="setting-group">
+        <h3>TTS Settings</h3>
+        <div class="setting-row">
+          <label>Provider</label>
+          <select>
+            <option>Browser Speech Synthesis</option>
+            <option>ElevenLabs</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Voice</label>
+          <select>
+            <option>Default Voice</option>
+            <option>Google US English</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Rate: <span>1.0</span></label>
+          <input type="range" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="setting-row">
+          <label>Pitch: <span>1.0</span></label>
+          <input type="range" min="0.5" max="2" step="0.1" value="1">
+        </div>
+        <div class="setting-row">
+          <label>Volume: <span>1.0</span></label>
+          <input type="range" min="0" max="1" step="0.1" value="1">
+        </div>
+      </div>
+      
+      <div class="setting-group">
+        <h3>STT Settings</h3>
+        <div class="setting-row">
+          <label>Provider</label>
+          <select>
+            <option>Browser Speech Recognition</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Language</label>
+          <select>
+            <option>en-US</option>
+            <option>en-GB</option>
+            <option>es-ES</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>
+            <input type="checkbox" checked> Auto-submit
+          </label>
+        </div>
+        <div class="setting-row">
+          <label>
+            <input type="checkbox" checked> Interim results
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Button -->
+  <button class="settings-button" id="settings-button" title="Settings">⚙️</button>
+  
+  <!-- Recording Overlay -->
+  <div class="recording-overlay hidden" id="recording-overlay">
+    <div class="recording-content">
+      <div class="recording-circle">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="white">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </div>
+      <h2 id="recording-text">Listening...</h2>
+      <div class="volume-bars">
+        <div class="volume-bar"></div>
+        <div class="volume-bar"></div>
+        <div class="volume-bar"></div>
+        <div class="volume-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulate different states
+    const scenarios = [
+      {
+        name: '1. Initial Load',
+        action: () => {
+          document.getElementById('messages').innerHTML = '';
+          document.getElementById('message-input').value = '';
+          setStatus('tts', 'idle', 'gray');
+          setStatus('stt', 'idle', 'gray');
+        }
+      },
+      {
+        name: '2. Settings Open',
+        action: () => {
+          document.getElementById('sidebar').classList.remove('hidden');
+        }
+      },
+      {
+        name: '3. Settings Closed',
+        action: () => {
+          document.getElementById('sidebar').classList.add('hidden');
+        }
+      },
+      {
+        name: '4. Message Typed',
+        action: () => {
+          document.getElementById('message-input').value = 'Hello, can you help me with voice commands?';
+        }
+      },
+      {
+        name: '5. Conversation',
+        action: () => {
+          addMessage('user', 'Hello, can you help me with voice commands?');
+          addMessage('assistant', 'Hello from the AI assistant! I can help you with voice commands. You can use the microphone button to speak, or press the spacebar for push-to-talk.');
+          document.getElementById('message-input').value = '';
+        }
+      },
+      {
+        name: '6. TTS Playing',
+        action: () => {
+          setStatus('tts', 'playing', 'green', true);
+        }
+      },
+      {
+        name: '7. Recording Active',
+        action: () => {
+          document.getElementById('recording-overlay').classList.remove('hidden');
+          setStatus('stt', 'listening', 'red', true);
+        }
+      },
+      {
+        name: '8. Processing Speech',
+        action: () => {
+          document.getElementById('recording-text').textContent = 'Processing...';
+          setStatus('stt', 'processing', 'yellow', true);
+        }
+      },
+      {
+        name: '9. Transcription Complete',
+        action: () => {
+          document.getElementById('recording-overlay').classList.add('hidden');
+          document.getElementById('message-input').value = 'This is my transcribed voice message';
+          setStatus('stt', 'idle', 'gray');
+        }
+      },
+      {
+        name: '10. Error State',
+        action: () => {
+          setStatus('stt', 'error', 'red');
+          document.getElementById('error-text').textContent = 'STT: Microphone access denied';
+          document.getElementById('error-text').classList.remove('hidden');
+        }
+      }
+    ];
+    
+    function setStatus(type, status, color, animate = false) {
+      const dot = document.getElementById(`${type}-status`);
+      const text = document.getElementById(`${type}-text`);
+      
+      dot.className = `status-dot ${color}`;
+      if (animate) dot.classList.add('active');
+      text.textContent = status.toUpperCase();
+    }
+    
+    function addMessage(type, content) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    // Settings toggle
+    document.getElementById('settings-button').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('hidden');
+    });
+    
+    // Create scenario buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'position: fixed; bottom: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 10000;';
+    
+    scenarios.forEach((scenario, index) => {
+      const button = document.createElement('button');
+      button.textContent = scenario.name;
+      button.style.cssText = 'background: #4a4a4a; font-size: 12px; padding: 8px 12px;';
+      button.onclick = () => {
+        // Reset to initial state
+        scenarios[0].action();
+        // Apply scenario
+        scenario.action();
+        // Take screenshot after a short delay
+        setTimeout(() => {
+          console.log(`Ready for screenshot: ${scenario.name}`);
+        }, 100);
+      };
+      buttonContainer.appendChild(button);
+    });
+    
+    document.body.appendChild(buttonContainer);
+    
+    // Initialize
+    scenarios[0].action();
+  </script>
+</body>
+</html>

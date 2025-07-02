@@ -18,4 +18,4 @@ def main() -> None:
     This is a placeholder function that prints a greeting message.
     In production, this would initialize the Kairix cognitive system.
     """
-    print("Hello from kairix-core!")
+    print("Hello from kairix_core!")

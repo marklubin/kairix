@@ -12,6 +12,8 @@ data/**
 .cache/*
 *.cache
 .cache*
+**/.magg/**
+*/.magg/
 **/data/**
 kairix-offline/.env
 dist/**

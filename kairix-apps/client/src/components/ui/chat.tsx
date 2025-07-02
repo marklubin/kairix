@@ -98,6 +98,7 @@ export function Chat({
                 isSTTActive && "text-muted-foreground"
               )}
               disabled={isGenerating || sttState.status === 'processing'}
+              data-testid="chat-input"
             />
             {sttState.status === 'processing' && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -113,6 +114,7 @@ export function Chat({
             variant={sttState.status === 'listening' ? "destructive" : "outline"}
             onClick={onSTTToggle}
             disabled={isGenerating || sttState.status === 'processing'}
+            data-testid="chat-mic-button"
           >
             {sttState.status === 'listening' ? (
               <MicOff className="h-4 w-4" />
@@ -136,6 +138,7 @@ export function Chat({
               type="submit" 
               size="icon" 
               disabled={!input.trim() && sttState.status !== 'transcribed'}
+              data-testid="chat-send-button"
             >
               <Send className="h-4 w-4" />
             </Button>

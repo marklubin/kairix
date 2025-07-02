@@ -9,6 +9,8 @@ interface ActivityStatusBarProps {
 
 const getTTSStatusInfo = (state: TTSState): { color: string; text: string; bgClass: string } => {
   switch (state.status) {
+    case 'idle':
+      return { color: 'grey', text: 'Idle', bgClass: 'bg-gray-500' };
     case 'waiting':
       return { color: 'grey', text: 'Waiting', bgClass: 'bg-gray-500' };
     case 'buffering':
@@ -49,16 +51,16 @@ export function ActivityStatusBar({ ttsState, sttState }: ActivityStatusBarProps
     <div className="w-full bg-background border-b px-4 py-2">
       <div className="flex items-center gap-6">
         {/* TTS Status */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">TTS:</span>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-[140px]" data-testid={`tts-status-${ttsState.status === 'idle' || ttsState.status === 'waiting' ? 'idle' : ttsState.status}`}>
+          <span className="text-xs font-medium text-muted-foreground w-8">TTS:</span>
+          <div className="flex items-center gap-2 flex-1">
             <div className={cn(
-              "w-2 h-2 rounded-full",
+              "w-2 h-2 rounded-full flex-shrink-0",
               ttsState.status === 'playing' && "animate-pulse",
               ttsInfo.bgClass
             )} />
             <span className={cn(
-              "text-xs font-medium uppercase",
+              "text-xs font-medium uppercase w-20",
               ttsState.status === 'error' ? 'text-red-600' : 'text-foreground'
             )}>
               {ttsInfo.text}
@@ -67,16 +69,16 @@ export function ActivityStatusBar({ ttsState, sttState }: ActivityStatusBarProps
         </div>
 
         {/* STT Status */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">STT:</span>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-[140px]" data-testid={`stt-status-${sttState.status}`}>
+          <span className="text-xs font-medium text-muted-foreground w-8">STT:</span>
+          <div className="flex items-center gap-2 flex-1">
             <div className={cn(
-              "w-2 h-2 rounded-full",
+              "w-2 h-2 rounded-full flex-shrink-0",
               sttState.status === 'listening' && "animate-pulse",
               sttInfo.bgClass
             )} />
             <span className={cn(
-              "text-xs font-medium uppercase",
+              "text-xs font-medium uppercase w-20",
               sttState.status === 'error' ? 'text-red-600' : 'text-foreground'
             )}>
               {sttInfo.text}
@@ -86,13 +88,13 @@ export function ActivityStatusBar({ ttsState, sttState }: ActivityStatusBarProps
         
         {/* Show additional info for certain states */}
         {ttsState.status === 'error' && (
-          <span className="text-xs text-red-600 truncate max-w-md">
+          <span className="text-xs text-red-600 truncate max-w-md" data-testid="tts-error">
             TTS: {ttsState.error}
           </span>
         )}
         
         {sttState.status === 'error' && (
-          <span className="text-xs text-red-600 truncate max-w-md">
+          <span className="text-xs text-red-600 truncate max-w-md" data-testid="stt-error">
             STT: {sttState.error}
           </span>
         )}

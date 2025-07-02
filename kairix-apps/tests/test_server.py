@@ -8,8 +8,9 @@ import pytest
 from fastapi.testclient import TestClient
 from kairix_core.cognition.persona import ConversationalPersona
 
-# Set required environment variable for tests
+# Set required environment variables for tests
 os.environ["KAIRIX_AGENT_CONFIGURATION_SET_KEY"] = "ollama-local"
+# Don't set KAIRIX_MCP_SERVER to use dummy implementation
 
 from kairix_apps.server import app
 
@@ -46,7 +47,7 @@ def mock_agent_runtime():
 
 @pytest.fixture
 def mock_persona(mock_neo4j, mock_inference, mock_agent_runtime):
-    """Mock ConversationalPersona and PersonaWrapper."""
+    """Mock ConversationalPersona and OpenAIAdapter."""
     with patch(
         "kairix_apps.engine.KairixEngine.conversational_persona_for_environment"
     ) as mock_engine:
@@ -61,22 +62,60 @@ def mock_persona(mock_neo4j, mock_inference, mock_agent_runtime):
         persona.react = mock_react
         mock_engine.return_value = persona
         
-        # Mock PersonaWrapper to return a wrapped persona with respond method
+        # Mock OpenAIAdapter
         with patch(
-            "kairix_core.api.adapters.persona_wrapper.PersonaWrapper"
-        ) as mock_wrapper:
-            wrapped_persona = MagicMock()
+            "kairix_apps.server.OpenAIAdapter"
+        ) as mock_adapter_class:
+            adapter_instance = MagicMock()
             
-            async def mock_respond(message, context):
-                # Return accumulated responses for complete_response
-                responses = ["Hello", "Hello from", "Hello from Kairix!"]
-                for response in responses:
-                    yield response
+            # Mock complete_response for non-streaming
+            async def mock_complete_response(messages, model):
+                return {
+                    "id": "chatcmpl-test",
+                    "object": "chat.completion",
+                    "created": 1234567890,
+                    "model": model,
+                    "choices": [{
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": "Hello from Kairix!"
+                        },
+                        "finish_reason": "stop"
+                    }],
+                    "usage": {
+                        "prompt_tokens": 10,
+                        "completion_tokens": 5,
+                        "total_tokens": 15
+                    }
+                }
             
-            wrapped_persona.respond = mock_respond
-            mock_wrapper.return_value = wrapped_persona
+            # Mock stream_response for streaming
+            async def mock_stream_response(messages, model):
+                chunks = [
+                    {"choices": [{"delta": {"content": "Hello"}, "index": 0}]},
+                    {"choices": [{"delta": {"content": " from"}, "index": 0}]},
+                    {"choices": [{"delta": {"content": " Kairix!"}, "index": 0}]},
+                    {"choices": [{"delta": {}, "finish_reason": "stop", "index": 0}]}
+                ]
+                for _i, chunk_data in enumerate(chunks):
+                    chunk = MagicMock()
+                    chunk.model_dump_json.return_value = json.dumps({
+                        "id": "chatcmpl-test",
+                        "object": "chat.completion.chunk",
+                        "created": 1234567890,
+                        "model": model,
+                        **chunk_data
+                    })
+                    yield chunk
             
-            yield persona
+            adapter_instance.complete_response = mock_complete_response
+            adapter_instance.stream_response = mock_stream_response
+            mock_adapter_class.return_value = adapter_instance
+            
+            # Patch the global adapter
+            with patch("kairix_apps.server.adapter", adapter_instance):
+                yield persona
 
 
 @pytest.fixture
@@ -158,6 +197,7 @@ def test_chat_completion_streaming(client, auth_headers):
     # Parse SSE response
     chunks = []
     for line in response.iter_lines():
+        line = line.decode('utf-8') if isinstance(line, bytes) else line
         if line.startswith("data: "):
             data = line[6:]
             if data != "[DONE]":
@@ -226,13 +266,12 @@ def test_realtime_audio_stream_not_implemented(client, auth_headers):
 
 def test_chat_completion_error_handling(client, mock_persona, auth_headers):
     """Test error handling in chat completion."""
-    # Patch the global wrapped_persona to simulate an error
-    with patch("kairix_apps.server.wrapped_persona") as mock_wrapped:
-        async def mock_error_respond(message, context):
+    # Patch the adapter to simulate an error
+    with patch("kairix_apps.server.adapter") as mock_adapter:
+        async def mock_error_complete(messages, model):
             raise Exception("Test error")
-            yield  # Never reached
         
-        mock_wrapped.respond = mock_error_respond
+        mock_adapter.complete_response = mock_error_complete
         
         request = {
             "model": "kairix-conversational",
@@ -240,5 +279,100 @@ def test_chat_completion_error_handling(client, mock_persona, auth_headers):
             "stream": False
         }
         
-        response = client.post("/v1/chat/completions", json=request)
+        response = client.post("/v1/chat/completions", json=request, headers=auth_headers)
         assert response.status_code == 500
+
+
+def test_context_update_success(client, auth_headers):
+    """Test successful context update."""
+    request = {
+        "timestamp": 1234567890000,
+        "session_id": "test-session-123",
+        "device_id": "test-device-456",
+        "geolocation": {
+            "latitude": 37.7749,
+            "longitude": -122.4194,
+            "accuracy": 10.0,
+            "timestamp": 1234567890000
+        },
+        "device": {
+            "platform": "iPhone",
+            "os_version": "iOS 17.2",
+            "battery_level": 0.15,
+            "network_type": "wifi"
+        },
+        "activity": {
+            "activity_type": "running",
+            "confidence": 0.9
+        }
+    }
+    
+    response = client.post("/context/update", json=request, headers=auth_headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["success"] is True
+    assert "Context update received successfully" in data["message"]
+    assert "context_id" in data
+    assert isinstance(data["recommendations"], list)
+    assert len(data["recommendations"]) == 2  # Running + low battery recommendations
+    assert "Stay hydrated during your run!" in data["recommendations"]
+    assert "Your battery is low, consider charging soon." in data["recommendations"]
+
+
+def test_context_update_minimal(client, auth_headers):
+    """Test context update with minimal required fields."""
+    request = {
+        "timestamp": 1234567890000,
+        "session_id": "test-session-minimal"
+    }
+    
+    response = client.post("/context/update", json=request, headers=auth_headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["success"] is True
+    assert "context_id" in data
+    assert data["recommendations"] == []
+
+
+def test_context_update_invalid_data(client, auth_headers):
+    """Test context update with invalid data."""
+    # Missing required fields
+    request = {
+        "timestamp": 1234567890000
+        # Missing session_id
+    }
+    
+    response = client.post("/context/update", json=request, headers=auth_headers)
+    assert response.status_code == 422  # Validation error
+    
+    # Invalid geolocation data
+    request = {
+        "timestamp": 1234567890000,
+        "session_id": "test-session",
+        "geolocation": {
+            "latitude": 200,  # Invalid latitude > 90
+            "longitude": -122.4194,
+            "timestamp": 1234567890000
+        }
+    }
+    
+    response = client.post("/context/update", json=request, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_context_update_unauthorized(client):
+    """Test context update without authentication."""
+    request = {
+        "timestamp": 1234567890000,
+        "session_id": "test-session"
+    }
+    
+    # No auth header
+    response = client.post("/context/update", json=request)
+    assert response.status_code == 422
+    
+    # Wrong API key
+    response = client.post("/context/update", json=request, headers={"X-API-Key": "wrong"})
+    assert response.status_code == 401

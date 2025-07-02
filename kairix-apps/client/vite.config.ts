@@ -10,4 +10,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    host: '0.0.0.0', // Listen on all addresses
+    port: 8888,
+    strictPort: false,
+    allowedHosts: true, // Allow all hosts
+  },
 })

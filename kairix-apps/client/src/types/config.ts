@@ -14,7 +14,7 @@ export interface Model {
 export const ENDPOINTS: Endpoint[] = [
   {
     name: "Local Server",
-    url: "http://localhost:8000/v1",
+    url: "http://mbp.thrush-escalator.ts.net:8000",
     apiKey: ""
   },
 
