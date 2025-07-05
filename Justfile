@@ -15,12 +15,6 @@ set-env PLATFORM INF:
     echo "#~~~~~~~~~~~~~~~~~~[Inference Config]~~~~~~~~~~~~~~~~~~~~" >> .env
     cat $HOME/kairix/environments/inference/{{INF}}.env  >> .env
 
-mcp-add SERVER:
-   uv run mcpm add --target %kairix {{SERVER}}
-
-mcp-server:
-    uv run mcpm router on
-
 # Run all tests
 test:
     uv run pytest tests/

@@ -12,7 +12,7 @@ from kairix_core.cognition.perceptor.incremental_reflection import (
     IncrementalReflectionPerceptor,
 )
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
-from kairix_core.cognition.persona import ConversationalPersona
+from kairix_core.cognition.persona import ConversationalPersona, Notebook
 from kairix_core.prompt import system_instructions
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
@@ -64,6 +64,7 @@ class KairixEngine:
             embedding_model, device=embedding_device
         )
 
+
         insight = SummaryInsightPerceptor(
             agent_runtime,
             embedded_sumary_store=neo4j_runtime.embedded_memory_shard_store,
@@ -90,12 +91,20 @@ class KairixEngine:
             embedder=embedding_transformer,
         )
 
+        notebook = Notebook()
+
         conversational_agent: K_Agent = Agent(
             name="conversationalist",
             instructions=prompts.conversationalist_instruction_template_v1(
                 agent_name=persona_name, user_name=user_name
             ),
-            mcp_servers=[agent_runtime.mcp_server]
+            mcp_servers=[agent_runtime.mcp_server],
+            tools=[
+                notebook.note_or_throw,
+                notebook.save,
+                notebook.list_titles,
+                notebook.maybe_note
+            ]
 
         )
 

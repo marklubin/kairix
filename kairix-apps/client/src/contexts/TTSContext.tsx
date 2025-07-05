@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { TTSService } from '@/services/tts/TTSService';
 import type { TTSState, TTSConfig } from '@/services/tts/types';
+import { loadConfig, saveConfig } from '@/lib/config';
 
 interface TTSContextType {
   ttsService: TTSService;
@@ -17,7 +18,7 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
   const [ttsService] = useState(() => new TTSService());
   const [ttsState, setTTSState] = useState<TTSState>({ status: 'waiting' });
   const [ttsConfig, setTTSConfig] = useState<TTSConfig>(ttsService.getConfig());
-  const [isEnabled, setIsEnabled] = useState(true);
+  const [isEnabled, setIsEnabled] = useState(() => loadConfig().ttsEnabled);
 
   useEffect(() => {
     // Subscribe to state changes
@@ -30,6 +31,11 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
     setTTSConfig(ttsService.getConfig());
   };
 
+  const handleSetIsEnabled = (enabled: boolean) => {
+    setIsEnabled(enabled);
+    saveConfig({ ttsEnabled: enabled });
+  };
+
   return (
     <TTSContext.Provider value={{
       ttsService,
@@ -37,7 +43,7 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
       ttsConfig,
       updateTTSConfig,
       isEnabled,
-      setIsEnabled
+      setIsEnabled: handleSetIsEnabled
     }}>
       {children}
     </TTSContext.Provider>

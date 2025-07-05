@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
+import os
 import kairix_core.util.utils
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -31,14 +32,13 @@ agent_runtime = AgentRuntime()
 # Global instances
 adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
-API_KEY = kairix_core.util.utils.get_or_raise("KAIRIX_API_KEY")
 
 async def verify_api_key(x_api_key: str = Header(...)) -> str:
-    return True
-    #
-    # if x_api_key != API_KEY:
-    #     raise HTTPException(status_code=401, detail="Invalid API key")
-    # return x_api_key
+    """Verify API key from header."""
+    expected_key = os.environ.get("API_KEY")
+    if expected_key and x_api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return x_api_key
 
 
 @asynccontextmanager
@@ -173,7 +173,7 @@ async def create_chat_completion(request: CreateChatCompletionRequest, api_key: 
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.post("/context/update")
+@app.post("/context/update", dependencies=[Depends(verify_api_key)])
 async def update_context(
         request: ContextUpdateRequest,
         api_key: str = Depends(verify_api_key)

@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Neo4j database service - only starts when using local Neo4j
   neo4j:
     image: neo4j:latest
     container_name: kairix-neo4j

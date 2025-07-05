@@ -1,6 +1,8 @@
 import type { TTSProvider, TTSState, TTSConfig } from './types';
 import { BrowserTTSProvider } from './providers/BrowserTTSProvider';
 import { ElevenLabsTTSProvider } from './providers/ElevenLabsTTSProvider';
+import { MacOSTTSProvider } from './providers/MacOSTTSProvider';
+import { loadConfig, saveConfig } from '@/lib/config';
 
 export class TTSService {
   private provider: TTSProvider;
@@ -15,14 +17,17 @@ export class TTSService {
   private currentMessageId: string | null = null;
 
   constructor(config?: Partial<TTSConfig>) {
+    // Load from centralized config
+    const appConfig = loadConfig();
+    
     this.config = {
-      provider: 'elevenlabs',
-      voice: '0NkECxcbkydDMspBKvQp', // Apiana voice
-      rate: 1.0,
-      pitch: 1.0,
-      volume: 1.0,
-      elevenLabsApiKey: 'sk_f84893b970e13c43c23063f92abbcbc760698537780b5bfd',
-      bufferWordCount: 10,
+      provider: appConfig.ttsProvider,
+      voice: appConfig.ttsVoice,
+      rate: appConfig.ttsRate,
+      pitch: appConfig.ttsPitch,
+      volume: appConfig.ttsVolume,
+      elevenLabsApiKey: appConfig.elevenLabsApiKey,
+      bufferWordCount: appConfig.ttsBufferWordCount,
       ...config
     };
 
@@ -36,6 +41,8 @@ export class TTSService {
         return new BrowserTTSProvider();
       case 'elevenlabs':
         return new ElevenLabsTTSProvider(this.config.elevenLabsApiKey);
+      case 'macos':
+        return new MacOSTTSProvider();
       default:
         throw new Error(`Unknown TTS provider: ${providerName}`);
     }
@@ -214,6 +221,17 @@ export class TTSService {
 
   updateConfig(config: Partial<TTSConfig>): void {
     this.config = { ...this.config, ...config };
+    
+    // Save to centralized config
+    saveConfig({
+      ttsProvider: this.config.provider,
+      ttsVoice: this.config.voice,
+      ttsRate: this.config.rate,
+      ttsPitch: this.config.pitch,
+      ttsVolume: this.config.volume,
+      elevenLabsApiKey: this.config.elevenLabsApiKey,
+      ttsBufferWordCount: this.config.bufferWordCount
+    });
     
     // If provider changed or ElevenLabs API key updated, recreate provider
     if (config.provider && config.provider !== this.provider.name) {

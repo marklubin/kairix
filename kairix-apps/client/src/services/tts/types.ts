@@ -17,6 +17,10 @@ export interface TTSVoice {
   id: string;
   name: string;
   lang: string;
+  localService?: boolean;
+  quality?: 'standard' | 'premium' | 'neural' | 'personal';
+  category?: 'system' | 'siri' | 'cloned';
+  original?: SpeechSynthesisVoice;
 }
 
 export type TTSState = 

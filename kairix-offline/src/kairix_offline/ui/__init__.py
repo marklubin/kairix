@@ -2,7 +2,6 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from kairix_core.util.logging import InMemoryLogStreamHandler, Neo4jLogHandler
 from rich.logging import RichHandler
 
 from kairix_offline.processing import initialize_processing

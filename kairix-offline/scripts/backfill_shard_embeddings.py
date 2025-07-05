@@ -12,7 +12,7 @@ logger = LoggingRuntime().logger
 def backfill():
     neo4j.install()
     i = 0
-    x = input("Awaiting to proceed.")
+    input("Awaiting to proceed.")
     for shard in MemoryShard.nodes.all():
         logger.info("Processing Shard %i", i)
         logger.info("Stripping prefix %s", shard.shard_contents[:9])

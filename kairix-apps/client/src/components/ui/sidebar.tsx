@@ -171,6 +171,7 @@ export function Sidebar({
                   disabled={!isEnabled}
                 >
                   <option value="browser">Browser (Built-in)</option>
+                  <option value="macos">macOS (Premium Voices)</option>
                   <option value="elevenlabs">ElevenLabs</option>
                 </Select>
               </div>
@@ -184,7 +185,7 @@ export function Sidebar({
                   <input
                     id="elevenlabs-api-key"
                     type="password"
-                    value={ttsConfig.elevenLabsApiKey || 'sk_f84893b970e13c43c23063f92abbcbc760698537780b5bfd'}
+                    value={ttsConfig.elevenLabsApiKey || ''}
                     onChange={(e) => updateTTSConfig({ elevenLabsApiKey: e.target.value })}
                     placeholder="Enter your API key"
                     className="w-full px-3 py-2 text-sm border rounded-md"
@@ -212,6 +213,9 @@ export function Sidebar({
                   {voices.map((voice) => (
                     <option key={voice.id} value={voice.id}>
                       {voice.name} ({voice.lang})
+                      {voice.quality === 'neural' && ' 🧠'}
+                      {voice.quality === 'premium' && ' ⭐'}
+                      {voice.category === 'cloned' && ' 🎭'}
                     </option>
                   ))}
                 </Select>
