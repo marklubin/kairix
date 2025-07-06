@@ -18,20 +18,24 @@ from kairix_core.types.environmental_context import PersonaEnvironment
 from typing_extensions import Any
 
 from kairix_apps.service_types import ContextUpdateRequest, ContextUpdateResponse
+from kairix_core.util.utils import get_or_raise
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
 logging_runtime = LoggingRuntime()
 logger = logging_runtime.logger
-wirelog = logging_runtime.wirelog
-
-
 agent_runtime = AgentRuntime()
 
 # Global instances
 adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
+
+#Container specific configurations
+port: int = int(get_or_raise("KAIRIX_SERVER_PORT"))
+env_var_log_level = os.getenv("KAIRIX_LOG_LEVEL")
+log_level = env_var_log_level if os.getenv("KAIRIX_LOG_LEVEL") else "INFO"
+
 
 async def verify_api_key(x_api_key: str = Header(...)) -> str:
     """Verify API key from header."""
@@ -83,6 +87,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -212,12 +217,12 @@ async def update_context(
 if __name__ == "__main__":
     import uvicorn
 
-    logger.info("Starting Kairix API server on port 8000...")
+    logger.info(f"Starting Kairix API server on port {port} with log level {log_level}...")
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
-        log_level="debug",
+        port=port,
+        log_level=log_level,
         access_log=True
     )

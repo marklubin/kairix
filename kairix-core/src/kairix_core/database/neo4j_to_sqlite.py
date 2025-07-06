@@ -15,8 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.db import (
-    Entity, EntityClass, EmbeddingType, Summary,
-    SemanticLinkage, LinkageType, LinkageObservation,
+    Entity, EntityClass, EmbeddingType, SemanticLinkage, LinkageType, LinkageObservation,
     Agent, Source, SourceObject, MemoryShard,
     ConversationMessage
 )

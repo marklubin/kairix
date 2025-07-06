@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
     "aiofiles>=24.1.0",
+    "dotenv-python>=0.0.1",
     "elevenlabs>=2.3.0",
     "fastapi>=0.115.13",
     "ffprobe>=0.5",

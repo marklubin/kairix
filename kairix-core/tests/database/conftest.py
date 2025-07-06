@@ -68,7 +68,7 @@ def test_db():
                     enable_sqlite_vss(self.engine)
                     create_vss_tables(self.engine)
                     self._vector_dao = VectorSearchDAO(self.engine)
-                except:
+                except Exception:
                     return None
             return self._vector_dao
     

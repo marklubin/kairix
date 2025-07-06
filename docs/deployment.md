@@ -135,7 +135,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: server.dockerfile
     restart: always
     ports:
       - "8080:8080"
@@ -158,7 +158,7 @@ services:
   frontend:
     build:
       context: ./kairix-apps/client
-      dockerfile: Dockerfile
+      dockerfile: server.dockerfile
     restart: always
     ports:
       - "3000:3000"

@@ -14,111 +14,14 @@ all-tests: test test-all-agents
 watch:
     watchexec -e py -- just check lint
 
-
-serve:
-    uv run textual serve voice.py
-
 # Initialize project with Python 3.10
 init:
-    uv venv --python 3.10
-    uv pip install -e .
     uv sync
-    @echo "✨ Project initialized with Python 3.10!"
 
-# Run the app with runtime type checking
-run *ARGS:
-    TYPEGUARD_PACKAGES=src uv run python -m src {{ARGS}}
 
 # Open REPL with typeguard
 repl:
     TYPEGUARD_PACKAGES=src uv run ipython
-
-# Generate requirements.txt (if needed)
-requirements:
-    uv pip compile pyproject.toml -o requirements.txt
-
-# Start LSP servers for development
-lsp:
-    @echo "Starting LSP servers..."
-    @echo "Ruff LSP on port 5033"
-    uv run ruff-lsp &
-    @echo "Pyright LSP on stdio"
-    uv run pyright --languageserver --stdio
-
-# List available environments
-list-envs:
-    @echo "Available environments:"
-    @ls -1 env/*.env 2>/dev/null | sed 's|env/||' | sed 's|\.env||' || echo "No environments found in env/"
-
-# Run talk.py with specified environment
-run-talk ENV:
-    @echo "Running talk.py with environment: {{ENV}}"
-    @if [ -f "env/{{ENV}}.env" ]; then \
-        echo "Loading env/{{ENV}}.env"; \
-        set -a && source env/{{ENV}}.env && set +a && uv run python talk.py; \
-    else \
-        echo "Error: env/{{ENV}}.env not found"; \
-        echo "Available environments:"; \
-        ls -1 env/*.env 2>/dev/null | sed 's|env/||' | sed 's|\.env||' || echo "None"; \
-        exit 1; \
-    fi
-
-# Run integration tests with specified environment
-test-talk-integration ENV:
-    @echo "Running integration tests with environment: {{ENV}}"
-    @if [ -f "env/{{ENV}}.env" ]; then \
-        echo "Loading env/{{ENV}}.env"; \
-        ENV={{ENV}} uv run pytest tests/integration/test_talk_integration.py -v -s; \
-    else \
-        echo "Error: env/{{ENV}}.env not found"; \
-        exit 1; \
-    fi
-
-# Run smoke tests with specified environment
-test-talk-smoke ENV:
-    @echo "Running smoke tests with environment: {{ENV}}"
-    @if [ -f "env/{{ENV}}.env" ]; then \
-        echo "Loading env/{{ENV}}.env"; \
-        ENV={{ENV}} uv run pytest tests/integration/test_talk_smoke.py -v; \
-    else \
-        echo "Error: env/{{ENV}}.env not found"; \
-        exit 1; \
-    fi
-
-# Test agent configurations with specified environment
-test-agents ENV:
-    @echo "Testing agent configurations with environment: {{ENV}}"
-    @ENV={{ENV}} uv run python run_agent_tests.py --env {{ENV}} --test full
-
-# Quick environment check
-test-env-info ENV:
-    @echo "Checking environment: {{ENV}}"
-    @ENV={{ENV}} uv run python run_agent_tests.py --env {{ENV}} --test info
-
-# Test model discovery
-test-model-discovery ENV:
-    @echo "Testing model discovery for environment: {{ENV}}"
-    @ENV={{ENV}} uv run python run_agent_tests.py --env {{ENV}} --test discovery
-
-# Run comprehensive agent tests for all environments
-test-all-agents:
-    @echo "🤖 Running comprehensive agent tests for all environments..."
-    @uv run python run_all_agent_tests.py
-
-# Quick model verification for all environments
-verify-models:
-    @echo "🔍 Verifying all available models..."
-    @uv run python test_all_models.py
-
-# Quick test - just check environment info for all
-test-all-envs:
-    @echo "📋 Checking all environments..."
-    @for env in $$(ls -1 env/*.env 2>/dev/null | sed 's|env/||' | sed 's|\.env||'); do \
-        echo "\n────────────────────"; \
-        echo "Environment: $$env"; \
-        echo "────────────────────"; \
-        ENV=$$env uv run python run_agent_tests.py --env $$env --test info || true; \
-    done
 
 run-app APP *ARGS:
   dotenv uv run python apps/{{APP}}.py {{ARGS}}
@@ -129,9 +32,8 @@ debug-app APP *ARGS:
 server:
     dotenv uv run python src/kairix_apps/server.py
 
-
+server-prod =
 [working-directory: 'client']
 client:
   npm install
   npm run build
-  npm run dev -- --host 0.0.0.0

@@ -1,5 +1,5 @@
 all: clean lint-unsafe check test
-set-env PLATFORM INF:
+set-env PLATFORM INF USER:
     rm -f .env 
     touch .env
     echo "#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >> .env
@@ -14,6 +14,9 @@ set-env PLATFORM INF:
 
     echo "#~~~~~~~~~~~~~~~~~~[Inference Config]~~~~~~~~~~~~~~~~~~~~" >> .env
     cat $HOME/kairix/environments/inference/{{INF}}.env  >> .env
+
+    echo "#~~~~~~~~~~~~~~~~~~[User Config]~~~~~~~~~~~~~~~~~~~~" >> .env
+        cat $HOME/kairix/environments/users/{{USER}}.env  >> .env
 
 # Run all tests
 test:

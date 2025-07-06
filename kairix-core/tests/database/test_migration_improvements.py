@@ -8,10 +8,9 @@ Test the improved migration features:
 import pytest
 from datetime import datetime
 
-from kairix_core.database.neo4j_to_sqlite import Neo4jToSQLiteConverter
 from kairix_core.types.db import (
-    Entity, EntityClass, LinkageType, Summary, MemoryShard,
-    EntityObservation, LinkageObservation
+    Entity, EntityClass, Summary, MemoryShard,
+    LinkageObservation
 )
 
 
@@ -49,7 +48,6 @@ def test_summary_table(test_db):
 def test_name_normalization(test_db):
     """Test that names are normalized properly."""
     # Don't actually connect to Neo4j for this test
-    from kairix_core.database.neo4j_to_sqlite import Neo4jToSQLiteConverter
     
     # Create a mock converter just to test the normalization method
     class MockConverter:
@@ -192,7 +190,7 @@ def test_uid_fields_for_idempotency(test_db):
         memory_dao2 = test_db.get_dao(MemoryShard, session2)
         # The create() method flushes immediately, so it will raise here
         with pytest.raises(IntegrityError):
-            memory2 = memory_dao2.create(
+            memory_dao2.create(
                 uid="unique_memory_001",  # Same UID
                 contents="Different content",
                 embedding_type="kairix-default-128",
