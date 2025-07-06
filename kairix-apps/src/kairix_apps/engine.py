@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 
 import kairix_core.prompt.agent_prompts as prompts
 from agents import Agent
-from kairix_core.cognition.perceptor.conversation_history import (
-    ConversationHistoryPerceptor,
+from kairix_core.cognition.perceptor.sqlite_conversation_history import (
+    SQLiteConversationHistoryPerceptor,
 )
 from kairix_core.cognition.perceptor.environmental_context import (
     EnvironmentalContextPerceptor,
@@ -16,7 +16,8 @@ from kairix_core.cognition.persona import ConversationalPersona, Notebook
 from kairix_core.prompt import system_instructions
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
-from kairix_core.runtime.neo4j import Neo4jRuntime
+from kairix_core.runtime.storage import StorageRuntime
+from kairix_core.cognition.stores.sqlite_embedded_data import create_memory_shard_store
 from kairix_core.util.utils import get_or_raise
 from sentence_transformers import SentenceTransformer
 
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 logger = LoggingRuntime().logger
 
 agent_runtime = AgentRuntime()
-neo4j_runtime = Neo4jRuntime()
+storage_runtime = StorageRuntime()
 
 
 class KairixEngine:
@@ -37,7 +38,6 @@ class KairixEngine:
         os.system("clear")
 
         config_set_key = os.getenv("KAIRIX_AGENT_CONFIGURATION_SET_KEY")
-        neo4j_url = os.getenv("NEO4J_URL")
         n_summaries_str = os.getenv("KAIRIX_N_SUMMARIES_PER_MESSAGE")
         n_summaries = int(n_summaries_str) if n_summaries_str else None
         user_name = os.getenv("KAIRIX_USER_NAME")
@@ -45,9 +45,6 @@ class KairixEngine:
 
         if not config_set_key:
             raise ValueError("No agent config set.")
-
-        if not neo4j_url:
-            raise ValueError("Missing Neo4j config.")
 
         if not n_summaries:
             raise ValueError("Failed to specify number of summaries,")
@@ -65,9 +62,12 @@ class KairixEngine:
         )
 
 
+        # Create SQLite embedded memory shard store
+        embedded_memory_store = create_memory_shard_store(storage=storage_runtime)
+        
         insight = SummaryInsightPerceptor(
             agent_runtime,
-            embedded_sumary_store=neo4j_runtime.embedded_memory_shard_store,
+            embedded_sumary_store=embedded_memory_store,
             k_memories=n_summaries,
         )
 
@@ -75,9 +75,10 @@ class KairixEngine:
             cache_duration_seconds=300
         )
 
-        conversation_history = ConversationHistoryPerceptor(
+        conversation_history = SQLiteConversationHistoryPerceptor(
             agent_id=persona_name,
-            window_size=20
+            window_size=20,
+            storage=storage_runtime
         )
 
         reflection_agent: K_Agent = Agent(
@@ -89,6 +90,7 @@ class KairixEngine:
             summarization_interval=20,
             agent=reflection_agent,
             embedder=embedding_transformer,
+            storage=storage_runtime
         )
 
         notebook = Notebook()
