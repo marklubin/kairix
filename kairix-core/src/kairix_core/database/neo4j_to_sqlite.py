@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.db import (
-    Entity, EntityClass, EmbeddingType, 
+    Entity, EntityClass, EmbeddingType, Summary,
     SemanticLinkage, LinkageType, LinkageObservation,
     Agent, Source, SourceObject, MemoryShard,
     ConversationMessage
@@ -153,6 +153,20 @@ class Neo4jToSQLiteConverter:
                 
                 self.concept_to_entity_map[neo_concept.semantic_id] = entity.id
                 
+                # Create observations for encounters
+                if hasattr(neo_concept, 'encounters') and neo_concept.encounters:
+                    from kairix_core.types.db import EntityObservation
+                    obs_dao = self.storage.get_dao(EntityObservation, session)
+                    
+                    for encounter in neo_concept.encounters:
+                        obs_dao.create(
+                            entity_id=entity.id,
+                            observation_type="encounter",
+                            observation_value="Entity encountered",
+                            approximate_occurrence=encounter if isinstance(encounter, datetime) else datetime.utcnow(),
+                            source_descriptor="migrated_from_neo4j"
+                        )
+                
                 # Add to vector index if available
                 if hasattr(self.storage, 'vector_dao') and self.storage.vector_dao:
                     try:
@@ -164,19 +178,27 @@ class Neo4jToSQLiteConverter:
         
         logger.info(f"Converted {len(self.concept_to_entity_map)} concepts to entities")
     
+    def _normalize_name(self, name: str) -> str:
+        """Normalize names for entity classes and linkage types."""
+        # Remove special characters and convert to lowercase with underscores
+        import re
+        normalized = re.sub(r'[^a-zA-Z0-9\s_-]', '', name)
+        normalized = re.sub(r'\s+', '_', normalized)
+        return normalized.lower().strip('_')
+    
     def _map_concept_type_to_entity_class(self, concept_type: str) -> str:
         """Map Neo4j concept types to entity classes."""
         # Common mappings
         type_map = {
             "Person": "person",
-            "Organization": "organization",
+            "Organization": "organization", 
             "Location": "location",
             "Event": "event",
             "Object": "object"
         }
         
-        # Return mapped value or use as-is (lowercase)
-        return type_map.get(concept_type, concept_type.lower())
+        # Return mapped value or normalize the name
+        return type_map.get(concept_type, self._normalize_name(concept_type))
     
     def _convert_semantic_linkages(self):
         """Convert Neo4j semantic linkages to SQLite."""
@@ -216,11 +238,14 @@ class Neo4jToSQLiteConverter:
                     logger.warning(f"Skipping linkage {source_semantic_id} -> {target_semantic_id}: entities not found")
                     continue
                 
+                # Normalize linkage type name
+                normalized_linkage_type = self._normalize_name(linkage_type)
+                
                 # Ensure linkage type exists
-                if not linkage_type_dao.find_one_by(name=linkage_type):
+                if not linkage_type_dao.find_one_by(name=normalized_linkage_type):
                     linkage_type_dao.create(
-                        name=linkage_type,
-                        description="Migrated from Neo4j"
+                        name=normalized_linkage_type,
+                        description=f"Migrated from Neo4j: {linkage_type}"
                     )
                     session.flush()
                 
@@ -229,7 +254,7 @@ class Neo4jToSQLiteConverter:
                     linkage_dao.create(
                         source_id=source_id,
                         target_id=target_id,
-                        linkage_type=linkage_type,
+                        linkage_type=normalized_linkage_type,
                         weight=weight,
                         first_noticed_at=related_at or datetime.utcnow()
                     )
@@ -240,7 +265,7 @@ class Neo4jToSQLiteConverter:
                         obs_dao.create(
                             source_id=source_id,
                             target_id=target_id,
-                            linkage_type=linkage_type,
+                            linkage_type=normalized_linkage_type,
                             approximate_occurrence=obs_date,
                             source_descriptor="migrated_from_neo4j"
                         )
@@ -297,14 +322,33 @@ class Neo4jToSQLiteConverter:
         logger.info(f"Converted {len(self.source_doc_map)} source documents")
     
     def _convert_summaries(self):
-        """Convert Neo4j summaries (store mapping only)."""
-        logger.info("Processing summaries...")
+        """Convert Neo4j summaries to SQLite."""
+        logger.info("Converting summaries...")
         
-        # Just build the mapping for memory shard conversion
-        for neo_summary in Neo4jSummary.nodes.all():
-            self.summary_map[neo_summary.uid] = neo_summary.summary_text
+        with self.storage.session() as session:
+            from kairix_core.types.db import Summary
+            summary_dao = self.storage.get_dao(Summary, session)
+            
+            for neo_summary in Neo4jSummary.nodes.all():
+                # Check if already exists
+                existing = summary_dao.find_one_by(uid=neo_summary.uid)
+                if existing:
+                    self.summary_map[neo_summary.uid] = existing.id
+                else:
+                    # Create summary
+                    summary = summary_dao.create(
+                        uid=neo_summary.uid,
+                        summary_text=neo_summary.summary_text,
+                        extractions_performed=getattr(neo_summary, 'extractions_performed', []),
+                        approximate_date=getattr(neo_summary, 'approximate_date', None),
+                        created_at=neo_summary.created_at or datetime.utcnow()
+                    )
+                    session.flush()
+                    self.summary_map[neo_summary.uid] = summary.id
+            
+            session.commit()
         
-        logger.info(f"Processed {len(self.summary_map)} summaries")
+        logger.info(f"Converted {len(self.summary_map)} summaries")
     
     def _convert_memory_shards(self):
         """Convert Neo4j memory shards to SQLite."""
@@ -344,13 +388,21 @@ class Neo4jToSQLiteConverter:
                 elif len(embedding) < 128:
                     embedding = embedding + [0.0] * (128 - len(embedding))
                 
+                # Get summary if exists
+                summary_id = None
+                if hasattr(neo_shard, 'summary') and neo_shard.summary.all():
+                    summary_uid = neo_shard.summary.all()[0].uid
+                    summary_id = self.summary_map.get(summary_uid)
+                
                 # Create memory shard
                 memory = memory_dao.create(
+                    uid=neo_shard.uid,
                     contents=neo_shard.shard_contents,
                     embedding_type="kairix-default-128",
                     embedding=embedding,
                     agent_id=agent_id,
                     source_object_id=source_object_id,
+                    summary_id=summary_id,
                     created_at=neo_shard.created_at or datetime.utcnow()
                 )
                 session.flush()

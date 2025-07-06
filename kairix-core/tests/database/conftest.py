@@ -74,5 +74,17 @@ def test_db():
     
     # Create and return the test storage
     storage = TestStorage()
+    
+    # Initialize default data for tests
+    from kairix_core.database.init_data import initialize_database
+    initialize_database(storage)
+    
+    # Get default agent ID for tests
+    from kairix_core.types.db import Agent
+    with storage.session() as session:
+        agent_dao = storage.get_dao(Agent, session)
+        default_agent = agent_dao.find_one_by(name="default")
+        storage.default_agent_id = default_agent.id if default_agent else 1
+    
     yield storage
     # Cleanup happens automatically when SQLite connection closes

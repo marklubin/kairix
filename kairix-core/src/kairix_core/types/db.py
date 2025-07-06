@@ -82,11 +82,13 @@ class Entity(Base):
     embedding_type = Column(String, ForeignKey('embedding_type.name'), nullable=True)
     embedding = Column(JSON, nullable=True)  # vector stored as JSON
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
 
     outgoing_links = relationship("SemanticLinkage", foreign_keys=[SemanticLinkage.source_id], back_populates="source")
     incoming_links = relationship("SemanticLinkage", foreign_keys=[SemanticLinkage.target_id], back_populates="target")
     entity_class_ref = relationship("EntityClass")
     embedding_type_ref = relationship("EmbeddingType")
+    observations = relationship("EntityObservation", back_populates="entity")
 
 
 class EntityObservation(Base):
@@ -138,10 +140,24 @@ class SourceObject(Base):
     
     source = relationship("Source", back_populates="objects")
 
+class Summary(Base):
+    __tablename__ = 'summaries'
+    
+    id = Column(Integer, primary_key=True)
+    uid = Column(String, unique=True, nullable=True)  # For idempotency from Neo4j
+    summary_text = Column(Text, nullable=False)
+    extractions_performed = Column(JSON, nullable=True, default=list)  # Array of extraction types
+    approximate_date = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    memory_shards = relationship("MemoryShard", back_populates="summary")
+
+
 class MemoryShard(Base):
     __tablename__ = 'memory_shards'
     
     id = Column(Integer, primary_key=True)
+    uid = Column(String, unique=True, nullable=True)  # For idempotency from Neo4j
     contents = Column(Text, nullable=False)
     embedding_type = Column(String, ForeignKey('embedding_type.name'), nullable=False)
     embedding = Column(JSON, nullable=False)  # vector stored as JSON
@@ -149,10 +165,12 @@ class MemoryShard(Base):
 
     agent_id = Column(Integer, ForeignKey('agents.id'), nullable=False)
     source_object_id = Column(Integer, ForeignKey('source_objects.id'), nullable=True)
+    summary_id = Column(Integer, ForeignKey('summaries.id'), nullable=True)
 
     agent = relationship("Agent")
     source_object = relationship("SourceObject")
     embedding_type_ref = relationship("EmbeddingType")
+    summary = relationship("Summary", back_populates="memory_shards")
 
 
 class Notebook(Base):
