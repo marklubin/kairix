@@ -37,6 +37,7 @@ dependencies = [
     "openai-agents<0.1.0",
     "diskcache>=5.6.3",
     "llama-cpp-python>=0.3.9",
+    "sqlalchemy[asyncio]>=2.0.41",
 ]
 
 
@@ -76,3 +77,4 @@ ignore_missing_imports = true
 # Explicit namespace packages
 namespace_packages = true
 explicit_package_bases = true
+

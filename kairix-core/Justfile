@@ -4,3 +4,7 @@ import "../Justfile"
 run CMD +ARGS:
   dotenv uv run apps/{{CMD}}.py  {{ARGS}}
 
+# Run database tests
+test-db:
+  uv run pytest tests/database/ -v
+

@@ -6,6 +6,8 @@ from neomodel import config as neomodel_config
 from neomodel import db
 from sentence_transformers import SentenceTransformer
 
+from kairix_core.types.db import EmbeddingType
+
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
 
 def query(content_key):
@@ -46,11 +48,9 @@ class EmbeddedDataStore:
         *,
         index: str,
         content_key: str,
-        content_transform: Optional[Callable[[str], str]],
-        store_url: str | None = None,
+        embedding_type: EmbeddingType
         embedding_model: str = DEFAULT_EMBEDDING_MODEL,
         embedding_dims: int = 768,
-        override_store: StoreDB | None = None,
     ):
         self.transformer = SentenceTransformer(embedding_model,
                                          truncate_dim=embedding_dims)
