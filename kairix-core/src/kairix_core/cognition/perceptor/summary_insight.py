@@ -9,7 +9,7 @@ from agents import Agent
 from kairix_core.prompt import agent_prompts as prompts
 from kairix_core.types.cognition import Perception, Stimulus, StimulusType
 from . import Perceptor
-from ..stores.embedded_data import EmbeddedDataStore
+from ..stores.sqlite_embedded_data import SQLiteEmbeddedDataStore
 from ...runtime.agent import AgentRuntime
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class SummaryInsightPerceptor(Perceptor):
     def __init__(
             self,
             runtime: AgentRuntime,
-            embedded_sumary_store: EmbeddedDataStore,
+            embedded_sumary_store: SQLiteEmbeddedDataStore,
             k_memories: int,
     ):
         #self.query_generating_agent = Agent(name="query_generator", instructions=prompts.embedding_query_instruction_v1)

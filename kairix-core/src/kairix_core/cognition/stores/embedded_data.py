@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, Iterable
+from typing import Any, Iterable, Callable, Optional
 
 from neomodel import config as neomodel_config
 from neomodel import db
@@ -48,9 +48,12 @@ class EmbeddedDataStore:
         *,
         index: str,
         content_key: str,
-        embedding_type: EmbeddingType
+        embedding_type: EmbeddingType,
         embedding_model: str = DEFAULT_EMBEDDING_MODEL,
         embedding_dims: int = 768,
+        store_url: str | None = None,
+        override_store: StoreDB | None = None,
+        content_transform: Optional[Callable[[Any], Any]] = None,
     ):
         self.transformer = SentenceTransformer(embedding_model,
                                          truncate_dim=embedding_dims)

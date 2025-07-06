@@ -1,11 +1,11 @@
 from sqlalchemy import (
-    Column, Integer, String, Text, DateTime, Float, ForeignKey, JSON, Table, create_engine,
-    UniqueConstraint, Index
+    Column, Integer, String, Text, DateTime, ForeignKey, JSON, UniqueConstraint, Index
 )
-from sqlalchemy.orm import declarative_base, relationship, mapped_column,Mapped
+from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped
 from datetime import datetime
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class LinkageType(Base):

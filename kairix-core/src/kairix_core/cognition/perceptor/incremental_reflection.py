@@ -8,8 +8,9 @@ from sentence_transformers import SentenceTransformer
 from kairix_core.cognition import Perceptor
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.cache import CacheRuntime
+from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.cognition import Stimulus, Perception, StimulusType, K_Agent
-from kairix_core.types.neo4j import MemoryShard
+from kairix_core.types.db import MemoryShard, Agent
 
 logger = logging.getLogger(__name__)
 cache = CacheRuntime().summarization_errors
@@ -21,12 +22,14 @@ class IncrementalReflectionPerceptor(Perceptor):
                  agent: K_Agent,
                  runtime: AgentRuntime,
                  embedder: SentenceTransformer,
+                 storage: StorageRuntime = None,
                  summarization_interval: int = 20):
         self.summarization_interval = summarization_interval
         self._pending_messages: list[str] = []
         self.agent = agent
         self.runtime = runtime
         self.embedder: SentenceTransformer = embedder
+        self.storage = storage or StorageRuntime()
         self.last_summary = ""
 
     async def perceive(self, stimulus: Stimulus) -> List[Perception]:
@@ -53,12 +56,25 @@ class IncrementalReflectionPerceptor(Perceptor):
                 embedding = self.embedder.encode(summary).tolist()
                 logger.info("Embedding completed. Persisting.")
 
-
-                shard  = MemoryShard(uid=label,
-                                     shard_contents= summary,
-                                     vector_address= embedding)
+                # Get or create agent in SQLite
+                with self.storage.session() as session:
+                    agent_dao = self.storage.get_dao(Agent, session)
+                    db_agent = agent_dao.find_one_by(name=self.agent.name)
+                    if not db_agent:
+                        db_agent = agent_dao.create(name=self.agent.name)
+                        session.flush()
+                    
+                    # Create memory shard
+                    memory_dao = self.storage.get_dao(MemoryShard, session)
+                    memory_dao.create(
+                        contents=summary,
+                        embedding_type="kairix-default-128",
+                        embedding=embedding[:128] if len(embedding) > 128 else embedding,
+                        agent_id=db_agent.id
+                    )
+                    session.commit()
+                    
                 self.last_summary = summary
-                shard.save()
 
             except Exception as e:
                 logger.info(f"Failed to generate reflective summarization. Error was: {e}. "
