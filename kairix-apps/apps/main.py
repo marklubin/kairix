@@ -2,7 +2,6 @@
 import logging
 
 from kairix_core.runtime.agent import AgentRuntime
-from kairix_core.runtime.neo4j import Neo4jRuntime
 from kairix_core.types.cognition import Stimulus, StimulusType
 from rich import pretty
 from rich.console import Console
@@ -10,8 +9,7 @@ from rich.progress import Progress, TextColumn
 
 from kairix_apps.engine import KairixEngine
 
-neo4j  = Neo4jRuntime()
-agent_runtime =AgentRuntime()
+agent_runtime = AgentRuntime()
 logger = logging.getLogger()
 
 # logging.getLogger("kairix_engine").setLevel(logging.DEBUG)
