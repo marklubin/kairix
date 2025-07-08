@@ -21,17 +21,11 @@ from kairix_core.runtime.storage import GenericDAO
 
 
 @pytest.fixture
-def test_db():
+def empty_test_db():
     """
-    Creates an in-memory SQLite database for testing.
+    Creates an in-memory SQLite database for testing WITHOUT default data.
     
-    This fixture:
-    - Creates a fresh database schema for each test
-    - Provides the same interface as StorageRuntime
-    - Automatically cleans up after the test
-    
-    Returns:
-        TestStorage: A storage instance backed by in-memory SQLite
+    This fixture is for testing the initialization functions themselves.
     """
     class TestStorage:
         def __init__(self):
@@ -40,6 +34,12 @@ def test_db():
             # Create all tables
             Base.metadata.create_all(self.engine)
             self.Session = sessionmaker(bind=self.engine)
+            
+            # Initialize vector search (always required)
+            from kairix_core.runtime.vector_storage import enable_sqlite_vss, create_vss_tables, VectorSearchDAO
+            enable_sqlite_vss(self.engine)
+            create_vss_tables(self.engine)
+            self._vector_dao = VectorSearchDAO(self.engine)
         
         @contextmanager
         def session(self):
@@ -60,16 +60,62 @@ def test_db():
         
         @property
         def vector_dao(self):
-            """Get vector DAO if available"""
-            if not hasattr(self, '_vector_dao'):
-                # Try to enable VSS for tests
-                try:
-                    from kairix_core.runtime.vector_storage import enable_sqlite_vss, create_vss_tables, VectorSearchDAO
-                    enable_sqlite_vss(self.engine)
-                    create_vss_tables(self.engine)
-                    self._vector_dao = VectorSearchDAO(self.engine)
-                except Exception:
-                    return None
+            """Get vector DAO"""
+            return self._vector_dao
+    
+    # Create and return the test storage WITHOUT initializing default data
+    storage = TestStorage()
+    yield storage
+    # Cleanup happens automatically when SQLite connection closes
+
+
+@pytest.fixture
+def test_db():
+    """
+    Creates an in-memory SQLite database for testing.
+    
+    This fixture:
+    - Creates a fresh database schema for each test
+    - Provides the same interface as StorageRuntime
+    - Automatically cleans up after the test
+    
+    Returns:
+        TestStorage: A storage instance backed by in-memory SQLite
+    """
+    class TestStorage:
+        def __init__(self):
+            # Use in-memory SQLite
+            self.engine = create_engine("sqlite:///:memory:")
+            # Create all tables
+            Base.metadata.create_all(self.engine)
+            self.Session = sessionmaker(bind=self.engine)
+            
+            # Initialize vector search (always required)
+            from kairix_core.runtime.vector_storage import enable_sqlite_vss, create_vss_tables, VectorSearchDAO
+            enable_sqlite_vss(self.engine)
+            create_vss_tables(self.engine)
+            self._vector_dao = VectorSearchDAO(self.engine)
+        
+        @contextmanager
+        def session(self):
+            """Context manager for database sessions"""
+            session = self.Session()
+            try:
+                yield session
+                session.commit()
+            except:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+        
+        def get_dao(self, model_class, session):
+            """Get a DAO for a specific model"""
+            return GenericDAO(model_class, session)
+        
+        @property
+        def vector_dao(self):
+            """Get vector DAO"""
             return self._vector_dao
     
     # Create and return the test storage
@@ -77,6 +123,7 @@ def test_db():
     
     # Initialize default data for tests
     from kairix_core.database.init_data import initialize_database
+    # Pass the storage instance itself since it has the required interface
     initialize_database(storage)
     
     # Get default agent ID for tests

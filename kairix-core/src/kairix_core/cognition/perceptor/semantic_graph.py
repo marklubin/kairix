@@ -15,7 +15,7 @@ logger = LoggingRuntime().logger
 class SemanticGraphPerceptor(Perceptor):
     _included_pos_tags = ["FW", "NN", "RB"]
 
-    def __init__(self, data_store: SQLiteEmbeddedDataStore, storage: StorageRuntime = None):
+    def __init__(self, data_store: SQLiteEmbeddedDataStore, storage: StorageRuntime | None = None):
         self.data_store = data_store
         self.storage = storage or StorageRuntime()
 

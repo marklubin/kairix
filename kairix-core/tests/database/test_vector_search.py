@@ -14,14 +14,18 @@ def test_vector_search_entities(test_db):
     with test_db.session() as session:
         # Setup
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        entity_class_dao.create(name="person")
+        # Check if entity class already exists before creating
+        if not entity_class_dao.find_one_by(name="person"):
+            entity_class_dao.create(name="person")
         
         embedding_dao = test_db.get_dao(EmbeddingType, session)
-        embedding_dao.create(
-            name="test-embedding",
-            model_name="test",
-            vector_length=128
-        )
+        # Check if embedding type already exists before creating
+        if not embedding_dao.find_one_by(name="test-embedding"):
+            embedding_dao.create(
+                name="test-embedding",
+                model_name="test",
+                vector_length=128
+            )
         
         entity_dao = test_db.get_dao(Entity, session)
         
@@ -74,8 +78,8 @@ def test_vector_search_entities(test_db):
 
 def test_vector_search_memories(test_db):
     """Test vector similarity search for memory shards"""
-    if not hasattr(test_db, 'vector_dao') or test_db.vector_dao is None:
-        pytest.skip("Vector search not available")
+    # Vector search is now always available
+    assert test_db.vector_dao is not None, "Vector search must be enabled"
     
     with test_db.session() as session:
         # Setup
@@ -84,11 +88,13 @@ def test_vector_search_memories(test_db):
         agent2 = agent_dao.create(name="agent2")
         
         embedding_dao = test_db.get_dao(EmbeddingType, session)
-        embedding_dao.create(
-            name="memory-embedding",
-            model_name="test",
-            vector_length=128
-        )
+        # Check if embedding type already exists before creating
+        if not embedding_dao.find_one_by(name="memory-embedding"):
+            embedding_dao.create(
+                name="memory-embedding",
+                model_name="test",
+                vector_length=128
+            )
         
         memory_dao = test_db.get_dao(MemoryShard, session)
         

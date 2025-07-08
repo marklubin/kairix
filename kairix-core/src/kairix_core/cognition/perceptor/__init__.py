@@ -28,5 +28,5 @@ class Perceptor(ABC):
         """
         pass
 
-    async def on_environment_changed(self, context: PersonaEnvironment):
+    async def on_environment_changed(self, context: PersonaEnvironment) -> None:
         pass

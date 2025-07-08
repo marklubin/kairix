@@ -4,7 +4,7 @@ This keeps the core persona implementation completely decoupled from
 the API adapter layer.
 """
 
-from typing import AsyncIterator, cast
+from typing import AsyncIterator, cast, Any
 from kairix_core.cognition.persona import Persona
 from kairix_core.types.cognition import Stimulus, StimulusType
 
@@ -40,7 +40,7 @@ class PersonaFactory:
     def __init__(self):
         self._builders = {}
     
-    def register(self, name: str, builder):
+    def register(self, name: str, builder: Any) -> None:
         """Register a persona builder function."""
         self._builders[name] = builder
     

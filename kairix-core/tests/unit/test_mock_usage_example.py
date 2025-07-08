@@ -63,12 +63,9 @@ class TestMockUsageExamples:
         # Access all mocked components
         agent_runtime = complete_mock_environment['agent_runtime']
         cache_runtime = complete_mock_environment['cache_runtime']
-        neo4j_runtime = complete_mock_environment['neo4j_runtime']
         
         # Everything is pre-configured and ready to use
         assert agent_runtime.configuration_set.default_provider == "openai"
-        assert neo4j_runtime.embedded_memory_shard_store is not None
-        
         # Cache behaves like a dict
         cache_runtime.cache_index['test_key'] = 'test_value'
         assert cache_runtime.cache_index['test_key'] == 'test_value'
@@ -87,10 +84,6 @@ class TestMockUsageExamples:
     
     def test_static_methods_mock(self, mock_static_methods):
         """Example of using mocked static methods."""
-        # Concept composite key is mocked
-        composite_key = mock_static_methods['concept_composite_key']
-        assert composite_key("example", "entity") == "entity://example"
-        
         # get_or_raise is mocked
         get_or_raise = mock_static_methods['get_or_raise']
         assert get_or_raise('KAIRIX_AGENT_CONFIGURATION_SET_KEY') == 'test_config'

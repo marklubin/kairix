@@ -22,14 +22,14 @@ class CacheRuntime:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._c.close()
 
-    def __getattr__(self, item) -> Index:
+    def __getattr__(self, item: str) -> Index:
 
         return self._c.index(item)
 
 
-    def _index_stats(self, index: Index):
+    def _index_stats(self, index: Index) -> None:
         print("[green]------------------------------")
-        print(f"[green][INDEX]{index.directory}[\]")
+        print(f"[green][INDEX]{index.directory}[/]")
         print("[green]------------------------------")
 
         print(f"# of items: [aqua]{len(index)}")
@@ -52,18 +52,18 @@ class CacheRuntime:
 
 
 
-    def stats(self):
-        print("[green]-----------Indices----------[\]")
-        mapping = dict()
-        for i in enumerate(self.indices()):
-            print(f"[purple]- {i}. {str(i)}, Entries: {len(i)}")
-            mapping[i] = i
+    def stats(self) -> None:
+        print("[green]-----------Indices----------[/]")
+        mapping: dict[int, Index] = dict()
+        for i, index in enumerate(self.indices()):
+            print(f"[purple]- {i}. {str(index)}, Entries: {len(index)}")
+            mapping[i] = index
 
         while True:
-            choice = input("Select Index to view or 'exit' to exit this screen.")
+            choice_str = input("Select Index to view or 'exit' to exit this screen.")
 
             try:
-                choice = int(choice)
+                choice = int(choice_str)
             except Exception:
                 break
 

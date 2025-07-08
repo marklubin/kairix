@@ -208,7 +208,7 @@ def init_default_agents(storage: StorageRuntime) -> None:
         agent_dao.create(name="assistant")
 
 
-def initialize_database(storage: StorageRuntime = None) -> None:
+def initialize_database(storage: StorageRuntime | None = None) -> None:
     """
     Initialize the database with all default configuration data.
     

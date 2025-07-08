@@ -36,7 +36,7 @@ class InferenceProvider(ABC):
     """Abstract base class for all inference providers."""
     
     @abc.abstractmethod
-    def predict(self, content: str, inference_params: InferenceParams):
+    def predict(self, content: str, inference_params: InferenceParams) -> str:
         """Generate a prediction based on input content.
         
         Args:
@@ -52,12 +52,12 @@ class InferenceProvider(ABC):
 class MockInferenceProvider(InferenceProvider):
     """Mock provider for testing that returns random UUIDs."""
     
-    def predict(self, content: str, inference_params: InferenceParams):
+    def predict(self, content: str, inference_params: InferenceParams) -> str:
         """Return a random UUID instead of actual inference."""
         return str(uuid.uuid4())
 
 
-def get_inference_provider_for_environement(model_parameters: ModelParams):
+def get_inference_provider_for_environement(model_parameters: ModelParams) -> InferenceProvider:
     """Factory function to create inference provider based on environment.
     
     Reads KAIRIX_INFERENCE_PROVIDER environment variable to determine
@@ -81,10 +81,12 @@ def get_inference_provider_for_environement(model_parameters: ModelParams):
     from kairix_core.inference.openai import OpenAIInferenceProvider
 
     if provider == "openai":
-        return OpenAIInferenceProvider(model_parameters=model_parameters, api_key=api_key)
+        provider_instance: InferenceProvider = OpenAIInferenceProvider(model_parameters=model_parameters, api_key=api_key)
+        return provider_instance
 
     if provider not in ["ollama"]:
         logger.warning(f"Unknown provider {provider}. Assuming Open AI compatible. Requires KAIRIX_INFERENCE_BASE_URL.")
 
     base_url = get_or_raise("KAIRIX_INFERENCE_BASE_URL")
-    return OpenAIInferenceProvider(model_parameters=model_parameters, base_url=base_url, api_key=api_key)
+    provider_instance = OpenAIInferenceProvider(model_parameters=model_parameters, base_url=base_url, api_key=api_key)
+    return provider_instance

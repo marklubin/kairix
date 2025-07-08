@@ -31,11 +31,11 @@ wirelog.addHandler(logging.FileHandler("wirelog.log"))
 class OpenAIInferenceProvider(InferenceProvider):
     def __init__(
         self,
-        *args,
+        *args: Any,
         model_parameters: ModelParams,
         api_key: str | None = None,
         base_url: str | None = None,
-    ):
+    ) -> None:
         self.model_parameters = model_parameters
 
         # Initialize OpenAI client
@@ -86,7 +86,7 @@ class OpenAIInferenceProvider(InferenceProvider):
 
         wirelog.info(f"RESPONSE>\n {dump_obj(response)}\n</RESPONSE>")
 
-        assert response.choices is not None and len(response.choices) > 0
+        assert len(response.choices) > 0
         choice = response.choices[0]
         message = choice.message
         return str(message.content)

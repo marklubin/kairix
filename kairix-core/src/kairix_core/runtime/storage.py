@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from typing import TypeVar, Generic, Type, List, Optional, Dict, Any
+from pathlib import Path
 
 from sqlalchemy.orm.session import Session
 from sqlalchemy.orm import sessionmaker
@@ -7,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from kairix_core.runtime.logging import LoggingRuntime
 from sqlalchemy import create_engine
 from kairix_core.types.db import Base
-_DB_FILE = ".kairix/k.db"
+_DEFAULT_DB_FILE = "../.sqlite/kairix.db"
 
 logger = LoggingRuntime().logger
 
@@ -34,22 +35,22 @@ class GenericDAO(Generic[T]):
             query = query.limit(limit)
         return query.all()
     
-    def find_by(self, **kwargs) -> List[T]:
+    def find_by(self, **kwargs: Any) -> List[T]:
         """Find records by field values"""
         return self.session.query(self.model_class).filter_by(**kwargs).all()
     
-    def find_one_by(self, **kwargs) -> Optional[T]:
+    def find_one_by(self, **kwargs: Any) -> Optional[T]:
         """Find single record by field values"""
         return self.session.query(self.model_class).filter_by(**kwargs).first()
     
-    def create(self, **kwargs) -> T:
+    def create(self, **kwargs: Any) -> T:
         """Create a new record"""
         instance = self.model_class(**kwargs)
         self.session.add(instance)
         self.session.flush()  # Flush to get ID without committing
         return instance
     
-    def update(self, instance: T, **kwargs) -> T:
+    def update(self, instance: T, **kwargs: Any) -> T:
         """Update an existing record"""
         for key, value in kwargs.items():
             setattr(instance, key, value)
@@ -69,13 +70,14 @@ class GenericDAO(Generic[T]):
             return True
         return False
     
-    def exists(self, **kwargs) -> bool:
+    def exists(self, **kwargs: Any) -> bool:
         """Check if record exists"""
-        return self.session.query(
+        result = self.session.query(
             self.session.query(self.model_class).filter_by(**kwargs).exists()
         ).scalar()
+        return bool(result)
     
-    def count(self, **kwargs) -> int:
+    def count(self, **kwargs: Any) -> int:
         """Count records matching criteria"""
         return self.session.query(self.model_class).filter_by(**kwargs).count()
     
@@ -87,28 +89,41 @@ class GenericDAO(Generic[T]):
 class StorageRuntime:
 
     _instance = None
+    _initialized = False
 
     def __new__(cls, *args, **kwargs):
+        # Allow multiple instances with different db_paths
+        if 'db_path' in kwargs and kwargs['db_path'] != _DEFAULT_DB_FILE:
+            # Create a new instance for custom db_path
+            return super().__new__(cls)
+        # Use singleton for default db_path
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, enable_vss=True):
-        self.engine = create_engine(f"sqlite:///{_DB_FILE}")
+    def __init__(self, db_path: Optional[str] = None):
+        # Prevent re-initialization of singleton instance
+        if hasattr(self, '_initialized') and self._initialized and db_path is None:
+            return
+            
+        self.db_path = db_path or _DEFAULT_DB_FILE
+        
+        # Ensure directory exists
+        db_dir = Path(self.db_path).parent
+        if db_dir != Path(".") and not db_dir.exists():
+            db_dir.mkdir(parents=True, exist_ok=True)
+            
+        self.engine = create_engine(f"sqlite:///{self.db_path}")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
+        self._initialized = True
         
-        # Initialize vector search if requested
-        self._vector_dao = None
-        if enable_vss:
-            try:
-                from kairix_core.runtime.vector_storage import enable_sqlite_vss, create_vss_tables, VectorSearchDAO
-                enable_sqlite_vss(self.engine)
-                create_vss_tables(self.engine)
-                self._vector_dao = VectorSearchDAO(self.engine)
-                logger.info("Vector search enabled")
-            except Exception as e:
-                logger.warning(f"Could not enable vector search: {e}")
+        # Initialize vector search (always required)
+        from kairix_core.runtime.vector_storage import enable_sqlite_vss, create_vss_tables, VectorSearchDAO
+        enable_sqlite_vss(self.engine)
+        create_vss_tables(self.engine)
+        self._vector_dao = VectorSearchDAO(self.engine)
+        logger.info("Vector search enabled")
 
     @contextmanager
     def session(self):
@@ -128,9 +143,7 @@ class StorageRuntime:
     
     @property
     def vector_dao(self):
-        """Get the vector search DAO if available"""
-        if self._vector_dao is None:
-            raise RuntimeError("Vector search is not enabled. Initialize StorageRuntime with enable_vss=True")
+        """Get the vector search DAO"""
         return self._vector_dao
 
 

@@ -1,6 +1,7 @@
 import logging
-
 from logging.handlers import  TimedRotatingFileHandler
+
+from kairix_core.util.utils import get_or_raise
 
 
 class LoggingRuntime:
@@ -36,8 +37,15 @@ class LoggingRuntime:
                     enable_link_path=True,
                 )
 
+
+        username = get_or_raise("KAIRIX_USER_NAME")
+        app_id = get_or_raise("KAIRIX_APP_ID")
+        log_level = get_or_raise("KAIRIX_LOG_LEVEL")
+
+        logfile = f"../logs/{username}/{app_id}.log"
+
         self.file_handler = TimedRotatingFileHandler(
-            "logs/kairix.log",
+            logfile,
             when="D")
 
         logging.basicConfig(
@@ -45,4 +53,4 @@ class LoggingRuntime:
             format=LoggingRuntime.FORMAT,
             datefmt= LoggingRuntime.DTF,
             handlers=[self.rich_handler, self.file_handler],
-            level="INFO")
+            level=log_level)

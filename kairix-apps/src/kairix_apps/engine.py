@@ -2,22 +2,22 @@ from typing import TYPE_CHECKING
 
 import kairix_core.prompt.agent_prompts as prompts
 from agents import Agent
-from kairix_core.cognition.perceptor.sqlite_conversation_history import (
-    SQLiteConversationHistoryPerceptor,
-)
 from kairix_core.cognition.perceptor.environmental_context import (
     EnvironmentalContextPerceptor,
 )
 from kairix_core.cognition.perceptor.incremental_reflection import (
     IncrementalReflectionPerceptor,
 )
+from kairix_core.cognition.perceptor.sqlite_conversation_history import (
+    SQLiteConversationHistoryPerceptor,
+)
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.persona import ConversationalPersona, Notebook
+from kairix_core.cognition.stores.sqlite_embedded_data import create_memory_shard_store
 from kairix_core.prompt import system_instructions
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.storage import StorageRuntime
-from kairix_core.cognition.stores.sqlite_embedded_data import create_memory_shard_store
 from kairix_core.util.utils import get_or_raise
 from sentence_transformers import SentenceTransformer
 
@@ -42,6 +42,8 @@ class KairixEngine:
         n_summaries = int(n_summaries_str) if n_summaries_str else None
         user_name = os.getenv("KAIRIX_USER_NAME")
         persona_name = os.getenv("KAIRIX_PERSONA_NAME")
+        summarization_interval = get_or_raise("KAIRIX_SUMMARIZATION_INTERVAL")
+        message_retention_interval = get_or_raise("KAIRIX_MESSAGE_RETENTION_WINDOW")
 
         if not config_set_key:
             raise ValueError("No agent config set.")
@@ -77,7 +79,7 @@ class KairixEngine:
 
         conversation_history = SQLiteConversationHistoryPerceptor(
             agent_id=persona_name,
-            window_size=20,
+            window_size=int(message_retention_interval),
             storage=storage_runtime
         )
 
@@ -87,7 +89,7 @@ class KairixEngine:
 
         incremental_reflection = IncrementalReflectionPerceptor(
             runtime=agent_runtime,
-            summarization_interval=20,
+            summarization_interval=int(summarization_interval),
             agent=reflection_agent,
             embedder=embedding_transformer,
             storage=storage_runtime

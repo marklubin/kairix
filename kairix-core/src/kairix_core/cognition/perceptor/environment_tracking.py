@@ -19,27 +19,26 @@ logger = LoggingRuntime().logger
 cache_runtime = CacheRuntime()
 
 _latest_tag = ":latest"
-_history_tag = ":history"
+
 
 class EnvironmentTrackingPerceptor(Perceptor):
 
     def __init__(self):
         self.context_cache = cache_runtime.context_cache
-        if _history_tag not in self.context_cache:
-            self.context_cache[_history_tag] = ""
 
 
-    async def on_environment_changed(self, context: PersonaEnvironment):
-        if _latest_tag in self.context_cache:
-            logger.info("Received environment update, storing old environment in history log.")
-            self.context_cache[_history_tag] += f"""
-            ================================================
-            ENVIRONMENTAL CONTEXT UPDATE
-            REMOVED AT: {datetime.datetime.now()}
-            ================================================
-            {str(self.context_cache[_latest_tag])}
-            """
-        self.context_cache[_latest_tag] = context
+    async def on_environment_changed(self, context: PersonaEnvironment) -> None:
+        context_message =  f"""
+        ================================================
+        ENVIRONMENTAL CONTEXT UPDATE
+        RECEIVED AT: {datetime.datetime.now()}
+        ================================================
+        {str(self.context_cache[_latest_tag])}
+        """
+        self.context_cache[_latest_tag] = context_message
+        logger.info(context_message)
+
+
 
 
     async def perceive(self, stimulus: Stimulus) -> List[Perception]:

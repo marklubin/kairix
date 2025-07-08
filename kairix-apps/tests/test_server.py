@@ -16,12 +16,12 @@ from kairix_apps.server import app
 
 
 @pytest.fixture
-def mock_neo4j():
-    """Mock Neo4j runtime."""
-    with patch("kairix_core.runtime.neo4j.Neo4jRuntime") as mock:
+def mock_storage():
+    """Mock storage runtime."""
+    with patch("kairix_core.runtime.storage.StorageRuntime") as mock:
         instance = MagicMock()
         instance.session = MagicMock()
-        instance.driver = MagicMock()
+        instance.engine = MagicMock()
         mock.return_value = instance
         yield instance
 
@@ -46,7 +46,7 @@ def mock_agent_runtime():
 
 
 @pytest.fixture
-def mock_persona(mock_neo4j, mock_inference, mock_agent_runtime):
+def mock_persona(mock_storage, mock_inference, mock_agent_runtime):
     """Mock ConversationalPersona and OpenAIAdapter."""
     with patch(
         "kairix_apps.engine.KairixEngine.conversational_persona_for_environment"

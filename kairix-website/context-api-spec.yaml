@@ -1,0 +1,582 @@
+openapi: 3.0.3
+info:
+  title: Kairix Context & Sensor Streaming API
+  description: API for receiving real-time contextual information and sensor data from browser clients
+  version: 1.0.0
+  contact:
+    name: Kairix API Support
+    email: support@kairix.ai
+
+servers:
+  - url: http://localhost:8001
+    description: Local development server
+  - url: https://api.kairix.ai
+    description: Production server
+
+paths:
+  /context/update:
+    post:
+      summary: Send contextual information update
+      description: Submit current context including location, device info, environment, etc.
+      operationId: updateContext
+      tags:
+        - Context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContextUpdateRequest'
+      responses:
+        '200':
+          description: Context successfully processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContextUpdateResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /context/bulk:
+    post:
+      summary: Send multiple context updates
+      description: Batch submit multiple context updates for efficiency
+      operationId: bulkUpdateContext
+      tags:
+        - Context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                updates:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ContextUpdate'
+                  maxItems: 100
+      responses:
+        '200':
+          description: Bulk update processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processed:
+                    type: integer
+                  failed:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ErrorDetail'
+
+  /ws/sensors:
+    get:
+      summary: WebSocket endpoint for sensor streaming
+      description: |
+        WebSocket connection for real-time sensor data streaming.
+        
+        Connection URL: ws://localhost:8001/ws/sensors?session_id={sessionId}&api_key={apiKey}
+        
+        Message format:
+        ```json
+        {
+          "type": "sensor_data",
+          "timestamp": 1234567890,
+          "data": {
+            "type": "motion",
+            "payload": { ... }
+          }
+        }
+        ```
+      operationId: streamSensors
+      tags:
+        - Sensors
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: api_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket connection established
+        '400':
+          description: Bad Request - Invalid parameters
+        '401':
+          description: Unauthorized - Invalid API key
+
+  /sensors/config:
+    get:
+      summary: Get sensor streaming configuration
+      description: Retrieve current configuration for sensor streaming
+      operationId: getSensorConfig
+      tags:
+        - Sensors
+      responses:
+        '200':
+          description: Current sensor configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorConfig'
+    
+    put:
+      summary: Update sensor streaming configuration
+      description: Update configuration for sensor streaming session
+      operationId: updateSensorConfig
+      tags:
+        - Sensors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorConfig'
+      responses:
+        '200':
+          description: Configuration updated
+        '400':
+          description: Invalid configuration
+
+  /analytics/session/{session_id}:
+    get:
+      summary: Get session analytics
+      description: Retrieve aggregated analytics for a sensor streaming session
+      operationId: getSessionAnalytics
+      tags:
+        - Analytics
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAnalytics'
+        '404':
+          description: Session not found
+
+components:
+  schemas:
+    ContextUpdateRequest:
+      type: object
+      required:
+        - timestamp
+        - session_id
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
+        session_id:
+          type: string
+          description: Unique session identifier
+        device_id:
+          type: string
+          description: Unique device identifier
+        geolocation:
+          $ref: '#/components/schemas/GeolocationData'
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+        environment:
+          $ref: '#/components/schemas/EnvironmentData'
+        activity:
+          $ref: '#/components/schemas/ActivityData'
+        custom:
+          type: object
+          additionalProperties: true
+          description: Custom context data
+
+    ContextUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        context_id:
+          type: string
+          description: Unique ID assigned to this context update
+        recommendations:
+          type: array
+          items:
+            type: string
+          description: Contextual recommendations based on the update
+
+    GeolocationData:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - timestamp
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        accuracy:
+          type: number
+          format: float
+          description: Accuracy in meters
+        altitude:
+          type: number
+          format: float
+          description: Altitude in meters
+        altitude_accuracy:
+          type: number
+          format: float
+        heading:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 360
+          description: Direction of travel in degrees from north
+        speed:
+          type: number
+          format: float
+          description: Speed in meters per second
+        timestamp:
+          type: integer
+          format: int64
+        address:
+          $ref: '#/components/schemas/Address'
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        postal_code:
+          type: string
+        formatted:
+          type: string
+
+    DeviceInfo:
+      type: object
+      properties:
+        platform:
+          type: string
+          example: "iPhone"
+        os_version:
+          type: string
+          example: "iOS 17.2"
+        browser:
+          type: string
+          example: "Safari 17.2"
+        screen_width:
+          type: integer
+        screen_height:
+          type: integer
+        pixel_ratio:
+          type: number
+          format: float
+        language:
+          type: string
+          example: "en-US"
+        timezone:
+          type: string
+          example: "America/New_York"
+        battery_level:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        battery_charging:
+          type: boolean
+        network_type:
+          type: string
+          enum: ["wifi", "cellular", "ethernet", "none"]
+        connection_speed:
+          type: string
+          enum: ["slow-2g", "2g", "3g", "4g", "5g"]
+
+    EnvironmentData:
+      type: object
+      properties:
+        ambient_light:
+          type: number
+          format: float
+          description: Ambient light in lux
+        ambient_noise:
+          type: number
+          format: float
+          description: Ambient noise in decibels
+        temperature:
+          type: number
+          format: float
+          description: Temperature in Celsius
+        humidity:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        pressure:
+          type: number
+          format: float
+          description: Atmospheric pressure in hPa
+        weather:
+          $ref: '#/components/schemas/WeatherData'
+
+    WeatherData:
+      type: object
+      properties:
+        condition:
+          type: string
+          example: "partly_cloudy"
+        temperature:
+          type: number
+          format: float
+        feels_like:
+          type: number
+          format: float
+        wind_speed:
+          type: number
+          format: float
+        wind_direction:
+          type: integer
+          minimum: 0
+          maximum: 360
+
+    ActivityData:
+      type: object
+      properties:
+        current_url:
+          type: string
+          format: uri
+        page_title:
+          type: string
+        session_duration:
+          type: integer
+          description: Session duration in milliseconds
+        idle_time:
+          type: integer
+          description: Idle time in milliseconds
+        activity_type:
+          type: string
+          enum: ["stationary", "walking", "running", "automotive", "cycling", "unknown"]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        is_active_tab:
+          type: boolean
+        media_playing:
+          type: boolean
+
+    SensorData:
+      type: object
+      discriminator:
+        propertyName: sensor_type
+      required:
+        - sensor_type
+        - timestamp
+      properties:
+        sensor_type:
+          type: string
+          enum: ["accelerometer", "gyroscope", "magnetometer", "orientation", "motion", "proximity", "ambient_light", "pressure"]
+        timestamp:
+          type: integer
+          format: int64
+
+    AccelerometerData:
+      allOf:
+        - $ref: '#/components/schemas/SensorData'
+        - type: object
+          properties:
+            x:
+              type: number
+              format: float
+              description: Acceleration in m/s² along x-axis
+            y:
+              type: number
+              format: float
+              description: Acceleration in m/s² along y-axis
+            z:
+              type: number
+              format: float
+              description: Acceleration in m/s² along z-axis
+            includes_gravity:
+              type: boolean
+
+    GyroscopeData:
+      allOf:
+        - $ref: '#/components/schemas/SensorData'
+        - type: object
+          properties:
+            alpha:
+              type: number
+              format: float
+              description: Rotation rate in deg/s around z-axis
+            beta:
+              type: number
+              format: float
+              description: Rotation rate in deg/s around x-axis
+            gamma:
+              type: number
+              format: float
+              description: Rotation rate in deg/s around y-axis
+
+    OrientationData:
+      allOf:
+        - $ref: '#/components/schemas/SensorData'
+        - type: object
+          properties:
+            alpha:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 360
+              description: Rotation around z-axis (compass heading)
+            beta:
+              type: number
+              format: float
+              minimum: -180
+              maximum: 180
+              description: Rotation around x-axis (pitch)
+            gamma:
+              type: number
+              format: float
+              minimum: -90
+              maximum: 90
+              description: Rotation around y-axis (roll)
+            absolute:
+              type: boolean
+
+    SensorConfig:
+      type: object
+      properties:
+        enabled_sensors:
+          type: array
+          items:
+            type: string
+            enum: ["accelerometer", "gyroscope", "magnetometer", "orientation", "proximity", "ambient_light", "pressure"]
+        sample_rate:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Sampling rate in Hz
+        batch_size:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          description: Number of samples to batch before sending
+        compression:
+          type: boolean
+        power_mode:
+          type: string
+          enum: ["high_performance", "balanced", "power_saver"]
+
+    SessionAnalytics:
+      type: object
+      properties:
+        session_id:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        duration_ms:
+          type: integer
+        total_samples:
+          type: integer
+        sensor_breakdown:
+          type: object
+          additionalProperties:
+            type: integer
+        detected_activities:
+          type: array
+          items:
+            type: object
+            properties:
+              activity:
+                type: string
+              duration_ms:
+                type: integer
+              confidence:
+                type: number
+        location_trace:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeolocationData'
+        anomalies:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: integer
+              type:
+                type: string
+              severity:
+                type: string
+                enum: ["low", "medium", "high"]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+        error:
+          type: string
+        value:
+          type: any
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []

@@ -17,32 +17,54 @@ from kairix_core.runtime.logging import LoggingRuntime
 logger = LoggingRuntime().logger
 
 
-def enable_sqlite_vss(engine: Engine):
+def enable_sqlite_vss(engine: Engine) -> None:
     """
     Enable SQLite VSS extension for the database engine.
     
     This needs to be called after creating the engine but before using vector search.
+    Vector search is now mandatory, so this will raise an exception if VSS cannot be loaded.
     """
-    @event.listens_for(engine, "connect")
-    def load_vss(dbapi_conn, connection_record):
-        dbapi_conn.enable_load_extension(True)
+    def load_vss_for_connection(dbapi_conn):
         try:
-            # Try to load the VSS extension
-            dbapi_conn.load_extension("vss0")
+            # Enable loading extensions
+            dbapi_conn.enable_load_extension(True)
+            
+            # Load VSS using the sqlite_vss module
+            import sqlite_vss
+            # First load vector0, then vss0
+            sqlite_vss.load(dbapi_conn)
+            
+            # Disable loading extensions for security
+            dbapi_conn.enable_load_extension(False)
+            
             logger.info("SQLite VSS extension loaded successfully")
         except Exception as e:
-            logger.warning(f"Could not load SQLite VSS extension: {e}")
-            logger.warning("Vector search functionality will not be available")
-        dbapi_conn.enable_load_extension(False)
+            raise RuntimeError(
+                f"Failed to load SQLite VSS extension (vector search is required): {e}\n"
+                "Please ensure sqlite-vss is installed. You can install it with:\n"
+                "  pip install sqlite-vss\n"
+                "Or follow instructions at: https://github.com/asg017/sqlite-vss"
+            )
+    
+    # Register event listener for future connections
+    @event.listens_for(engine, "connect")
+    def load_vss(dbapi_conn, connection_record):
+        load_vss_for_connection(dbapi_conn)
+    
+    # Load for existing connections in the pool
+    with engine.connect() as conn:
+        load_vss_for_connection(conn.connection.dbapi_connection)
 
 
-def create_vss_tables(engine: Engine):
+def create_vss_tables(engine: Engine) -> None:
     """
     Create virtual tables for vector similarity search.
     
     Creates VSS virtual tables for:
     - entity_vss: For Entity embeddings
     - memory_shard_vss: For MemoryShard embeddings
+    
+    Raises RuntimeError if VSS tables cannot be created.
     """
     with engine.connect() as conn:
         try:
@@ -64,6 +86,10 @@ def create_vss_tables(engine: Engine):
             logger.info("VSS virtual tables created successfully")
         except Exception as e:
             logger.error(f"Failed to create VSS tables: {e}")
+            raise RuntimeError(
+                f"Failed to create VSS tables (vector search is required): {e}\n"
+                "This usually means the VSS extension is not properly loaded."
+            )
             raise
 
 
@@ -73,7 +99,7 @@ class VectorSearchDAO:
     def __init__(self, engine: Engine):
         self.engine = engine
     
-    def add_entity_embedding(self, entity_id: int, embedding: List[float]):
+    def add_entity_embedding(self, entity_id: int, embedding: List[float]) -> None:
         """Add or update an entity embedding in the VSS index."""
         with self.engine.connect() as conn:
             # Convert embedding to JSON string
@@ -86,7 +112,7 @@ class VectorSearchDAO:
             """), {"id": entity_id, "embedding": embedding_json})
             conn.commit()
     
-    def add_memory_embedding(self, memory_id: int, embedding: List[float]):
+    def add_memory_embedding(self, memory_id: int, embedding: List[float]) -> None:
         """Add or update a memory shard embedding in the VSS index."""
         with self.engine.connect() as conn:
             embedding_json = json.dumps(embedding)
@@ -114,9 +140,8 @@ class VectorSearchDAO:
             result = conn.execute(text("""
                 SELECT rowid, distance
                 FROM entity_vss
-                WHERE vss_search(embedding, :query)
+                WHERE vss_search(embedding, vss_search_params(:query, :limit))
                 ORDER BY distance
-                LIMIT :limit
             """), {"query": query_json, "limit": limit})
             
             return [(row[0], row[1]) for row in result]
@@ -143,23 +168,21 @@ class VectorSearchDAO:
                     SELECT v.rowid, v.distance
                     FROM memory_shard_vss v
                     JOIN memory_shards m ON v.rowid = m.id
-                    WHERE vss_search(v.embedding, :query)
+                    WHERE vss_search(v.embedding, vss_search_params(:query, :limit))
                     AND m.agent_id = :agent_id
                     ORDER BY v.distance
-                    LIMIT :limit
                 """), {"query": query_json, "limit": limit, "agent_id": agent_id})
             else:
                 result = conn.execute(text("""
                     SELECT rowid, distance
                     FROM memory_shard_vss
-                    WHERE vss_search(embedding, :query)
+                    WHERE vss_search(embedding, vss_search_params(:query, :limit))
                     ORDER BY distance
-                    LIMIT :limit
                 """), {"query": query_json, "limit": limit})
             
             return [(row[0], row[1]) for row in result]
     
-    def bulk_add_entity_embeddings(self, embeddings: List[Tuple[int, List[float]]]):
+    def bulk_add_entity_embeddings(self, embeddings: List[Tuple[int, List[float]]]) -> None:
         """Bulk add entity embeddings for efficiency."""
         with self.engine.connect() as conn:
             for entity_id, embedding in embeddings:
@@ -170,13 +193,13 @@ class VectorSearchDAO:
                 """), {"id": entity_id, "embedding": embedding_json})
             conn.commit()
     
-    def remove_entity_embedding(self, entity_id: int):
+    def remove_entity_embedding(self, entity_id: int) -> None:
         """Remove an entity from the VSS index."""
         with self.engine.connect() as conn:
             conn.execute(text("DELETE FROM entity_vss WHERE rowid = :id"), {"id": entity_id})
             conn.commit()
     
-    def remove_memory_embedding(self, memory_id: int):
+    def remove_memory_embedding(self, memory_id: int) -> None:
         """Remove a memory shard from the VSS index."""
         with self.engine.connect() as conn:
             conn.execute(text("DELETE FROM memory_shard_vss WHERE rowid = :id"), {"id": memory_id})

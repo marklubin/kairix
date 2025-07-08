@@ -65,7 +65,7 @@ class ConversationalPersona:
                 yield event.data.delta
                 i += 1
 
-    async def environment_updated(self, environment: PersonaEnvironment):
+    async def environment_updated(self, environment: PersonaEnvironment) -> None:
         logger.info("Received environment update. Trigger async updates.")
         for p in self.perceptors:
             task = asyncio.create_task(p.on_environment_changed(environment))

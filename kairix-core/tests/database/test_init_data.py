@@ -1,7 +1,6 @@
 """
 Test database initialization with default data.
 """
-import pytest
 from kairix_core.database.init_data import (
     initialize_database,
     init_embedding_types,
@@ -15,12 +14,12 @@ from kairix_core.types.db import (
 )
 
 
-def test_init_embedding_types(test_db):
+def test_init_embedding_types(empty_test_db):
     """Test initialization of embedding types."""
-    init_embedding_types(test_db)
+    init_embedding_types(empty_test_db)
     
-    with test_db.session() as session:
-        embedding_dao = test_db.get_dao(EmbeddingType, session)
+    with empty_test_db.session() as session:
+        embedding_dao = empty_test_db.get_dao(EmbeddingType, session)
         
         # Check that embeddings were created
         assert embedding_dao.count() >= 3
@@ -39,12 +38,12 @@ def test_init_embedding_types(test_db):
         assert kairix.vector_length == 128
 
 
-def test_init_entity_classes(test_db):
+def test_init_entity_classes(empty_test_db):
     """Test initialization of entity classes."""
-    init_entity_classes(test_db)
+    init_entity_classes(empty_test_db)
     
-    with test_db.session() as session:
-        entity_class_dao = test_db.get_dao(EntityClass, session)
+    with empty_test_db.session() as session:
+        entity_class_dao = empty_test_db.get_dao(EntityClass, session)
         
         # Check count
         assert entity_class_dao.count() >= 6
@@ -61,12 +60,12 @@ def test_init_entity_classes(test_db):
         assert location is not None
 
 
-def test_init_linkage_types(test_db):
+def test_init_linkage_types(empty_test_db):
     """Test initialization of linkage types."""
-    init_linkage_types(test_db)
+    init_linkage_types(empty_test_db)
     
-    with test_db.session() as session:
-        linkage_dao = test_db.get_dao(LinkageType, session)
+    with empty_test_db.session() as session:
+        linkage_dao = empty_test_db.get_dao(LinkageType, session)
         
         # Check count
         assert linkage_dao.count() >= 6
@@ -83,12 +82,12 @@ def test_init_linkage_types(test_db):
         assert antonym is not None
 
 
-def test_init_emotional_tones(test_db):
+def test_init_emotional_tones(empty_test_db):
     """Test initialization of emotional tones."""
-    init_emotional_tones(test_db)
+    init_emotional_tones(empty_test_db)
     
-    with test_db.session() as session:
-        emotion_dao = test_db.get_dao(EmotionalTone, session)
+    with empty_test_db.session() as session:
+        emotion_dao = empty_test_db.get_dao(EmotionalTone, session)
         
         # Check count
         assert emotion_dao.count() >= 6
@@ -105,12 +104,12 @@ def test_init_emotional_tones(test_db):
         assert neutral is not None
 
 
-def test_init_default_agents(test_db):
+def test_init_default_agents(empty_test_db):
     """Test initialization of default agents."""
-    init_default_agents(test_db)
+    init_default_agents(empty_test_db)
     
-    with test_db.session() as session:
-        agent_dao = test_db.get_dao(Agent, session)
+    with empty_test_db.session() as session:
+        agent_dao = empty_test_db.get_dao(Agent, session)
         
         # Check count
         assert agent_dao.count() >= 2
@@ -123,40 +122,40 @@ def test_init_default_agents(test_db):
         assert assistant is not None
 
 
-def test_initialize_database_complete(test_db):
+def test_initialize_database_complete(empty_test_db):
     """Test complete database initialization."""
-    initialize_database(test_db)
+    initialize_database(empty_test_db)
     
-    with test_db.session() as session:
+    with empty_test_db.session() as session:
         # Check all tables have data
-        assert test_db.get_dao(EmbeddingType, session).count() > 0
-        assert test_db.get_dao(EntityClass, session).count() > 0
-        assert test_db.get_dao(LinkageType, session).count() > 0
-        assert test_db.get_dao(EmotionalTone, session).count() > 0
-        assert test_db.get_dao(Agent, session).count() > 0
+        assert empty_test_db.get_dao(EmbeddingType, session).count() > 0
+        assert empty_test_db.get_dao(EntityClass, session).count() > 0
+        assert empty_test_db.get_dao(LinkageType, session).count() > 0
+        assert empty_test_db.get_dao(EmotionalTone, session).count() > 0
+        assert empty_test_db.get_dao(Agent, session).count() > 0
 
 
-def test_idempotent_initialization(test_db):
+def test_idempotent_initialization(empty_test_db):
     """Test that initialization is idempotent."""
     # Initialize once
-    initialize_database(test_db)
+    initialize_database(empty_test_db)
     
-    with test_db.session() as session:
+    with empty_test_db.session() as session:
         initial_counts = {
-            'embedding': test_db.get_dao(EmbeddingType, session).count(),
-            'entity_class': test_db.get_dao(EntityClass, session).count(),
-            'linkage': test_db.get_dao(LinkageType, session).count(),
-            'emotion': test_db.get_dao(EmotionalTone, session).count(),
-            'agent': test_db.get_dao(Agent, session).count()
+            'embedding': empty_test_db.get_dao(EmbeddingType, session).count(),
+            'entity_class': empty_test_db.get_dao(EntityClass, session).count(),
+            'linkage': empty_test_db.get_dao(LinkageType, session).count(),
+            'emotion': empty_test_db.get_dao(EmotionalTone, session).count(),
+            'agent': empty_test_db.get_dao(Agent, session).count()
         }
     
     # Initialize again
-    initialize_database(test_db)
+    initialize_database(empty_test_db)
     
-    with test_db.session() as session:
+    with empty_test_db.session() as session:
         # Counts should not change
-        assert test_db.get_dao(EmbeddingType, session).count() == initial_counts['embedding']
-        assert test_db.get_dao(EntityClass, session).count() == initial_counts['entity_class']
-        assert test_db.get_dao(LinkageType, session).count() == initial_counts['linkage']
-        assert test_db.get_dao(EmotionalTone, session).count() == initial_counts['emotion']
-        assert test_db.get_dao(Agent, session).count() == initial_counts['agent']
+        assert empty_test_db.get_dao(EmbeddingType, session).count() == initial_counts['embedding']
+        assert empty_test_db.get_dao(EntityClass, session).count() == initial_counts['entity_class']
+        assert empty_test_db.get_dao(LinkageType, session).count() == initial_counts['linkage']
+        assert empty_test_db.get_dao(EmotionalTone, session).count() == initial_counts['emotion']
+        assert empty_test_db.get_dao(Agent, session).count() == initial_counts['agent']

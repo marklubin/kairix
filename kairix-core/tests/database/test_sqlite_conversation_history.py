@@ -2,7 +2,6 @@
 Test SQLite conversation history perceptor.
 """
 import pytest
-import asyncio
 from kairix_core.cognition.perceptor.sqlite_conversation_history import SQLiteConversationHistoryPerceptor
 from kairix_core.types.cognition import Stimulus, StimulusType
 from kairix_core.types.db import ConversationMessage

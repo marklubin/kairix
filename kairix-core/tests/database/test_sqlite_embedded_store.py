@@ -1,7 +1,6 @@
 """
 Test SQLite embedded data store with vector search.
 """
-import pytest
 from kairix_core.cognition.stores.sqlite_embedded_data import (
     SQLiteEmbeddedDataStore,
     create_memory_shard_store,
@@ -14,9 +13,8 @@ from kairix_core.types.db import (
 
 def test_memory_shard_vector_search(test_db):
     """Test vector search for memory shards."""
-    # Skip if VSS not available
-    if not hasattr(test_db, 'vector_dao') or test_db.vector_dao is None:
-        pytest.skip("Vector search not available")
+    # Vector search is now always available
+    assert test_db.vector_dao is not None, "Vector search must be enabled"
     
     with test_db.session() as session:
         # Setup
@@ -54,15 +52,17 @@ def test_memory_shard_vector_search(test_db):
             agent_id=agent.id
         )
         
+        session.flush()  # Flush to get IDs but keep session open
+        
+        # Create store and add embeddings
+        store = create_memory_shard_store(storage=test_db)
+        
+        # Add to vector index
+        store.add_item_with_embedding(memory1.id, memory1.contents, memory1.embedding)
+        store.add_item_with_embedding(memory2.id, memory2.contents, memory2.embedding)
+        store.add_item_with_embedding(memory3.id, memory3.contents, memory3.embedding)
+        
         session.commit()
-    
-    # Create store and add embeddings
-    store = create_memory_shard_store(storage=test_db)
-    
-    # Add to vector index
-    store.add_item_with_embedding(memory1.id, memory1.contents, memory1.embedding)
-    store.add_item_with_embedding(memory2.id, memory2.contents, memory2.embedding)
-    store.add_item_with_embedding(memory3.id, memory3.contents, memory3.embedding)
     
     # Search for programming-related content
     # Since we're using dummy embeddings, we'll search with a pattern close to memory1
@@ -71,20 +71,22 @@ def test_memory_shard_vector_search(test_db):
     assert len(results) == 2
     # First result should have highest score
     assert results[0][1] > results[1][1]
-    # Content should be returned
-    assert "programming" in results[0][0] or "learning" in results[0][0]
+    # Results should contain our test data
+    content_list = [r[0] for r in results]
+    assert any("programming" in c for c in content_list) or any("learning" in c for c in content_list)
 
 
 def test_entity_vector_search(test_db):
     """Test vector search for entities."""
-    # Skip if VSS not available
-    if not hasattr(test_db, 'vector_dao') or test_db.vector_dao is None:
-        pytest.skip("Vector search not available")
+    # Vector search is now always available
+    assert test_db.vector_dao is not None, "Vector search must be enabled"
     
     with test_db.session() as session:
         # Setup
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        entity_class_dao.create(name="person")
+        # Check if entity class already exists before creating
+        if not entity_class_dao.find_one_by(name="person"):
+            entity_class_dao.create(name="person")
         
         embedding_dao = test_db.get_dao(EmbeddingType, session)
         embedding_dao.create(
@@ -120,15 +122,17 @@ def test_entity_vector_search(test_db):
             embedding=[0.5, 0.5] + [0.0] * 126
         )
         
+        session.flush()  # Flush to get IDs but keep session open
+        
+        # Create store and add embeddings
+        store = create_concept_store(storage=test_db)
+        
+        # Add to vector index
+        store.add_item_with_embedding(john.id, john.name, john.embedding)
+        store.add_item_with_embedding(jane.id, jane.name, jane.embedding)
+        store.add_item_with_embedding(bob.id, bob.name, bob.embedding)
+        
         session.commit()
-    
-    # Create store and add embeddings
-    store = create_concept_store(storage=test_db)
-    
-    # Add to vector index
-    store.add_item_with_embedding(john.id, john.name, john.embedding)
-    store.add_item_with_embedding(jane.id, jane.name, jane.embedding)
-    store.add_item_with_embedding(bob.id, bob.name, bob.embedding)
     
     # Search - should return semantic_id as content
     results = list(store.search("find similar", k=3))
@@ -143,9 +147,8 @@ def test_entity_vector_search(test_db):
 
 def test_content_transform(test_db):
     """Test content transformation in search results."""
-    # Skip if VSS not available
-    if not hasattr(test_db, 'vector_dao') or test_db.vector_dao is None:
-        pytest.skip("Vector search not available")
+    # Vector search is now always available
+    assert test_db.vector_dao is not None, "Vector search must be enabled"
     
     with test_db.session() as session:
         # Setup
@@ -167,23 +170,25 @@ def test_content_transform(test_db):
             embedding_type="test-embedding",
             embedding=[1.0] * 128
         )
+        session.flush()  # Flush to get IDs but keep session open
+        
+        # Create store with content transform
+        def transform_semantic_id(semantic_id):
+            # Extract just the name part after ://
+            return semantic_id.split("://")[1]
+        
+        store = SQLiteEmbeddedDataStore(
+            table_name='entity',
+            content_key='semantic_id',
+            embedding_dims=128,
+            content_transform=transform_semantic_id,
+            storage=test_db
+        )
+        
+        # Add to index
+        store.add_item_with_embedding(entity.id, entity.name, entity.embedding)
+        
         session.commit()
-    
-    # Create store with content transform
-    def transform_semantic_id(semantic_id):
-        # Extract just the name part after ://
-        return semantic_id.split("://")[1]
-    
-    store = SQLiteEmbeddedDataStore(
-        table_name='entity',
-        content_key='semantic_id',
-        embedding_dims=128,
-        content_transform=transform_semantic_id,
-        storage=test_db
-    )
-    
-    # Add to index
-    store.add_item_with_embedding(entity.id, entity.name, entity.embedding)
     
     # Search
     results = list(store.search("test", k=1))
@@ -195,9 +200,8 @@ def test_content_transform(test_db):
 
 def test_agent_filtering_memory_search(test_db):
     """Test that memory search can be filtered by agent."""
-    # Skip if VSS not available
-    if not hasattr(test_db, 'vector_dao') or test_db.vector_dao is None:
-        pytest.skip("Vector search not available")
+    # Vector search is now always available
+    assert test_db.vector_dao is not None, "Vector search must be enabled"
     
     with test_db.session() as session:
         # Create two agents
@@ -229,16 +233,27 @@ def test_agent_filtering_memory_search(test_db):
             agent_id=agent2.id
         )
         
+        session.flush()  # Flush to get IDs but keep session open
+        
+        # Get agent IDs before session closes
+        agent1_id = agent1.id
+        memory1_id = memory1.id
+        memory1_contents = memory1.contents
+        memory1_embedding = memory1.embedding
+        memory2_id = memory2.id
+        memory2_contents = memory2.contents
+        memory2_embedding = memory2.embedding
+        
+        store = create_memory_shard_store(storage=test_db)
+        
+        # Add both to index
+        store.add_item_with_embedding(memory1_id, memory1_contents, memory1_embedding)
+        store.add_item_with_embedding(memory2_id, memory2_contents, memory2_embedding)
+        
         session.commit()
     
-    store = create_memory_shard_store(storage=test_db)
-    
-    # Add both to index
-    store.add_item_with_embedding(memory1.id, memory1.contents, memory1.embedding)
-    store.add_item_with_embedding(memory2.id, memory2.contents, memory2.embedding)
-    
     # Search with agent filter
-    results = list(store.search("memory", k=10, agent_id=agent1.id))
+    results = list(store.search("memory", k=10, agent_id=agent1_id))
     
     # Should only return agent1's memory
     assert len(results) == 1

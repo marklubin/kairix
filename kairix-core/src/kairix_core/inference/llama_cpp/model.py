@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from agents import  TResponseInputItem, ModelSettings, Tool, AgentOutputSchemaBase, ModelResponse, Usage
 from llama_cpp import Llama, ChatCompletionRequestSystemMessage, \
@@ -25,7 +26,7 @@ class LlamaCppModel:
                       model_settings: ModelSettings = ModelSettings(),
                       tools: list[Tool] = [],  # noqa
                       output_schema: AgentOutputSchemaBase | None = None,
-                      *args, **kwargs) -> ModelResponse:  # noqa
+                      *args: Any, **kwargs: Any) -> ModelResponse:  # noqa
 
         input_content = self._get_input(input)
 
@@ -72,7 +73,7 @@ class LlamaCppModel:
 
         choices: list[ChatCompletionResponseChoice] = raw_response['choices']  # type: ignore[index]
 
-        if not choices or len(choices) == 0 or not choices[0] or not choices[0]['message']:
+        if not choices or not choices[0]['message']:
             raise Exception("illegal response from inference, no choices provided")
 
         response_message: ChatCompletionResponseMessage = choices[0]['message']

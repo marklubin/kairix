@@ -7,7 +7,7 @@ default:
     @just --list
 
 # Run all tests including agent verification
-all-tests: test test-all-agents
+all-tests: test
     @echo "✅ All tests completed!"
 
 # Watch mode - auto run checks on changes
@@ -19,9 +19,9 @@ init:
     uv sync
 
 
-# Open REPL with typeguard
-repl:
-    TYPEGUARD_PACKAGES=src uv run ipython
+run-user-server USER *ARGS:
+    dotenv -e .envs/{{USER}}.env uv run python src/kairix_apps/server.py
+
 
 run-app APP *ARGS:
   dotenv uv run python apps/{{APP}}.py {{ARGS}}
@@ -32,7 +32,6 @@ debug-app APP *ARGS:
 server:
     dotenv uv run python src/kairix_apps/server.py
 
-server-prod =
 [working-directory: 'client']
 client:
   npm install

@@ -1,13 +1,10 @@
 """
 Basic database tests to verify all tables and relationships work correctly.
 """
-import pytest
-from datetime import datetime
 
 from kairix_core.types.db import (
     Entity, EntityClass, EmbeddingType, EntityObservation,
-    LinkageType, EmotionalTone, SemanticLinkage, LinkageObservation,
-    Agent, Source, SourceObject, MemoryShard
+    LinkageType, EmotionalTone, SemanticLinkage, Agent, Source, SourceObject, MemoryShard
 )
 
 
@@ -16,38 +13,43 @@ def test_create_reference_tables(test_db):
     with test_db.session() as session:
         # Create EntityClass
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        person_class = entity_class_dao.create(
-            name="person",
-            description="A human being",
-            positive_examples="John Doe, Jane Smith",
-            negative_examples="Apple Inc, New York City"
-        )
+        # Try to get existing or create new
+        person_class = entity_class_dao.find_one_by(name="person")
+        if not person_class:
+            person_class = entity_class_dao.create(
+                name="person",
+                description="A human being",
+                positive_examples="John Doe, Jane Smith",
+                negative_examples="Apple Inc, New York City"
+            )
         assert person_class.name == "person"
         
         # Create LinkageType
         linkage_dao = test_db.get_dao(LinkageType, session)
+        # Create a unique linkage type for this test
         knows_type = linkage_dao.create(
-            name="knows",
+            name="test_knows",
             description="Personal acquaintance",
             positive_examples="friends, colleagues",
             negative_examples="heard of, read about"
         )
-        assert knows_type.name == "knows"
+        assert knows_type.name == "test_knows"
         
         # Create EmotionalTone
         emotion_dao = test_db.get_dao(EmotionalTone, session)
+        # Create a unique emotional tone for this test
         happy_tone = emotion_dao.create(
-            name="happy",
+            name="test_happy",
             description="Positive emotional state",
             positive_examples="joyful, excited, pleased",
             negative_examples="sad, angry, frustrated"
         )
-        assert happy_tone.name == "happy"
+        assert happy_tone.name == "test_happy"
         
-        # Create EmbeddingType
+        # Create EmbeddingType (use test prefix to avoid conflicts)
         embedding_dao = test_db.get_dao(EmbeddingType, session)
         ada_embedding = embedding_dao.create(
-            name="text-embedding-ada-002",
+            name="test-text-embedding-ada-002",
             model_name="openai/text-embedding-ada-002",
             vector_length=1536
         )
@@ -59,10 +61,12 @@ def test_create_entities(test_db):
     with test_db.session() as session:
         # First create required reference data
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        person_class = entity_class_dao.create(name="person")
+        # Check if person already exists
+        if not entity_class_dao.find_one_by(name="person"):
+            entity_class_dao.create(name="person")
         
         embedding_dao = test_db.get_dao(EmbeddingType, session)
-        embedding_type = embedding_dao.create(
+        embedding_dao.create(
             name="test-embedding",
             model_name="test",
             vector_length=128
@@ -97,10 +101,12 @@ def test_create_semantic_linkages(test_db):
     with test_db.session() as session:
         # Setup reference data
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        entity_class_dao.create(name="person")
+        if not entity_class_dao.find_one_by(name="person"):
+            entity_class_dao.create(name="person")
         
         linkage_dao = test_db.get_dao(LinkageType, session)
-        linkage_dao.create(name="knows")
+        if not linkage_dao.find_one_by(name="knows"):
+            linkage_dao.create(name="knows")
         
         # Create entities
         entity_dao = test_db.get_dao(Entity, session)
@@ -113,7 +119,7 @@ def test_create_semantic_linkages(test_db):
         
         # Create linkage
         linkage_dao = test_db.get_dao(SemanticLinkage, session)
-        knows_link = linkage_dao.create(
+        linkage_dao.create(
             source_id=john.id,
             target_id=jane.id,
             linkage_type="knows",
@@ -131,10 +137,12 @@ def test_create_observations(test_db):
     with test_db.session() as session:
         # Setup
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        entity_class_dao.create(name="person")
+        if not entity_class_dao.find_one_by(name="person"):
+            entity_class_dao.create(name="person")
         
         emotion_dao = test_db.get_dao(EmotionalTone, session)
-        emotion_dao.create(name="neutral")
+        if not emotion_dao.find_one_by(name="neutral"):
+            emotion_dao.create(name="neutral")
         
         entity_dao = test_db.get_dao(Entity, session)
         john = entity_dao.create(
@@ -158,9 +166,10 @@ def test_create_observations(test_db):
 def test_create_sources_and_memory(test_db):
     """Test creating sources, source objects, and memory shards"""
     with test_db.session() as session:
-        # Create agent
+        # Create agent with unique name
         agent_dao = test_db.get_dao(Agent, session)
-        agent = agent_dao.create(name="test_agent")
+        import uuid
+        agent = agent_dao.create(name=f"test_agent_{uuid.uuid4().hex[:8]}")
         
         # Create source
         source_dao = test_db.get_dao(Source, session)
@@ -209,12 +218,14 @@ def test_dao_operations(test_db):
     with test_db.session() as session:
         # Setup
         entity_class_dao = test_db.get_dao(EntityClass, session)
-        entity_class_dao.create(name="place")
-        entity_class_dao.create(name="person")
+        if not entity_class_dao.find_one_by(name="place"):
+            entity_class_dao.create(name="place")
+        if not entity_class_dao.find_one_by(name="person"):
+            entity_class_dao.create(name="person")
         
-        # Test count
+        # Test count (accounting for pre-initialized data)
         count = entity_class_dao.count()
-        assert count == 2
+        assert count >= 2  # At least place and person
         
         # Test find_by
         places = entity_class_dao.find_by(name="place")
@@ -235,6 +246,7 @@ def test_dao_operations(test_db):
         assert updated.description == "A location or area"
         
         # Test delete
+        initial_count = entity_class_dao.count()
         entity_class_dao.delete_by_id("place")
         count = entity_class_dao.count()
-        assert count == 1
+        assert count == initial_count - 1  # One less than before

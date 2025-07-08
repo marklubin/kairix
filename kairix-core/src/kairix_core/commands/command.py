@@ -22,7 +22,7 @@ class KairixCommand(Generic[T_CMD_DATA], ABC):
     """
 
     @abstractmethod
-    def register(self, command: ArgumentParser):
+    def register(self, command: ArgumentParser) -> None:
         """Register command arguments with the argument parser.
         
         This method should add any command-specific arguments to the parser.

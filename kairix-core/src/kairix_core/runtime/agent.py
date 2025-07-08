@@ -78,7 +78,8 @@ class AgentRuntime:
 
         self.configuration_set = configuration_set
         self.model_provider = MultiProvider(provider_map=MultiProviderMap())
-        self.model_provider.provider_map.set_mapping(available_provider_mappings)
+        if self.model_provider.provider_map is not None:
+            self.model_provider.provider_map.set_mapping(available_provider_mappings)
 
 
         mcp_params: MCPServerStdioParams = MCPServerStdioParams(

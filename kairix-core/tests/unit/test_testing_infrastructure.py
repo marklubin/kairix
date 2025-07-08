@@ -79,8 +79,7 @@ class TestTestingInfrastructure:
         self,
         mock_agent_runtime,
         mock_cache_runtime,
-        mock_logging_runtime,
-        mock_neo4j_runtime
+        mock_logging_runtime
     ):
         """Test that fixtures are available and configured."""
         # Agent runtime
@@ -97,9 +96,6 @@ class TestTestingInfrastructure:
         mock_logging_runtime.logger.info("test")
         mock_logging_runtime.logger.info.assert_called_once_with("test")
         
-        # Neo4j runtime
-        assert mock_neo4j_runtime is not None
-        assert mock_neo4j_runtime.embedded_memory_shard_store is not None
     
     @pytest.mark.asyncio
     async def test_async_mocks(
@@ -133,7 +129,6 @@ class TestTestingInfrastructure:
         assert 'agent_runtime' in complete_mock_environment
         assert 'cache_runtime' in complete_mock_environment
         assert 'logging_runtime' in complete_mock_environment
-        assert 'neo4j_runtime' in complete_mock_environment
         assert 'env_vars' in complete_mock_environment
         
         # All components are configured

@@ -9,15 +9,14 @@ Usage:
     from kairix_core.testing.conftest import *
     
     # Or import specific fixtures
-    from kairix_core.testing.conftest import mock_agent_runtime, mock_neo4j_runtime
+    from kairix_core.testing.conftest import mock_agent_runtime
 """
 
 import asyncio
-from typing import AsyncIterator, List, Optional
+from typing import AsyncIterator, List, Optional, Dict, Any
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
 import pytest
 from dataclasses import dataclass
-import uuid
 
 from kairix_core.types.cognition import Stimulus, Perception
 from kairix_core.cognition.perceptor import Perceptor
@@ -194,7 +193,7 @@ def mock_cache_runtime():
     mock_cache.pp_cache_keys = Mock()
     
     # Make cache_index behave like a dict
-    cache_data = {}
+    cache_data: Dict[str, Any] = {}
     mock_cache.cache_index.__getitem__ = lambda _, k: cache_data.get(k)
     mock_cache.cache_index.__setitem__ = lambda _, k, v: cache_data.__setitem__(k, v)
     mock_cache.cache_index.__contains__ = lambda _, k: k in cache_data
@@ -216,25 +215,6 @@ def mock_logging_runtime():
     return mock_logging
 
 
-@pytest.fixture
-def mock_neo4j_runtime():
-    """Mock Neo4j runtime."""
-    mock_neo4j = Mock()
-    
-    # Embedded stores
-    mock_neo4j.embedded_memory_shard_store = Mock()
-    mock_neo4j.embedded_concept_store = Mock()
-    
-    # Search methods
-    mock_neo4j.embedded_memory_shard_store.search = AsyncMock(return_value=[
-        {"content": "Memory 1", "similarity": 0.9},
-        {"content": "Memory 2", "similarity": 0.85}
-    ])
-    mock_neo4j.embedded_concept_store.search = AsyncMock(return_value=[
-        {"name": "Concept 1", "type": "entity", "similarity": 0.95}
-    ])
-    
-    return mock_neo4j
 
 
 # ============================================================================
@@ -247,7 +227,7 @@ class MockInferenceProvider(InferenceProvider):
     def __init__(self, response: str = "Mock inference response"):
         self.response = response
         
-    def predict(self, content: str, inference_params: InferenceParams):
+    def predict(self, content: str, inference_params: InferenceParams) -> str:
         """Return mock prediction."""
         return self.response
 
@@ -303,28 +283,26 @@ def mock_embedded_data_store():
 # ============================================================================
 
 @pytest.fixture
-def mock_neo4j_connection():
-    """Mock Neo4j database connection."""
-    with patch('neomodel.db.set_connection') as mock_conn:
-        yield mock_conn
+def mock_storage_runtime():
+    """Mock SQLite StorageRuntime."""
+    from kairix_core.runtime.storage import StorageRuntime
+    
+    mock_storage = Mock(spec=StorageRuntime)
+    mock_storage.session = Mock()
+    mock_storage.engine = Mock()
+    mock_storage.get_dao = Mock()
+    mock_storage.vector_dao = Mock()
+    
+    # Mock session context manager
+    mock_session = Mock()
+    mock_session.__enter__ = Mock(return_value=mock_session)
+    mock_session.__exit__ = Mock(return_value=None)
+    mock_storage.session.return_value = mock_session
+    
+    return mock_storage
 
 
-@pytest.fixture
-def mock_neo4j_models():
-    """Mock Neo4j model classes."""
-    mocks = {}
-    
-    # Mock node classes
-    for model_name in ['Agent', 'Concept', 'MemoryShard', 'StoredLog', 'Summary']:
-        mock_model = Mock()
-        mock_model.nodes = Mock()
-        mock_model.nodes.all = Mock(return_value=[])
-        mock_model.nodes.filter = Mock(return_value=[])
-        mock_model.nodes.first_or_none = Mock(return_value=None)
-        mock_model.create = Mock(return_value=Mock(uid=str(uuid.uuid4())))
-        mocks[model_name] = mock_model
-    
-    return mocks
+
 
 
 # ============================================================================
@@ -339,7 +317,7 @@ def mock_environment_variables(monkeypatch):
         'KAIRIX_INFERENCE_PROVIDER': 'openai',
         'KAIRIX_INFERENCE_API_KEY': 'test-api-key',
         'KAIRIX_INFERENCE_BASE_URL': 'http://localhost:11434',
-        'DATABASE_URL': 'bolt://localhost:7687',
+        'DATABASE_URL': 'sqlite:///test_kairix.db',
         'OPENAI_API_KEY': 'test-openai-key',
     }
     
@@ -378,11 +356,6 @@ def mock_static_methods():
     """Mock common static methods."""
     mocks = {}
     
-    # Mock Concept._composite_key
-    with patch('kairix_core.types.neo4j.Concept._composite_key') as mock_key:
-        mock_key.side_effect = lambda name, type: f"{type}://{name}"
-        mocks['concept_composite_key'] = mock_key
-    
     # Mock get_or_raise
     with patch('kairix_core.util.utils.get_or_raise') as mock_get:
         mock_get.side_effect = lambda key: {
@@ -403,9 +376,7 @@ def complete_mock_environment(
     mock_agent_runtime,
     mock_cache_runtime,
     mock_logging_runtime,
-    mock_neo4j_runtime,
     mock_environment_variables,
-    mock_neo4j_connection,
     mock_static_methods
 ):
     """Complete mock environment with all components."""
@@ -413,9 +384,7 @@ def complete_mock_environment(
         'agent_runtime': mock_agent_runtime,
         'cache_runtime': mock_cache_runtime,
         'logging_runtime': mock_logging_runtime,
-        'neo4j_runtime': mock_neo4j_runtime,
         'env_vars': mock_environment_variables,
-        'neo4j_connection': mock_neo4j_connection,
         'static_methods': mock_static_methods
     }
 

@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from agents import ModelResponse, Model
 
@@ -10,15 +11,15 @@ class PooledModel(Model):
 
     def __init__(self, model_pool: list[LlamaCppModel]):
         self._pool = model_pool
-        self._queue = None
+        self._queue: asyncio.Queue[LlamaCppModel] | None = None
 
-    async def initialize_with_pool(self):
+    async def initialize_with_pool(self) -> None:
         async with asyncio.Lock():
             self._queue = asyncio.Queue(len(self._pool))
             for model in self._pool:
                 await self._queue.put(model)
 
-    async def get_response(self, *args, **kwargs) -> ModelResponse:
+    async def get_response(self, *args: Any, **kwargs: Any) -> ModelResponse:
         if not self._queue:
             await self.initialize_with_pool()
 

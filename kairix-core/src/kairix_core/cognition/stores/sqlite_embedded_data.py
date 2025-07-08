@@ -78,6 +78,11 @@ class SQLiteEmbeddedDataStore:
         Returns:
             Iterator of (content, score) tuples
         """
+        # Ensure k is positive to prevent FAISS crash
+        if k <= 0:
+            logger.warning(f"Invalid k value {k} for vector search, using k=1")
+            k = 1
+            
         if self.table_name == 'entity':
             results = self.vector_dao.search_similar_entities(query_vector, limit=k)
         else:  # memory_shard
@@ -116,6 +121,11 @@ class SQLiteEmbeddedDataStore:
         Returns:
             Iterator of (content, score) tuples
         """
+        # Ensure k is positive to prevent FAISS crash
+        if k <= 0:
+            logger.warning(f"Invalid k value {k} for search, using k=1")
+            k = 1
+            
         try:
             vect = self._get_embedding(query)
             return self._vector_search(query_vector=vect, k=k, agent_id=agent_id)

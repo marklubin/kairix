@@ -12,15 +12,14 @@ This script:
 import sys
 import logging
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, Any
 import json
 
 from neomodel import db
-from kairix_core.database.neo4j_to_sqlite import Neo4jToSQLiteConverter
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.db import (
     Agent, Entity, SemanticLinkage, MemoryShard, 
-    ConversationMessage, Source, SourceObject
+    ConversationMessage
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -246,7 +245,7 @@ class MigrationValidator:
             store = create_memory_shard_store(self.storage)
             
             try:
-                results = list(store.search("test query", k=5))
+                list(store.search("test query", k=5))
                 tests_passed.append("memory_search")
             except Exception as e:
                 self.report["errors"].append(f"Memory search test failed: {str(e)}")
@@ -256,7 +255,7 @@ class MigrationValidator:
             
             try:
                 perceptor = SQLiteConversationHistoryPerceptor("default", self.storage)
-                context = perceptor.get_recent_context(10)
+                perceptor.get_recent_context(10)
                 tests_passed.append("conversation_retrieval")
             except Exception as e:
                 self.report["errors"].append(f"Conversation retrieval test failed: {str(e)}")
@@ -265,7 +264,7 @@ class MigrationValidator:
             try:
                 with self.storage.session() as session:
                     entity_dao = self.storage.get_dao(Entity, session)
-                    entities = entity_dao.find_all(limit=10)
+                    entity_dao.find_all(limit=10)
                     tests_passed.append("entity_lookup")
             except Exception as e:
                 self.report["errors"].append(f"Entity lookup test failed: {str(e)}")

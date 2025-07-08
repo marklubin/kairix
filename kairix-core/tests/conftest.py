@@ -4,14 +4,27 @@ This file imports all fixtures from the shared testing module, making them
 available to all tests in this project.
 """
 
+# Load test environment variables before importing any modules
+from pathlib import Path
+
+import asyncio
+import pytest
+from dotenv import load_dotenv
+
+# Load .env.test file
+env_file = Path(__file__).parent.parent / ".env.test"
+if env_file.exists():
+    load_dotenv(env_file, override=True)
+
+# Create log directory for tests if it doesn't exist
+log_dir = Path(__file__).parent.parent / "../logs/test_user"
+log_dir.mkdir(parents=True, exist_ok=True)
+
 # Import all fixtures from the shared testing module
-from kairix_core.testing.conftest import *  # noqa: F403
+from kairix_core.testing.conftest import *  # noqa: F403, E402
 
 # You can add project-specific test fixtures here that aren't needed
 # by external packages
-
-import pytest
-import asyncio
 
 
 @pytest.fixture(scope="session")

@@ -34,15 +34,17 @@ class Notebook:
     @function_tool
     def note_or_throw(self, title: str) -> list[str]:
         logger.info("Persona invoking note_or_none")
-        return self.notebook[title]
+        result = self.notebook[title]
+        assert isinstance(result, list)
+        return result
 
     @function_tool
-    def maybe_note(self, title: str) -> list[str]:
+    def maybe_note(self, title: str) -> list[str] | None:
         logger.info("Persona invoking maybe_note")
         return self.notebook[title] if title in self.notebook else None
 
     @function_tool
-    def save(self, title: str, content: str, tags: set[str]):
+    def save(self, title: str, content: str, tags: set[str]) -> None:
         logger.info("Persona saving to notebook.")
         note = None
         if title in self.notebook:

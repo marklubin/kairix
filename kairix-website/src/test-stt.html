@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        #transcript {
+            margin: 20px 0;
+            padding: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            min-height: 100px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        #audioLevel {
+            margin: 20px 0;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #audioLevelBar {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <h1>Speech Recognition Test</h1>
+    
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+    
+    <div id="status">Status: Ready</div>
+    
+    <div>Audio Level:</div>
+    <div id="audioLevel">
+        <div id="audioLevelBar"></div>
+    </div>
+    
+    <div>Transcript:</div>
+    <div id="transcript"></div>
+    
+    <div>Log:</div>
+    <div id="log" style="font-family: monospace; font-size: 12px; background: #f5f5f5; padding: 10px; height: 300px; overflow-y: auto;"></div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+        const transcript = document.getElementById('transcript');
+        const logDiv = document.getElementById('log');
+        const audioLevelBar = document.getElementById('audioLevelBar');
+        
+        let recognition = null;
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let animationId = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateAudioLevel() {
+            if (!analyser) return;
+            
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+            const percentage = (average / 255) * 100;
+            
+            audioLevelBar.style.width = percentage + '%';
+            
+            animationId = requestAnimationFrame(updateAudioLevel);
+        }
+        
+        async function startRecording() {
+            try {
+                log('Starting recording...');
+                
+                // Check browser support
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    throw new Error('Speech recognition not supported');
+                }
+                
+                // Get microphone permission and check audio
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('Microphone permission granted', 'success');
+                
+                // Set up audio analysis
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                
+                updateAudioLevel();
+                
+                // Create new recognition instance
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                recognition.maxAlternatives = 1;
+                
+                log('Recognition settings: continuous=true, interimResults=true, lang=en-US');
+                
+                // Set up all event handlers
+                recognition.onstart = () => {
+                    log('Recognition started', 'success');
+                    status.textContent = 'Status: Listening...';
+                    status.className = 'success';
+                };
+                
+                recognition.onaudiostart = () => {
+                    log('Audio capture started');
+                };
+                
+                recognition.onsoundstart = () => {
+                    log('Sound detected');
+                };
+                
+                recognition.onspeechstart = () => {
+                    log('Speech detected', 'success');
+                };
+                
+                recognition.onresult = (event) => {
+                    log(`Result event fired, results length: ${event.results.length}`);
+                    
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        if (result.isFinal) {
+                            finalTranscript += result[0].transcript + ' ';
+                            log(`Final: "${result[0].transcript}"`, 'success');
+                        } else {
+                            interimTranscript += result[0].transcript;
+                            log(`Interim: "${result[0].transcript}"`);
+                        }
+                    }
+                    
+                    transcript.innerHTML = `<strong>Final:</strong> ${finalTranscript}<br><strong>Interim:</strong> ${interimTranscript}`;
+                };
+                
+                recognition.onerror = (event) => {
+                    log(`Error: ${event.error}`, 'error');
+                    status.textContent = `Status: Error - ${event.error}`;
+                    status.className = 'error';
+                };
+                
+                recognition.onnomatch = () => {
+                    log('No speech match');
+                };
+                
+                recognition.onsoundend = () => {
+                    log('Sound ended');
+                };
+                
+                recognition.onspeechend = () => {
+                    log('Speech ended');
+                };
+                
+                recognition.onend = () => {
+                    log('Recognition ended');
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    cancelAnimationFrame(animationId);
+                };
+                
+                // Start recognition
+                recognition.start();
+                
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                status.textContent = `Status: Error - ${error.message}`;
+                status.className = 'error';
+            }
+        }
+        
+        function stopRecording() {
+            log('Stopping recording...');
+            
+            if (recognition) {
+                recognition.stop();
+            }
+            
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            status.textContent = 'Status: Stopped';
+            status.className = '';
+        }
+        
+        startBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+        
+        // Initial check
+        if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+            log('Speech recognition not supported in this browser', 'error');
+            startBtn.disabled = true;
+        } else {
+            log('Speech recognition supported', 'success');
+        }
+    </script>
+</body>
+</html>

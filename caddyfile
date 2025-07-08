@@ -1,0 +1,97 @@
+http://x9d.kairix.net, x9d.localhost {
+	basic_auth {
+		f $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
+	}
+
+	handle_path / {
+		reverse_proxy localhost:6010
+	}
+
+	handle_path /api/* {
+		reverse_proxy localhost:7010
+	}
+
+	handle_path /tools/* {
+		reverse_proxy localhost:8010
+	}
+}
+
+http://m2r.kairix.net, m2r.localhost {
+	basic_auth {
+		chris $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
+	}
+
+	handle_path / {
+		reverse_proxy localhost:6011
+	}
+
+	handle_path /api/* {
+		reverse_proxy localhost:7011
+	}
+
+	handle_path /tools/* {
+		reverse_proxy localhost:8011
+	}
+}
+
+http://q4j.kairix.net, q4j.localhost {
+	basic_auth {
+		allie $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
+	}
+
+	handle_path / {
+		reverse_proxy localhost:6012
+	}
+
+	handle_path /api/* {
+		reverse_proxy localhost:7012
+	}
+
+	handle_path /tools/* {
+		reverse_proxy localhost:8012
+	}
+}
+
+http://d7x.kairix.net, d7x.localhost {
+	basic_auth {
+		demo $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
+	}
+
+	handle_path / {
+		reverse_proxy localhost:6013
+	}
+
+	handle_path /api/* {
+		reverse_proxy localhost:7013
+	}
+
+	handle_path /tools/* {
+		reverse_proxy localhost:8013
+	}
+}
+
+http://n8q.kairix.net, n8q.localhost {
+	basic_auth {
+		nb $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
+	}
+
+	handle_path / {
+		reverse_proxy localhost:6014
+	}
+
+	handle_path /api/* {
+		reverse_proxy localhost:7014
+	}
+
+	handle_path /tools/* {
+		reverse_proxy localhost:8014
+	}
+}
+
+# Wildcard catch-all for unmapped subdomains
+http://*.kairix.net {
+	handle {
+		rewrite * /sf-is-russia
+		reverse_proxy localhost:9999
+	}
+}

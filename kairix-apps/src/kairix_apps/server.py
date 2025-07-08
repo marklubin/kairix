@@ -1,10 +1,12 @@
 """FastAPI server implementation for KairixEngine with OpenAI-compatible API."""
+import os
+
+os.putenv("KAIRIX_APP_ID", "server")
+
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-import os
-import kairix_core.util.utils
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,10 +17,10 @@ from kairix_core.cognition import ConversationalPersona
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.types.environmental_context import PersonaEnvironment
+from kairix_core.util.utils import get_or_raise
 from typing_extensions import Any
 
 from kairix_apps.service_types import ContextUpdateRequest, ContextUpdateResponse
-from kairix_core.util.utils import get_or_raise
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
@@ -31,16 +33,21 @@ agent_runtime = AgentRuntime()
 adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
 
-#Container specific configurations
+# Container specific configurations
 port: int = int(get_or_raise("KAIRIX_SERVER_PORT"))
-env_var_log_level = os.getenv("KAIRIX_LOG_LEVEL")
-log_level = env_var_log_level if os.getenv("KAIRIX_LOG_LEVEL") else "INFO"
+env_var_log_level: str | None = os.getenv("KAIRIX_LOG_LEVEL")
+log_level: str = str(env_var_log_level) if os.getenv("KAIRIX_LOG_LEVEL") else "debug"
 
 
 async def verify_api_key(x_api_key: str = Header(...)) -> str:
     """Verify API key from header."""
-    expected_key = os.environ.get("API_KEY")
-    if expected_key and x_api_key != expected_key:
+    maybe_api_key = os.environ.get("KAIRIX_API_KEY")
+
+    if not maybe_api_key:
+        logger.info("No API Key configured for server allowing all requests.")
+        return "ok"
+
+    if x_api_key != maybe_api_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return x_api_key
 
@@ -90,7 +97,7 @@ app.add_middleware(
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Log validation errors with full details."""
     logger.error(f"Validation error for {request.url}: {exc.errors()}")
     logger.error(f"Request body: {exc.body}")
@@ -101,7 +108,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.get("/health")
-async def health_check(api_key: str = Depends(verify_api_key)) -> dict \
+async def health_check() -> dict \
         :
     """Health check endpoint."""
     return {"status": "healthy", "service": "kairix-api"}
@@ -109,7 +116,7 @@ async def health_check(api_key: str = Depends(verify_api_key)) -> dict \
 
 @app.options("/v1/models")
 @app.get("/v1/models")
-async def list_models(api_key: str = Depends(verify_api_key)) -> dict[str, Any]:
+async def list_models() -> dict[str, Any]:
     """List available models."""
     models = [
         Model(
@@ -127,7 +134,6 @@ async def create_chat_completion(request: CreateChatCompletionRequest, api_key: 
     """Create a chat completion with streaming support."""
     logger.info(f"Received chat completion request: model={request.model}, stream={request.stream}")
 
-    wirelog.request(request)
     if adapter is None:
         logger.error("Adapter is None - service not initialized properly")
         raise HTTPException(status_code=500, detail="Service not initialized - adapter is None")
@@ -167,7 +173,6 @@ async def create_chat_completion(request: CreateChatCompletionRequest, api_key: 
             completion = await adapter.complete_response(
                 messages, request.model
             )
-            wirelog.response(completion)
             logger.info("Response generated successfully")
             return completion
 
@@ -183,6 +188,9 @@ async def update_context(
         request: ContextUpdateRequest,
         api_key: str = Depends(verify_api_key)
 ) -> ContextUpdateResponse:
+    if not persona:
+        raise OSError("Environment is not initialized correctly.")
+
     """Update context information from client."""
     logger.info(f"Received context update for session {request.session_id}")
     logger.debug(f"Full request data: {request.model_dump()}")
@@ -223,6 +231,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=port,
-        log_level=log_level,
+        log_level=log_level.lower(),
         access_log=True
     )

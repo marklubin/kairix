@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple STT Test</title>
+</head>
+<body>
+    <h1>Minimal Speech Recognition Test</h1>
+    <button id="btn">Click and Speak</button>
+    <div id="result"></div>
+    
+    <script>
+        const btn = document.getElementById('btn');
+        const result = document.getElementById('result');
+        
+        btn.onclick = () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = () => {
+                console.log('Started');
+                result.textContent = 'Listening...';
+            };
+            
+            recognition.onresult = (event) => {
+                console.log('Result:', event);
+                let text = '';
+                for (let i = 0; i < event.results.length; i++) {
+                    text += event.results[i][0].transcript + ' ';
+                }
+                result.textContent = 'Result: ' + text;
+            };
+            
+            recognition.onerror = (event) => {
+                console.log('Error:', event.error);
+                result.textContent = 'Error: ' + event.error;
+            };
+            
+            recognition.onend = () => {
+                console.log('Ended');
+            };
+            
+            recognition.start();
+        };
+    </script>
+</body>
+</html>

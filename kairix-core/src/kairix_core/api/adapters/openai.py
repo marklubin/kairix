@@ -6,7 +6,7 @@ OpenAI's API format and Kairix's internal persona system.
 
 import time
 import uuid
-from typing import AsyncIterator, List
+from typing import Any, AsyncIterator, List
 
 from openai.types import CompletionUsage
 # Import types from OpenAI package
@@ -79,7 +79,7 @@ class OpenAIAdapter:
         self,
         messages: List[ChatCompletionMessageParam],
         model: str,
-        **kwargs
+        **kwargs: Any
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Stream responses with delta chunks."""
         message, context = self.convert_messages(messages)
@@ -118,7 +118,7 @@ class OpenAIAdapter:
         self,
         messages: List[ChatCompletionMessageParam],
         model: str,
-        **kwargs
+        **kwargs: Any
     ) -> ChatCompletion:
         """Get complete response (non-streaming)."""
         message, context = self.convert_messages(messages)

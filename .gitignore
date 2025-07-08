@@ -37,7 +37,11 @@ neo4j/*
 data/*
 output/*
 .vscode
-
+.sqlite
+*.sqlite3
+*.db
+*.log
+logs/
 
 .idea/*
 input/*

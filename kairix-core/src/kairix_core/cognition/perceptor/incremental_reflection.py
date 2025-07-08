@@ -22,7 +22,7 @@ class IncrementalReflectionPerceptor(Perceptor):
                  agent: K_Agent,
                  runtime: AgentRuntime,
                  embedder: SentenceTransformer,
-                 storage: StorageRuntime = None,
+                 storage: StorageRuntime | None = None,
                  summarization_interval: int = 20):
         self.summarization_interval = summarization_interval
         self._pending_messages: list[str] = []

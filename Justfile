@@ -1,4 +1,24 @@
 all: clean lint-unsafe check test
+
+
+clean-env-links:
+    rm -rf envs
+    rm -rf kairix-apps/.envs
+    rm -rf kairix-core/.envs
+    rm -rf kairix-offline/.envs
+    rm -rf kairix-website/.envs
+
+create-env-links:
+    mkdir envs
+    ln -s $HOME/kairix/envs kairix-apps/.envs
+    ln -s $HOME/kairix/envs kairix-core/.envs
+    ln -s $HOME/kairix/envs kairix-offline/.envs
+    ln -s $HOME/kairix/envs kairix-website/.envs
+
+
+run-user USER CMD *ARGS:
+    dotenv -e .envs/{{USER}}.env uv run {{CMD}} {{ARGS}}
+
 set-env PLATFORM INF USER:
     rm -f .env 
     touch .env
@@ -16,7 +36,10 @@ set-env PLATFORM INF USER:
     cat $HOME/kairix/environments/inference/{{INF}}.env  >> .env
 
     echo "#~~~~~~~~~~~~~~~~~~[User Config]~~~~~~~~~~~~~~~~~~~~" >> .env
-        cat $HOME/kairix/environments/users/{{USER}}.env  >> .env
+    cat $HOME/kairix/environments/users/{{USER}}.env  >> .env
+    rm -rf envs/{{USER}}.env
+    cp .env envs/{{USER}}.env
+    rm -rf .env
 
 # Run all tests
 test:
@@ -44,7 +67,6 @@ start_db:
 
 install:
     uv sync
-    uv run python -c "from kairix_core.runtime.neo4j import Neo4jRuntime; Neo4jRuntime().install()"
 
 
 clean:
@@ -61,5 +83,3 @@ clean:
 tree:
     tree -I '__pycache__|*.pyc|.git'
 
-clear-db-label LABEL:
-      echo "MATCH (n:{{LABEL}}) DETACH DELETE n" | cypher-shell -a bolt://localhost:7687 -u neo4j -p password

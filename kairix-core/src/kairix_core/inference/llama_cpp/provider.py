@@ -27,7 +27,9 @@ class LlamaCppProvider(ModelProvider):
     def populate(self):
         for model, pool_size in self.model_and_pool_size:
             model_pool = [
-                LlamaCppModel(llama=Llama.from_pretrained(  # type: ignore[call-arg]
+                LlamaCppModel(llama=Llama.from_pretrained(
+                    repo_id=_model_definitions[model]["repo_id"],
+                    filename=_model_definitions[model]["filename"],
                     n_gpu_layers=-1,  # Fixed parameter name
                     flash_attn=True,
                     n_ctx=8000,
@@ -35,7 +37,6 @@ class LlamaCppProvider(ModelProvider):
                     type_k=2,
                     type_v=2,
                     n_threads=8,
-                    **_model_definitions[model]
                     )
                 )
                 for _ in range(pool_size)
@@ -49,7 +50,8 @@ class LlamaCppProvider(ModelProvider):
         if not self.models:
             self.populate()
 
-        if model_name not in self.models:
+        if model_name is None or model_name not in self.models:
             raise ValueError(f"No configured model pool for {model_name}. Must configure "
                              f"when creating provider.")
-        return self.models[model_name]
+        model: Model = self.models[model_name]
+        return model
