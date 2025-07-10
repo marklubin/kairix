@@ -1,4 +1,39 @@
-http://x9d.kairix.net, x9d.localhost {
+{
+    admin off
+}
+
+# Main domain with HTTPS and redirect
+kairix.net {
+    # Reverse proxy for API server
+    handle /api/* {
+        reverse_proxy localhost:8000
+    }
+
+    # Serve website
+    handle {
+        reverse_proxy localhost:3000
+    }
+
+    # Enable compression
+    encode gzip
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+# HTTP to HTTPS redirect
+http://kairix.net {
+    redir https://{host}{uri} permanent
+}
+
+# Existing subdomain configurations with HTTPS
+x9d.kairix.net {
 	basic_auth {
 		f $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
 	}
@@ -16,7 +51,7 @@ http://x9d.kairix.net, x9d.localhost {
 	}
 }
 
-http://m2r.kairix.net, m2r.localhost {
+m2r.kairix.net {
 	basic_auth {
 		chris $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
 	}
@@ -34,7 +69,7 @@ http://m2r.kairix.net, m2r.localhost {
 	}
 }
 
-http://q4j.kairix.net, q4j.localhost {
+q4j.kairix.net {
 	basic_auth {
 		allie $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
 	}
@@ -52,7 +87,7 @@ http://q4j.kairix.net, q4j.localhost {
 	}
 }
 
-http://d7x.kairix.net, d7x.localhost {
+d7x.kairix.net {
 	basic_auth {
 		demo $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
 	}
@@ -70,7 +105,7 @@ http://d7x.kairix.net, d7x.localhost {
 	}
 }
 
-http://n8q.kairix.net, n8q.localhost {
+n8q.kairix.net {
 	basic_auth {
 		nb $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG
 	}
@@ -89,7 +124,7 @@ http://n8q.kairix.net, n8q.localhost {
 }
 
 # Wildcard catch-all for unmapped subdomains
-http://*.kairix.net {
+*.kairix.net {
 	handle {
 		rewrite * /sf-is-russia
 		reverse_proxy localhost:9999

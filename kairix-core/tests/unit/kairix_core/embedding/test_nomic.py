@@ -1,5 +1,4 @@
 """Tests for NomicEmbedding."""
-import numpy as np
 from unittest.mock import patch
 from kairix_core.embedding.nomic import NomicEmbedding
 

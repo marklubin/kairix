@@ -11,7 +11,7 @@ storage = StorageRuntime(db_path="../.sqlite/mark.db")
 
 with storage.session() as session:
     # Get all shards with embeddings
-    shards = session.query(MemoryShard).filter(MemoryShard.embedding != None).all()
+    shards = session.query(MemoryShard).filter(MemoryShard.embedding is not None).all()
     print(f"Found {len(shards)} shards with embeddings")
     
     # Populate VSS

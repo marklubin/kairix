@@ -8,7 +8,7 @@ import uvicorn
 
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.perceptor.environmental_context import EnvironmentalContextPerceptor
-from kairix_core.types.cognition import Stimulus, StimulusType, Perception
+from kairix_core.types.cognition import Stimulus, StimulusType
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.cognition.stores.sqlite_embedded_data import create_memory_shard_store

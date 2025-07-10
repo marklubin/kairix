@@ -4,7 +4,6 @@ from typing import List
 from pytz import utc  # type: ignore[import-untyped]
 
 from kairix_core.embedding.base import EmbeddingModel
-from kairix_core.embedding.nomic import NomicEmbedding
 
 from kairix_core.cognition import Perceptor
 from kairix_core.runtime.agent import AgentRuntime

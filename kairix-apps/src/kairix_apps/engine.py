@@ -14,12 +14,12 @@ from kairix_core.cognition.perceptor.sqlite_conversation_history import (
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.cognition.persona import ConversationalPersona, Notebook
 from kairix_core.cognition.stores.sqlite_embedded_data import create_memory_shard_store
+from kairix_core.embedding.nomic import NomicEmbedding
 from kairix_core.prompt import system_instructions
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.util.utils import get_or_raise
-from kairix_core.embedding.nomic import NomicEmbedding
 
 if TYPE_CHECKING:
     from kairix_core.types.cognition import K_Agent

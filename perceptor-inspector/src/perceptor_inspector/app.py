@@ -1,10 +1,7 @@
 """Perceptor Inspector - Test SummaryInsightPerceptor with real configuration."""
 import json
-import os
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from datetime import datetime
-import glob
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +9,6 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
 
-from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
 from kairix_core.types.cognition import Stimulus, StimulusType
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.storage import StorageRuntime
@@ -58,14 +54,14 @@ async def test_perceptor(request: TestRequest):
         embedded_store = create_memory_shard_store(storage=storage)
         
         # Create agent runtime
-        agent_runtime = AgentRuntime()
+        AgentRuntime()
         
         # Test the embedded store directly without full perceptor
         # This avoids spacy dependency issues
         keywords = ["weather", "climate", "temperature"]
         
         # Create stimulus
-        stimulus = Stimulus(
+        Stimulus(
             type=StimulusType.user_message,
             content={"text": request.config.user_message}
         )
