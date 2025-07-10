@@ -3,17 +3,27 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '')
-  // Get the website port from environment variable
-  const websitePort = parseInt(env.KAIRIX_WEBSITE_PORT)
   
-  if (!websitePort) {
-    throw new Error('KAIRIX_WEBSITE_PORT environment variable is required')
+  // Only check env vars when serving, not building
+  if (command === 'serve') {
+    const websitePort = parseInt(env.KAIRIX_WEBSITE_PORT)
+    const elevenLabsApiKey = env.ELEVENLABS_API_KEY
+    
+    if (!websitePort) {
+      throw new Error('KAIRIX_WEBSITE_PORT environment variable is required')
+    }
+    
+    if (!elevenLabsApiKey) {
+      throw new Error('ELEVENLABS_API_KEY environment variable is required')
+    }
   }
   
-  // Get HMR host from environment or use default
+  // Use env vars if available, otherwise use defaults for build
+  const websitePort = parseInt(env.KAIRIX_WEBSITE_PORT) || 5173
+  const elevenLabsApiKey = env.ELEVENLABS_API_KEY || ''
   const hmrHost = env.VITE_HMR_HOST || 'localhost'
 
   return {
@@ -24,11 +34,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // Re-export KAIRIX_WEBSITE_PORT as VITE_KAIRIX_WEBSITE_PORT for client code
+      // Re-export required env vars with VITE_ prefix for client code
       'import.meta.env.VITE_KAIRIX_WEBSITE_PORT': JSON.stringify(websitePort.toString()),
+      'import.meta.env.VITE_ELEVENLABS_API_KEY': JSON.stringify(elevenLabsApiKey),
     },
     server: {
-      host: 'localhost', // Use localhost only
+      host: '0.0.0.0', // Bind to all interfaces for production
       port: websitePort,
       strictPort: true, // Use strict port to ensure we use the configured port
       cors: true, // Enable CORS

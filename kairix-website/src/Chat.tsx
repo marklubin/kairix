@@ -31,7 +31,9 @@ function ChatContainer() {
   useEffect(() => {
     const loadVoices = async () => {
       try {
+        console.log('Loading voices for provider:', ttsConfig.provider);
         const availableVoices = await ttsService.getVoices();
+        console.log('Available voices:', availableVoices);
         setVoices(availableVoices.map(v => ({ id: v.id, name: v.name })));
       } catch (error) {
         console.error('Failed to load voices:', error);

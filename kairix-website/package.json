@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "dotenv -e .env -- vite",
-    "build": "dotenv -e .env -- tsc -b && dotenv -e .env -- vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "dotenv -e .env -- vite preview",
+    "serve": "doppler run -c $npm_config_name -- vite",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

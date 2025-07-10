@@ -13,6 +13,8 @@ export class ElevenLabsTTSProvider implements TTSProvider {
     this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
     console.log('ElevenLabs API Key loaded:', this.apiKey ? 'Yes' : 'No');
     console.log('API Key length:', this.apiKey.length);
+    console.log('API Key prefix:', this.apiKey.substring(0, 10));
+    console.log('All VITE env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
     this.voiceId = voiceId;
     this.modelId = modelId;
   }
@@ -23,9 +25,12 @@ export class ElevenLabsTTSProvider implements TTSProvider {
 
   async getVoices(): Promise<TTSVoice[]> {
     if (!this.apiKey) {
+      console.error('ElevenLabs API key is missing');
       return [];
     }
 
+    console.log('Fetching voices with API key:', this.apiKey.substring(0, 10) + '...');
+    
     try {
       const response = await fetch('https://api.elevenlabs.io/v1/voices', {
         headers: {
@@ -33,8 +38,11 @@ export class ElevenLabsTTSProvider implements TTSProvider {
         }
       });
 
+      console.log('ElevenLabs voices response status:', response.status);
+      
       if (!response.ok) {
-        console.error('Failed to fetch ElevenLabs voices');
+        const errorText = await response.text();
+        console.error('Failed to fetch ElevenLabs voices:', response.status, errorText);
         return [];
       }
 

@@ -3,7 +3,9 @@ set shell := ["bash", "-cu"]
 
 all: clean lint-unsafe check test
 
-
+[working-directory: 'kairix-apps']
+run-server CONFIG:
+  doppler run -c {{CONFIG}} uv run python src/kairix_apps/server.py
 
 
 # Run all tests

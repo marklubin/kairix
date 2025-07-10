@@ -16,7 +16,7 @@ export function useCustomChat() {
   const { ttsService, isEnabled: isTTSEnabled } = useTTS();
   const { sttService, sttState } = useSTT();
   const currentAssistantMessageIdRef = useRef<string | null>(null);
-  const handleSubmitRef = useRef<(e?: React.FormEvent, overrideInput?: string) => Promise<void>>();
+  const handleSubmitRef = useRef<(e?: React.FormEvent, overrideInput?: string) => Promise<void>>(null);
 
   // Load chat history when model changes
   useEffect(() => {

@@ -3,6 +3,7 @@ from typing import List
 
 from pytz import utc  # type: ignore[import-untyped]
 
+from kairix_core.embedding.base import EmbeddingModel
 from kairix_core.embedding.nomic import NomicEmbedding
 
 from kairix_core.cognition import Perceptor
@@ -24,14 +25,15 @@ class IncrementalReflectionPerceptor(Perceptor):
     def __init__(self, *,
                  agent: K_Agent,
                  runtime: AgentRuntime,
-                 storage: StorageRuntime | None = None,
+                 embedder: EmbeddingModel,
+                 storage: StorageRuntime,
                  summarization_interval: int = 20):
         self.summarization_interval = summarization_interval
         self._pending_messages: list[str] = []
         self.agent = agent
         self.runtime = runtime
-        self.embedder = NomicEmbedding()  # Uses default 768 dimensions
-        self.storage = storage or StorageRuntime()
+        self.embedder = embedder
+        self.storage = storage
         self.last_summary = ""
 
     async def perceive(self, stimulus: Stimulus) -> List[Perception]:
