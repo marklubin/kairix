@@ -1,0 +1,14 @@
+# Kairix Caddyfile Template
+# This file is used during provisioning to set up the base Caddy configuration
+
+# Health check endpoint
+:80 {
+    respond /health "OK" 200
+}
+
+# User configurations will be added below this line by the CLI tool
+
+# Wildcard catch-all for unmapped subdomains
+*.{$KAIRIX_DOMAIN:kairix.net} {
+    respond "Subdomain not configured" 404
+}
