@@ -7,14 +7,15 @@ that uses SQLite-VSS for vector similarity search.
 import logging
 from typing import Any, Callable, Optional, Iterable, List, Tuple
 
-from sentence_transformers import SentenceTransformer
+from kairix_core.embedding.base import EmbeddingModel
+from kairix_core.embedding.nomic import NomicEmbedding
 
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.db import Entity, MemoryShard
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
+# Removed hardcoded HuggingFace model reference
 
 ContentWithScore = Tuple[Any, float]
 
@@ -27,7 +28,7 @@ class SQLiteEmbeddedDataStore:
         *,
         table_name: str,  # 'entity' or 'memory_shard'
         content_key: str,  # field to return in search results
-        embedding_model: str = DEFAULT_EMBEDDING_MODEL,
+        embedding_model: Optional[EmbeddingModel] = None,
         embedding_dims: int = 768,
         content_transform: Optional[Callable[[Any], Any]] = None,
         storage: Optional[StorageRuntime] = None,
@@ -38,14 +39,12 @@ class SQLiteEmbeddedDataStore:
         Args:
             table_name: Name of the table to search ('entity' or 'memory_shard')
             content_key: Field name to return in search results
-            embedding_model: Name of the sentence transformer model
+            embedding_model: Optional embedding model instance
             embedding_dims: Dimensions of the embedding vectors
             content_transform: Optional function to transform content before returning
             storage: Optional StorageRuntime instance (creates new if not provided)
         """
-        self.transformer = SentenceTransformer(
-            embedding_model, truncate_dim=embedding_dims
-        )
+        self.embedding_model = embedding_model or NomicEmbedding()
         
         self.storage = storage or StorageRuntime()
         self.vector_dao = self.storage.vector_dao
@@ -60,8 +59,11 @@ class SQLiteEmbeddedDataStore:
     
     def _get_embedding(self, text: str) -> List[float]:
         """Generate embedding vector for text."""
-        numpy_array = self.transformer.encode(text)
-        logger.debug(f"Got embedding of length: {len(numpy_array)}.")
+        numpy_array = self.embedding_model.encode(text)
+        # Flatten if we get a 2D array (which happens for single text)
+        if numpy_array.ndim > 1:
+            numpy_array = numpy_array[0]
+        logger.debug(f"Got embedding of shape: {numpy_array.shape}")
         return numpy_array.tolist()
     
     def _vector_search(
@@ -159,7 +161,7 @@ def create_memory_shard_store(storage: Optional[StorageRuntime] = None) -> SQLit
     return SQLiteEmbeddedDataStore(
         table_name='memory_shard',
         content_key='contents',  # Return the shard contents
-        embedding_dims=128,
+        embedding_dims=768,
         storage=storage
     )
 
@@ -169,6 +171,6 @@ def create_concept_store(storage: Optional[StorageRuntime] = None) -> SQLiteEmbe
     return SQLiteEmbeddedDataStore(
         table_name='entity',
         content_key='semantic_id',  # Return the semantic ID
-        embedding_dims=128,
+        embedding_dims=768,
         storage=storage
     )

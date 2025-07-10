@@ -9,8 +9,10 @@ export class ElevenLabsTTSProvider implements TTSProvider {
   private isPlaying = false;
   private currentAudio: HTMLAudioElement | null = null;
 
-  constructor(apiKey: string = '', voiceId: string = '0NkECxcbkydDMspBKvQp', modelId: string = 'eleven_monolingual_v1') {
-    this.apiKey = apiKey;
+  constructor(voiceId: string = '0NkECxcbkydDMspBKvQp', modelId: string = 'eleven_flash_v2_5') {
+    this.apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
+    console.log('ElevenLabs API Key loaded:', this.apiKey ? 'Yes' : 'No');
+    console.log('API Key length:', this.apiKey.length);
     this.voiceId = voiceId;
     this.modelId = modelId;
   }
@@ -58,6 +60,7 @@ export class ElevenLabsTTSProvider implements TTSProvider {
     const voiceId = options?.voice || this.voiceId;
 
     try {
+      console.log('Making ElevenLabs API request with key:', this.apiKey.substring(0, 10) + '...');
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
         method: 'POST',
         headers: {
@@ -77,7 +80,11 @@ export class ElevenLabsTTSProvider implements TTSProvider {
       });
 
       if (!response.ok) {
-        throw new Error(`ElevenLabs API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('ElevenLabs API error response:', errorText);
+        console.error('Response status:', response.status);
+        console.error('Using API key:', this.apiKey);
+        throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
       }
 
       // Get audio data
@@ -165,9 +172,6 @@ export class ElevenLabsTTSProvider implements TTSProvider {
     this.isPlaying = false;
   }
 
-  setApiKey(apiKey: string): void {
-    this.apiKey = apiKey;
-  }
 
   setVoiceId(voiceId: string): void {
     this.voiceId = voiceId;

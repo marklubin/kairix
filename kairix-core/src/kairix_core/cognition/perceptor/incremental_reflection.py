@@ -1,19 +1,22 @@
 import datetime
-import logging
 from typing import List
 
 from pytz import utc  # type: ignore[import-untyped]
-from sentence_transformers import SentenceTransformer
+
+from kairix_core.embedding.nomic import NomicEmbedding
 
 from kairix_core.cognition import Perceptor
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.cache import CacheRuntime
+from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.cognition import Stimulus, Perception, StimulusType, K_Agent
 from kairix_core.types.db import MemoryShard, Agent
 
-logger = logging.getLogger(__name__)
+logger = LoggingRuntime().logger
 cache = CacheRuntime().summarization_errors
+
+_LOG_PREFIX = "[INCREMENTAL_REFLECTION]"
 
 
 class IncrementalReflectionPerceptor(Perceptor):
@@ -21,21 +24,28 @@ class IncrementalReflectionPerceptor(Perceptor):
     def __init__(self, *,
                  agent: K_Agent,
                  runtime: AgentRuntime,
-                 embedder: SentenceTransformer,
                  storage: StorageRuntime | None = None,
                  summarization_interval: int = 20):
         self.summarization_interval = summarization_interval
         self._pending_messages: list[str] = []
         self.agent = agent
         self.runtime = runtime
-        self.embedder: SentenceTransformer = embedder
+        self.embedder = NomicEmbedding()  # Uses default 768 dimensions
         self.storage = storage or StorageRuntime()
         self.last_summary = ""
 
     async def perceive(self, stimulus: Stimulus) -> List[Perception]:
+        logger.info("In the incremental reflection perceptor.")
+        logger.info(f"""
+                {len(self._pending_messages)} of {self.summarization_interval} into summarization interval.
+        """)
+
+
         if stimulus.type == StimulusType.user_message:
+            logger.info(_LOG_PREFIX)
             self._pending_messages.append(f"User: {stimulus.content}")
         elif stimulus.type == StimulusType.self_perception:
+            logger.info(_LOG_PREFIX)
             self._pending_messages.append(f"Assistant: {stimulus.content}")
         else:
             logger.info(f"{__name__} not responding to stimulus, {stimulus.type}")
@@ -50,7 +60,8 @@ class IncrementalReflectionPerceptor(Perceptor):
 
             try:
                 logger.info("Invoking summarization agent.")
-                summary = str(await self.runtime.run(self.agent, text_to_summarize))
+                run_result = await self.runtime.run(self.agent, text_to_summarize)
+                summary = run_result.data  # Extract the actual content from RunResult
                 logger.info("Got back summary, generating embedding.")
 
                 embedding = self.embedder.encode(summary).tolist()
@@ -68,8 +79,8 @@ class IncrementalReflectionPerceptor(Perceptor):
                     memory_dao = self.storage.get_dao(MemoryShard, session)
                     memory_dao.create(
                         contents=summary,
-                        embedding_type="kairix-default-128",
-                        embedding=embedding[:128] if len(embedding) > 128 else embedding,
+                        embedding_type="kairix-default-768",
+                        embedding=embedding,
                         agent_id=db_agent.id
                     )
                     session.commit()

@@ -18,11 +18,9 @@ dependencies = [
     "openai>=1.86.0",
     "pydub>=0.25.1",
     "rich>=14.0.0",
-    "sentence-transformers>=4.1.0",
     "pydantic>=2.11.5",
     "neomodel>=5.5.0",
     "chatformat>=1.2",
-    "huggingface-hub>=0.32.4",
     "wireup>=2.0.0",
     "spacy>=3.8.7",
     "textblob>=0.19.0",
@@ -41,6 +39,10 @@ dependencies = [
     "textual>=3.6.0",
     "pyperclip>=1.9.0",
     "sqlite-vss>=0.1.2",
+    "nomic>=3.5.3",
+    "pyyaml>=6.0.2",
+    "gpt4all>=2.8.2",
+    "torch>=2.7.1",
 ]
 
 

@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, patch
 
 from kairix_core.cognition.perceptor.semantic_graph import SemanticGraphPerceptor
-from kairix_core.cognition.stores.embedded_data import EmbeddedDataStore
+from kairix_core.cognition.stores.sqlite_embedded_data import SQLiteEmbeddedDataStore
 from kairix_core.types.cognition import Stimulus, StimulusType
 
 
@@ -14,7 +14,7 @@ class TestSemanticGraphPerceptor:
     @pytest.fixture
     def mock_embedded_store(self):
         """Mock the embedded data store."""
-        store = Mock(spec=EmbeddedDataStore)
+        store = Mock(spec=SQLiteEmbeddedDataStore)
         store.search = Mock(return_value=[])
         return store
     

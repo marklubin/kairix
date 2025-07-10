@@ -2,6 +2,16 @@ import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
+// Set environment variables for tests
+process.env.VITE_API_URL = 'http://localhost:8888'
+process.env.VITE_KAIRIX_WEBSITE_PORT = '5173'
+
+// Mock import.meta.env for Vite
+vi.stubGlobal('import.meta.env', {
+  VITE_API_URL: 'http://localhost:8888',
+  VITE_KAIRIX_WEBSITE_PORT: '5173'
+})
+
 // Cleanup after each test
 afterEach(() => {
   cleanup()
@@ -105,7 +115,42 @@ class MockAudioContext {
   close = vi.fn()
 }
 
-// @ts-ignore
+// @ts-expect-error
 window.AudioContext = MockAudioContext
-// @ts-ignore
+// @ts-expect-error
 window.webkitAudioContext = MockAudioContext
+
+// Mock SpeechRecognition
+class MockSpeechRecognition {
+  continuous = false
+  interimResults = false
+  lang = 'en-US'
+  maxAlternatives = 1
+  onaudiostart = null
+  onaudioend = null
+  onend = null
+  onerror = null
+  onnomatch = null
+  onresult = null
+  onsoundstart = null
+  onsoundend = null
+  onspeechend = null
+  onspeechstart = null
+  onstart = null
+  
+  start = vi.fn()
+  stop = vi.fn()
+  abort = vi.fn()
+  
+  addEventListener = vi.fn()
+  removeEventListener = vi.fn()
+  dispatchEvent = vi.fn()
+}
+
+// @ts-expect-error
+window.SpeechRecognition = MockSpeechRecognition
+// @ts-expect-error
+window.webkitSpeechRecognition = MockSpeechRecognition
+
+// Mock scrollIntoView
+Element.prototype.scrollIntoView = vi.fn()

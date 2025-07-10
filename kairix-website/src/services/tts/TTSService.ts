@@ -26,7 +26,6 @@ export class TTSService {
       rate: appConfig.ttsRate,
       pitch: appConfig.ttsPitch,
       volume: appConfig.ttsVolume,
-      elevenLabsApiKey: appConfig.elevenLabsApiKey,
       bufferWordCount: appConfig.ttsBufferWordCount,
       ...config
     };
@@ -40,7 +39,7 @@ export class TTSService {
       case 'browser':
         return new BrowserTTSProvider();
       case 'elevenlabs':
-        return new ElevenLabsTTSProvider(this.config.elevenLabsApiKey);
+        return new ElevenLabsTTSProvider();
       case 'macos':
         return new MacOSTTSProvider();
       default:
@@ -229,16 +228,12 @@ export class TTSService {
       ttsRate: this.config.rate,
       ttsPitch: this.config.pitch,
       ttsVolume: this.config.volume,
-      elevenLabsApiKey: this.config.elevenLabsApiKey,
       ttsBufferWordCount: this.config.bufferWordCount
     });
     
-    // If provider changed or ElevenLabs API key updated, recreate provider
+    // If provider changed, recreate provider
     if (config.provider && config.provider !== this.provider.name) {
       this.setProvider(config.provider);
-    } else if (config.elevenLabsApiKey !== undefined && this.config.provider === 'elevenlabs') {
-      // Recreate ElevenLabs provider with new API key
-      this.provider = new ElevenLabsTTSProvider(config.elevenLabsApiKey);
     }
   }
 

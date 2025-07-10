@@ -4,15 +4,15 @@ from agents import OpenAIProvider, ModelProvider
 
 from kairix_core.configuration.types import ProviderName, AgentConfigurationSet, AgentConfig
 from kairix_core.configuration.utils import model_for_provider
-from kairix_core.inference.llama_cpp.provider import LlamaCppProvider
+# from kairix_core.inference.llama_cpp.provider import LlamaCppProvider
 provider_mappings: dict[ProviderName, ModelProvider] = {
     "ollama-remote": OpenAIProvider(base_url="https://ollama.kairix.net/v1",
                                     use_responses=False),
     "ollama-local": OpenAIProvider(base_url="http://localhost:11434/v1",
                                    use_responses=False),
-    "llama-cpp": LlamaCppProvider(
-        ("nh2-mistral", 3)
-    )
+    # "llama-cpp": LlamaCppProvider(
+    #     ("nh2-mistral", 3)
+    # )
 }
 
 default_model = os.getenv("KAIRIX_DEFAULT_INFERENCE_MODEL") or "gpt-4o"

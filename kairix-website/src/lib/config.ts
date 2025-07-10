@@ -21,12 +21,11 @@ export const defaultConfig = {
   // TTS Settings
   ttsProvider: 'elevenlabs',
   ttsEnabled: true,
-  elevenLabsApiKey: 'sk_f84893b970e13c43c23063f92abbcbc760698537780b5bfd',
   ttsVoice: '0NkECxcbkydDMspBKvQp',
-  ttsRate: 1.0,
+  ttsRate: 1.2,
   ttsPitch: 1.0,
   ttsVolume: 1.0,
-  ttsBufferWordCount: 10,
+  ttsBufferWordCount: 20,
   
   // STT Settings
   sttProvider: 'browser',

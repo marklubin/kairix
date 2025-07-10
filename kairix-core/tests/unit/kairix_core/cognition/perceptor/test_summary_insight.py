@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock, patch
 
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
-from kairix_core.cognition.stores.embedded_data import EmbeddedDataStore
+from kairix_core.cognition.stores.sqlite_embedded_data import SQLiteEmbeddedDataStore
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.types.cognition import Stimulus, StimulusType
 from agents import Agent
@@ -23,7 +23,7 @@ class TestSummaryInsightPerceptor:
     @pytest.fixture
     def mock_embedded_store(self):
         """Mock the embedded data store."""
-        store = Mock(spec=EmbeddedDataStore)
+        store = Mock(spec=SQLiteEmbeddedDataStore)
         store.search = Mock(return_value=[])
         return store
     

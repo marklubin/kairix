@@ -71,14 +71,14 @@ def create_vss_tables(engine: Engine) -> None:
             # Create VSS table for Entity embeddings
             conn.execute(text("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS entity_vss USING vss0(
-                    embedding(128)
+                    embedding(768)
                 );
             """))
             
             # Create VSS table for MemoryShard embeddings  
             conn.execute(text("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS memory_shard_vss USING vss0(
-                    embedding(128)
+                    embedding(768)
                 );
             """))
             

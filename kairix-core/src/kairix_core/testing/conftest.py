@@ -267,14 +267,16 @@ def mock_llama_cpp_provider():
 
 @pytest.fixture
 def mock_embedded_data_store():
-    """Mock EmbeddedDataStore."""
+    """Mock SQLiteEmbeddedDataStore."""
     store = Mock()
-    store.search = AsyncMock(return_value=[
-        {"content": "Result 1", "similarity": 0.95},
-        {"content": "Result 2", "similarity": 0.90}
+    # Return tuples of (content, score) as expected by SQLiteEmbeddedDataStore
+    store.search = Mock(return_value=[
+        ("Result 1", 0.95),
+        ("Result 2", 0.90)
     ])
-    store.model = Mock()
-    store.model.encode = Mock(return_value=[[0.1] * 768])  # Mock embedding
+    store._get_embedding = Mock(return_value=[0.1] * 768)  # Mock embedding
+    store.embedding_model = Mock()
+    store.embedding_model.encode = Mock(return_value=[0.1] * 768)
     return store
 
 

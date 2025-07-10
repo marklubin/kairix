@@ -22,19 +22,9 @@ def init_embedding_types(storage: StorageRuntime) -> None:
         # Default embedding types from the codebase
         embeddings = [
             {
-                "name": "sentence-transformers/all-mpnet-base-v2",
-                "model_name": "sentence-transformers/all-mpnet-base-v2",
+                "name": "nomic-embed-text-v1.5",
+                "model_name": "nomic-embed-text-v1.5",
                 "vector_length": 768
-            },
-            {
-                "name": "text-embedding-ada-002",
-                "model_name": "openai/text-embedding-ada-002",
-                "vector_length": 1536
-            },
-            {
-                "name": "kairix-default-128",
-                "model_name": "sentence-transformers/all-mpnet-base-v2",
-                "vector_length": 128  # Truncated for memory efficiency
             }
         ]
         

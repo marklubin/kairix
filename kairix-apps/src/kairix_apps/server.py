@@ -1,6 +1,6 @@
 """FastAPI server implementation for KairixEngine with OpenAI-compatible API."""
 import os
-
+os.putenv("TOKENIZERS_PARALLELISM", "false")
 os.putenv("KAIRIX_APP_ID", "server")
 
 from collections.abc import AsyncIterator

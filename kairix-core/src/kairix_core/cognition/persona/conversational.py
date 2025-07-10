@@ -34,7 +34,7 @@ class ConversationalPersona:
         self.actuating_agent = actuating_agent
         self.reflection_perceptors = reflection_perceptors
 
-        logger.info(f"""
+        logger.info(f"""z
                 Kairix Persona Cognition Engine v.0.01
            
                 Cognition Configuration Summary

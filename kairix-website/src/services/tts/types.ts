@@ -37,6 +37,5 @@ export interface TTSConfig {
   rate?: number;
   pitch?: number;
   volume?: number;
-  elevenLabsApiKey?: string;
   bufferWordCount?: number;
 }

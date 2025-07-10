@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from kairix_core.runtime.logging import LoggingRuntime
 from sqlalchemy import create_engine
 from kairix_core.types.db import Base
-_DEFAULT_DB_FILE = "../.sqlite/kairix.db"
+import os
+_DEFAULT_DB_FILE = f"../.sqlite/{os.getenv('KAIRIX_USER_NAME', 'kairix')}.db"
 
 logger = LoggingRuntime().logger
 

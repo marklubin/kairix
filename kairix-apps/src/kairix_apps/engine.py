@@ -19,7 +19,7 @@ from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.util.utils import get_or_raise
-from sentence_transformers import SentenceTransformer
+from kairix_core.embedding.nomic import NomicEmbedding
 
 if TYPE_CHECKING:
     from kairix_core.types.cognition import K_Agent
@@ -57,11 +57,7 @@ class KairixEngine:
         if not persona_name:
             raise ValueError("Failed to set persona name.")
 
-        embedding_model = get_or_raise("KAIRIX_EMBEDDER_MODEL")
-        embedding_device = get_or_raise("KAIRIX_EMBEDDER_DEVICE")
-        embedding_transformer = SentenceTransformer(
-            embedding_model, device=embedding_device
-        )
+        embedding_transformer = NomicEmbedding()
 
 
         # Create SQLite embedded memory shard store
@@ -99,15 +95,17 @@ class KairixEngine:
 
         conversational_agent: K_Agent = Agent(
             name="conversationalist",
-            instructions=prompts.conversationalist_instruction_template_v1(
+            instructions=prompts.conversationalist_instruction_template_v2(
                 agent_name=persona_name, user_name=user_name
             ),
             mcp_servers=[agent_runtime.mcp_server],
             tools=[
-                notebook.note_or_throw,
-                notebook.save,
+                notebook.get_note,
                 notebook.list_titles,
-                notebook.maybe_note
+                notebook.save,
+                notebook.get_note_content,
+                notebook.maybe_note,
+                notebook.search_by_tag
             ]
 
         )

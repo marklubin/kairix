@@ -7,13 +7,15 @@ import { useSTT } from "./contexts/STTContext"
 import { useHotkey } from "./contexts/HotkeyContext"
 import { useRef, useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { STTOverlay } from "@/components/ui/stt-overlay"
 
 function ChatContainer() {
   const chatHandler = useCustomChat()
-  const { ttsState, setIsEnabled: setTTSEnabled, isEnabled: isTTSEnabled, ttsConfig, updateTTSConfig } = useTTS()
+  const { ttsState, setIsEnabled: setTTSEnabled, isEnabled: isTTSEnabled, ttsConfig, updateTTSConfig, ttsService } = useTTS()
   const { sttState, sttConfig, updateSTTConfig } = useSTT()
   const { registerAction } = useHotkey()
   const [showSettings, setShowSettings] = useState(false)
+  const [voices, setVoices] = useState<Array<{id: string, name: string}>>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
 
@@ -24,6 +26,23 @@ function ChatContainer() {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
   }, [chatHandler.messages]);
+
+  // Load voices when provider changes
+  useEffect(() => {
+    const loadVoices = async () => {
+      try {
+        const availableVoices = await ttsService.getVoices();
+        setVoices(availableVoices.map(v => ({ id: v.id, name: v.name })));
+      } catch (error) {
+        console.error('Failed to load voices:', error);
+        setVoices([]);
+      }
+    };
+
+    if (isTTSEnabled) {
+      loadVoices();
+    }
+  }, [ttsConfig.provider, isTTSEnabled, ttsService]);
 
   // Register all hotkey actions
   registerAction('focusInput', () => {
@@ -141,6 +160,7 @@ function ChatContainer() {
               variant="ghost"
               onClick={() => setShowSettings(!showSettings)}
               className="h-8 w-8"
+              aria-label="Settings"
             >
               <Settings className="h-4 w-4" />
             </Button>
@@ -182,7 +202,39 @@ function ChatContainer() {
                 </div>
                 
                 {isTTSEnabled && (
-                  <div className="pl-4 space-y-2">
+                  <div className="pl-4 space-y-3">
+                    {/* Provider Selection */}
+                    <div>
+                      <label className="text-xs block mb-1">Provider</label>
+                      <select
+                        value={ttsConfig.provider}
+                        onChange={(e) => updateTTSConfig({ provider: e.target.value })}
+                        className="w-full px-2 py-1 text-xs border rounded bg-background"
+                      >
+                        <option value="browser">Browser TTS</option>
+                        <option value="elevenlabs">ElevenLabs</option>
+                        <option value="macos">macOS</option>
+                      </select>
+                    </div>
+
+
+                    {/* Voice Selection */}
+                    <div>
+                      <label className="text-xs block mb-1">Voice</label>
+                      <select
+                        value={ttsConfig.voice || ''}
+                        onChange={(e) => updateTTSConfig({ voice: e.target.value })}
+                        className="w-full px-2 py-1 text-xs border rounded bg-background"
+                      >
+                        <option value="">Default Voice</option>
+                        {voices.map(voice => (
+                          <option key={voice.id} value={voice.id}>
+                            {voice.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div>
                       <label className="text-xs">Rate: {ttsConfig.rate}x</label>
                       <input
@@ -268,6 +320,12 @@ function ChatContainer() {
           </div>
         </div>
       </div>
+      
+      {/* STT Overlay */}
+      <STTOverlay 
+        sttState={sttState} 
+        onStop={chatHandler.handleSTTToggle}
+      />
     </div>
   )
 }

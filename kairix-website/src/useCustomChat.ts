@@ -16,6 +16,7 @@ export function useCustomChat() {
   const { ttsService, isEnabled: isTTSEnabled } = useTTS();
   const { sttService, sttState } = useSTT();
   const currentAssistantMessageIdRef = useRef<string | null>(null);
+  const handleSubmitRef = useRef<(e?: React.FormEvent, overrideInput?: string) => Promise<void>>();
 
   // Load chat history when model changes
   useEffect(() => {
@@ -43,6 +44,15 @@ export function useCustomChat() {
         // Stop recording and get transcript
         const transcript = await sttService.stopRecording();
         console.log('STT stopped, transcript:', transcript);
+        
+        // Auto-submit if enabled and we have a transcript
+        if (transcript && sttService.isAutoSubmitEnabled() && handleSubmitRef.current) {
+          console.log('Auto-submitting transcript:', transcript);
+          // Submit with the transcript
+          await handleSubmitRef.current(undefined, transcript);
+          // Clear input after submission
+          setInput('');
+        }
       } else {
         console.log('Starting STT recording...');
         
@@ -249,7 +259,12 @@ export function useCustomChat() {
         ttsService.finishStreaming();
       }
     }
-  }, [input, isLoading, messages, selectedModel]);
+  }, [input, isLoading, messages, selectedModel, isTTSEnabled, ttsService]);
+
+  // Update the ref when handleSubmit changes
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -268,20 +283,20 @@ export function useCustomChat() {
     // Handle final transcription
     if (sttState.status === 'transcribed' && sttState.transcript) {
       console.log('Final transcript:', sttState.transcript);
-      setInput(sttState.transcript);
       
       // Auto-submit if enabled
       if (sttService.isAutoSubmitEnabled()) {
-        // Small delay to ensure input state is updated
-        setTimeout(() => {
-          console.log('Auto-submitting with input:', sttState.transcript);
-          // Pass the transcript directly to handleSubmit
-          handleSubmit(undefined, sttState.transcript);
-          // Reset STT state to idle after submission to prevent repeated submits
-          sttService.resetState();
-        }, 100);
+        console.log('Auto-submitting with input:', sttState.transcript);
+        // Pass the transcript directly to handleSubmit
+        handleSubmit(undefined, sttState.transcript);
+        // Clear the input after submission
+        setInput('');
+        // Reset STT state to idle after submission to prevent repeated submits
+        sttService.resetState();
       } else {
-        // If not auto-submitting, still reset to idle after a delay
+        // If not auto-submitting, set the transcript in the input
+        setInput(sttState.transcript);
+        // Reset to idle after a delay
         setTimeout(() => {
           sttService.resetState();
         }, 500);
@@ -315,5 +330,7 @@ export function useCustomChat() {
     stop,
     clearChat,
     handleSTTToggle,
+    currentAssistantMessageIdRef,
+    handleSubmitRef,
   };
 }
