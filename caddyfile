@@ -32,6 +32,39 @@ http://kairix.net {
     redir https://{host}{uri} permanent
 }
 
+# Dev subdomain configuration
+dev.kairix.net {
+    # Reverse proxy for API server with streaming support
+    handle /api/* {
+        reverse_proxy localhost:8888 {
+            # Better handling for streaming responses
+            flush_interval -1
+        }
+    }
+
+    # Serve website
+    handle {
+        reverse_proxy localhost:9001
+    }
+
+    # Enable compression
+    encode gzip
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+# HTTP to HTTPS redirect for dev subdomain
+http://dev.kairix.net {
+    redir https://{host}{uri} permanent
+}
+
 # Existing subdomain configurations with HTTPS
 x9d.kairix.net {
 	basic_auth {

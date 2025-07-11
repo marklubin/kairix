@@ -43,6 +43,7 @@ export default defineConfig(({ mode, command }) => {
       port: websitePort,
       strictPort: true, // Use strict port to ensure we use the configured port
       cors: true, // Enable CORS
+      allowedHosts: ['dev.kairix.net', 'localhost', '.kairix.net'], // Allow access from these hosts
       hmr: {
         host: 'localhost',
         port: websitePort,

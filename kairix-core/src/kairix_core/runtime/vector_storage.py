@@ -134,6 +134,13 @@ class VectorSearchDAO:
         Returns:
             List of (entity_id, distance) tuples ordered by similarity
         """
+        # Validate limit to prevent FAISS k=0 error
+        if limit is None or limit <= 0:
+            from kairix_core.runtime.logging import LoggingRuntime
+            logger = LoggingRuntime().logger
+            logger.warning(f"Invalid limit {limit} for vector search, using default limit=5")
+            limit = 5
+            
         with self.engine.connect() as conn:
             query_json = json.dumps(query_embedding)
             
@@ -159,11 +166,21 @@ class VectorSearchDAO:
         Returns:
             List of (memory_id, distance) tuples ordered by similarity
         """
+        # Validate limit to prevent FAISS k=0 error
+        if limit is None or limit <= 0:
+            from kairix_core.runtime.logging import LoggingRuntime
+            logger = LoggingRuntime().logger
+            logger.warning(f"Invalid limit {limit} for memory search, using default limit=5")
+            limit = 5
+            
         with self.engine.connect() as conn:
             query_json = json.dumps(query_embedding)
+            logger.debug(f"search_similar_memories called with limit={limit}, agent_id={agent_id}")
             
             if agent_id:
                 # Filter by agent_id by joining with memory_shards table
+                # WORKAROUND: Ensure limit is always positive for vss_search_params
+                safe_limit = max(1, limit) if limit else 5
                 result = conn.execute(text("""
                     SELECT v.rowid, v.distance
                     FROM memory_shard_vss v
@@ -171,14 +188,16 @@ class VectorSearchDAO:
                     WHERE vss_search(v.embedding, vss_search_params(:query, :limit))
                     AND m.agent_id = :agent_id
                     ORDER BY v.distance
-                """), {"query": query_json, "limit": limit, "agent_id": agent_id})
+                """), {"query": query_json, "limit": safe_limit, "agent_id": agent_id})
             else:
+                # WORKAROUND: Ensure limit is always positive for vss_search_params
+                safe_limit = max(1, limit) if limit else 5
                 result = conn.execute(text("""
                     SELECT rowid, distance
                     FROM memory_shard_vss
                     WHERE vss_search(embedding, vss_search_params(:query, :limit))
                     ORDER BY distance
-                """), {"query": query_json, "limit": limit})
+                """), {"query": query_json, "limit": safe_limit})
             
             return [(row[0], row[1]) for row in result]
     

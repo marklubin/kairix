@@ -1,6 +1,6 @@
 # Modern Python project with uv, ruff, ty, and typeguard
 
-import "../justfile"
+import "../Justfile"
 
 # Default - show available commands
 default:

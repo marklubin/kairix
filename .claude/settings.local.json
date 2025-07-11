@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(sudo systemctl reload:*)",
+      "Bash(curl:*)",
+      "Bash(sudo systemctl status:*)",
+      "Bash(sudo caddy validate:*)",
+      "Bash(ls:*)",
+      "Bash(sudo cp:*)",
+      "Bash(sudo ss:*)",
+      "Bash(sudo ufw status:*)",
+      "Bash(nslookup:*)",
+      "Bash(sudo journctl:*)",
+      "Bash(sudo journalctl:*)",
+      "Bash(sudo ls:*)",
+      "Bash(sudo caddy:*)",
+      "Bash(sudo systemctl restart:*)",
+      "Bash(groups:*)",
+      "Bash(sudo useradd:*)",
+      "Bash(sudo usermod:*)",
+      "Bash(sudo chmod:*)",
+      "Bash(sudo grep -n \"pam_pwquality\" /etc/pam.d/common-password)"
+    ],
+    "deny": []
+  }
+}

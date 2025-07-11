@@ -33,8 +33,8 @@ def _get_environment_configuration_set():
     return configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
 
 
-def _get_mcp_url():
-    return str(get_or_raise("KAIRIX_MCP_SERVER"))
+def _get_magg_path():
+    return str(get_or_raise("KAIRIX_MAGG_EXECUTABLE"))
 
 
 set_default_openai_api("chat_completions")
@@ -81,9 +81,9 @@ class AgentRuntime:
         if self.model_provider.provider_map is not None:
             self.model_provider.provider_map.set_mapping(available_provider_mappings)
 
-
+        magg_path: str = _get_magg_path()
         mcp_params: MCPServerStdioParams = MCPServerStdioParams(
-            command="/Users/mark/.local/bin/magg",
+            command=magg_path,
             args=["serve"]
         )
 

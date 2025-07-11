@@ -39,7 +39,7 @@ class KairixEngine:
 
         config_set_key = os.getenv("KAIRIX_AGENT_CONFIGURATION_SET_KEY")
         n_summaries_str = os.getenv("KAIRIX_N_SUMMARIES_PER_MESSAGE")
-        n_summaries = int(n_summaries_str) if n_summaries_str else None
+        n_summaries = int(n_summaries_str) if n_summaries_str else 5
         user_name = os.getenv("KAIRIX_USER_NAME")
         persona_name = os.getenv("KAIRIX_PERSONA_NAME")
         summarization_interval = get_or_raise("KAIRIX_SUMMARIZATION_INTERVAL")

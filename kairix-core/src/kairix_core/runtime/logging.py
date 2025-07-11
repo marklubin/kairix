@@ -19,37 +19,23 @@ class LoggingRuntime:
     def __init__(self, logger_name:str ="kairix"):
 
         self.file_handler = None
-        from rich.console import Console
-        from rich.logging import RichHandler
-
         self.logger = logging.getLogger(logger_name)
-
-
-
-        self.console = Console(width=200)
-        self.rich_handler = RichHandler(
-                    console=self.console,
-                    tracebacks_show_locals=True,
-                    rich_tracebacks=True,
-                    show_path=False,
-                    show_time=False,
-                    show_level=False,
-                    markup=True,
-                    enable_link_path=True,
-                )
 
 
 
         log_level = os.getenv("KAIRIX_LOG_LEVEL") or "DEBUG"
 
 
-        handlers = [self.rich_handler, self.file_handler] \
-            if self.file_handler else [self.rich_handler]
+        # Create a simple console handler with our format
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter(fmt=LoggingRuntime.FORMAT, datefmt=LoggingRuntime.DTF))
+        
+        handlers = [console_handler, self.file_handler] if self.file_handler else [console_handler]
 
         logging.basicConfig(
             force=True,
             format=LoggingRuntime.FORMAT,
-            datefmt= LoggingRuntime.DTF,
+            datefmt=LoggingRuntime.DTF,
             handlers=handlers,
             level=log_level)
 

@@ -1,8 +1,8 @@
 """FastAPI server implementation for KairixEngine with OpenAI-compatible API."""
 import os
 
-os.putenv("TOKENIZERS_PARALLELISM", "false")
-os.putenv("KAIRIX_APP_ID", "server")
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["KAIRIX_APP_ID"] = "server"
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -233,5 +233,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
         log_level=log_level.lower(),
-        access_log=True
+        access_log=True,
+        log_config=None
     )

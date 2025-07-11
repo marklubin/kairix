@@ -101,11 +101,11 @@ run-script SCRIPT:
 
 [working-directory: 'kairix-apps']
 run-server CONFIG:
-    doppler run -c {{CONFIG}} -- uv run python src/kairix_apps/server.py
+    doppler run -p kairix -c {{CONFIG}} -- uv run python src/kairix_apps/server.py
 
 [working-directory: 'kairix-website']
 run-website CONFIG:
-    doppler run -c {{CONFIG}} -- npm run serve
+    doppler run -p kairix -c {{CONFIG}} -- npm run serve
 
 copy-db:
   scp -r .sqlite coalinga:/home/kairix/kairix/
