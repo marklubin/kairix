@@ -151,7 +151,7 @@ export function useCustomChat() {
       };
 
       // Get context messages (last 20) for API call
-      const contextMessages = ChatStorage.getContextMessages([...messages, userMessage]);
+      const contextMessages = [userMessage];
 
       // Call the Kairix server with streaming
       const chatUrl = `${KAIRIX_SERVER_URL}/v1/chat/completions`;

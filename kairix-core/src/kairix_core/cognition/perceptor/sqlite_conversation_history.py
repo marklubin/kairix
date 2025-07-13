@@ -36,7 +36,7 @@ class SQLiteConversationHistoryPerceptor(Perceptor):
         self, 
         agent_id: str = "default",
         user_id: str = "default_user", 
-        window_size: int = 50,
+        window_size: int = 25,
         storage: Optional[StorageRuntime] = None
     ):
         self.agent_name = agent_id

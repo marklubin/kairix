@@ -92,7 +92,7 @@ function ChatContainer() {
   // Add Ctrl+V handler for STT toggle
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'v') {
+      if (e.ctrlKey && e.key === 'space') {
         e.preventDefault();
         chatHandler.handleSTTToggle();
       }
