@@ -1,6 +1,8 @@
 import type { STTProvider, STTState, STTConfig } from './types';
 import { BrowserSTTProvider } from './providers/BrowserSTTProvider';
 import { WhisperSTTProvider } from './providers/WhisperSTTProvider';
+import { WhisperMobileSTTProvider } from './providers/WhisperMobileSTTProvider';
+import { WhisperUnifiedSTTProvider } from './providers/WhisperUnifiedSTTProvider';
 
 export class STTService {
   private provider: STTProvider;
@@ -11,15 +13,19 @@ export class STTService {
   private currentMessageId: string | null = null; // Track which message triggered TTS interruption
 
   constructor(config?: Partial<STTConfig>) {
+    // Use browser STT for immediate response
+    const defaultProvider = 'browser';
+    
     this.config = {
-      provider: 'browser',
+      provider: defaultProvider,
       language: 'en-US',
       continuous: true,  // Enable continuous mode for streaming
       interimResults: true,
-      autoSubmit: true,
+      autoSubmit: false,  // NEVER auto-submit
       ...config
     };
 
+    console.log('STTService: Using unified Whisper provider:', this.config.provider);
     this.provider = this.createProvider(this.config.provider);
   }
 
@@ -39,6 +45,22 @@ export class STTService {
       }
       case 'whisper': {
         const provider = new WhisperSTTProvider();
+        return provider;
+      }
+      case 'whisper-mobile': {
+        const provider = new WhisperMobileSTTProvider();
+        // Set up interim result handler
+        provider.onInterimResult = (transcript) => {
+          this.setState({ status: 'listening', interimTranscript: transcript });
+        };
+        return provider;
+      }
+      case 'whisper-unified': {
+        const provider = new WhisperUnifiedSTTProvider();
+        // Set up interim result handler
+        provider.onInterimResult = (transcript) => {
+          this.setState({ status: 'listening', interimTranscript: transcript });
+        };
         return provider;
       }
       default:
@@ -170,6 +192,15 @@ export class STTService {
   }
 
   isAutoSubmitEnabled(): boolean {
-    return this.config.autoSubmit ?? true;
+    // NEVER auto-submit - user must manually click button
+    return false;
+  }
+  
+  clearTranscript(): void {
+    // Clear the accumulated transcript in the provider
+    if (this.provider && 'clearTranscript' in this.provider) {
+      (this.provider as any).clearTranscript();
+    }
+    this.setState({ status: 'idle' });
   }
 }

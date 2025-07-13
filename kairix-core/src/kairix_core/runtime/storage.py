@@ -120,9 +120,9 @@ class StorageRuntime:
         self._initialized = True
         
         # Initialize vector search (always required)
-        from kairix_core.runtime.vector_storage import enable_sqlite_vss, create_vss_tables, VectorSearchDAO
-        enable_sqlite_vss(self.engine)
-        create_vss_tables(self.engine)
+        from kairix_core.runtime.vector_storage_vec import enable_sqlite_vec, create_vec_tables, VectorSearchDAO
+        enable_sqlite_vec(self.engine)
+        create_vec_tables(self.engine)
         self._vector_dao = VectorSearchDAO(self.engine)
         logger.info("Vector search enabled")
 

@@ -15,7 +15,7 @@ interface ChatProps {
   stop: () => void
   sttState: STTState
   onSTTToggle: () => void
-  inputRef?: React.RefObject<HTMLInputElement | null>
+  inputRef?: React.RefObject<HTMLTextAreaElement | null>
 }
 
 export function Chat({
@@ -30,8 +30,9 @@ export function Chat({
   inputRef: externalInputRef
 }: ChatProps) {
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
-  const internalInputRef = React.useRef<HTMLInputElement>(null)
+  const internalInputRef = React.useRef<HTMLTextAreaElement>(null)
   const inputRef = externalInputRef || internalInputRef
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -40,6 +41,23 @@ export function Chat({
   // Show loading indicator in input when STT is processing
   const isSTTActive = sttState.status === 'listening' || sttState.status === 'processing'
   const showSTTPlaceholder = isSTTActive && !input
+
+  // Auto-resize textarea based on content
+  React.useEffect(() => {
+    const textarea = textareaRef.current || inputRef.current
+    if (textarea) {
+      // Reset height to get accurate scrollHeight
+      textarea.style.height = 'auto'
+      // Set new height based on content
+      const newHeight = Math.min(textarea.scrollHeight, 200) // Max height of 200px
+      textarea.style.height = `${newHeight}px`
+      
+      // Auto-scroll to bottom when text is added
+      if (textarea.scrollHeight > textarea.clientHeight) {
+        textarea.scrollTop = textarea.scrollHeight
+      }
+    }
+  }, [input, inputRef])
 
   return (
     <div className="flex flex-col h-full">
@@ -86,23 +104,35 @@ export function Chat({
       {/* Fixed Input Form at bottom */}
       <div className="border-t bg-background">
         <form onSubmit={handleSubmit} className="p-3">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-end">
             <div className="flex-1 relative">
-              <input
-                ref={inputRef}
-                type="text"
+              <textarea
+                ref={(el) => {
+                  if (inputRef && 'current' in inputRef) {
+                    inputRef.current = el
+                  }
+                  textareaRef.current = el
+                }}
                 value={input}
                 onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  // Submit on Enter, unless Shift is held
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit()
+                  }
+                }}
                 placeholder={showSTTPlaceholder ? "Listening..." : "Type a message..."}
                 className={cn(
-                  "w-full px-3 py-2 pr-10 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-ring",
+                  "w-full px-3 py-2 pr-10 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none overflow-y-auto min-h-[40px]",
                   isSTTActive && "text-muted-foreground"
                 )}
                 disabled={isGenerating || sttState.status === 'processing'}
                 data-testid="chat-input"
+                rows={1}
               />
               {sttState.status === 'processing' && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-3 top-3">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               )}
@@ -116,7 +146,8 @@ export function Chat({
               onClick={onSTTToggle}
               disabled={isGenerating || sttState.status === 'processing'}
               data-testid="chat-mic-button"
-              className="h-10 w-10"
+              className="h-10 w-10 touch-manipulation"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               {sttState.status === 'listening' ? (
                 <MicOff className="h-4 w-4" />

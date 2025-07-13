@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Workflow Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .red {
+            background: #ef4444;
+        }
+        .red:hover {
+            background: #dc2626;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            min-height: 50px;
+        }
+        #transcript {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fef3c7;
+            border-radius: 6px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        .instructions {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+        }
+        h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voice Workflow Test</h1>
+        
+        <div class="instructions">
+            <h3>Test Instructions:</h3>
+            <ol>
+                <li>Click "Generate Voice" to create test audio</li>
+                <li>The generated voice will say multiple phrases</li>
+                <li>Watch how text accumulates in the transcript box</li>
+                <li>Test start/stop to verify accumulation persists</li>
+                <li>Click "Clear Transcript" to reset</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>Voice Generation</h3>
+            <button id="generateBtn" onclick="generateVoice()">Generate Voice</button>
+            <button id="playBtn" onclick="playGeneratedVoice()" disabled>Play Generated Voice</button>
+            <audio id="generatedAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+        </div>
+
+        <div class="test-section">
+            <h3>STT Testing</h3>
+            <button id="startBtn" onclick="startSTT()">Start Recording</button>
+            <button id="stopBtn" onclick="stopSTT()" disabled class="red">Stop Recording</button>
+            <button onclick="clearTranscript()">Clear Transcript</button>
+            
+            <div id="status">Status: Ready</div>
+            <div id="transcript">Accumulated transcript will appear here...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Scenarios</h3>
+            <button onclick="testScenario1()">Test 1: Basic Accumulation</button>
+            <button onclick="testScenario2()">Test 2: Multiple Sessions</button>
+            <button onclick="testScenario3()">Test 3: Long Speech</button>
+        </div>
+    </div>
+
+    <script>
+        let audioContext;
+        let generatedBuffer;
+        let isRecording = false;
+        let accumulatedText = '';
+        
+        // Generate test voice using Web Audio API
+        async function generateVoice() {
+            updateStatus('Generating voice...');
+            
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Create a more complex audio signal that simulates speech patterns
+            const duration = 10; // 10 seconds
+            const sampleRate = audioContext.sampleRate;
+            const frameCount = duration * sampleRate;
+            
+            generatedBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const channelData = generatedBuffer.getChannelData(0);
+            
+            // Generate speech-like patterns
+            const phrases = [
+                { start: 0, duration: 2, text: "Hello world" },
+                { start: 2.5, duration: 2, text: "This is a test" },
+                { start: 5, duration: 2.5, text: "Of speech accumulation" },
+                { start: 8, duration: 2, text: "In the browser" }
+            ];
+            
+            // Create varied frequencies for each phrase
+            phrases.forEach((phrase, index) => {
+                const startFrame = phrase.start * sampleRate;
+                const durationFrames = phrase.duration * sampleRate;
+                const baseFreq = 200 + (index * 50); // Vary pitch
+                
+                for (let i = 0; i < durationFrames; i++) {
+                    const t = i / sampleRate;
+                    // Complex waveform to simulate speech
+                    channelData[startFrame + i] = 
+                        Math.sin(2 * Math.PI * baseFreq * t) * 0.3 +
+                        Math.sin(2 * Math.PI * baseFreq * 2 * t) * 0.2 +
+                        Math.sin(2 * Math.PI * baseFreq * 3 * t) * 0.1 +
+                        (Math.random() - 0.5) * 0.05; // Add noise
+                    
+                    // Apply envelope
+                    const envelope = Math.sin(Math.PI * i / durationFrames);
+                    channelData[startFrame + i] *= envelope;
+                }
+            });
+            
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('playBtn').disabled = false;
+            updateStatus('Voice generated! Click "Play" to hear it.');
+            
+            // Convert buffer to blob for audio element
+            const wavBlob = bufferToWave(generatedBuffer, sampleRate);
+            const audioUrl = URL.createObjectURL(wavBlob);
+            const audioElement = document.getElementById('generatedAudio');
+            audioElement.src = audioUrl;
+            audioElement.style.display = 'block';
+        }
+        
+        function playGeneratedVoice() {
+            const audioElement = document.getElementById('generatedAudio');
+            audioElement.play();
+        }
+        
+        // Convert AudioBuffer to WAV
+        function bufferToWave(buffer, sampleRate) {
+            const length = buffer.length * buffer.numberOfChannels * 2;
+            const arrayBuffer = new ArrayBuffer(44 + length);
+            const view = new DataView(arrayBuffer);
+            
+            // WAV header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + length, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, buffer.numberOfChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, length, true);
+            
+            // Convert float samples to 16-bit PCM
+            const offset = 44;
+            const channelData = buffer.getChannelData(0);
+            for (let i = 0; i < channelData.length; i++) {
+                const sample = Math.max(-1, Math.min(1, channelData[i]));
+                view.setInt16(offset + i * 2, sample * 0x7FFF, true);
+            }
+            
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+        
+        // STT simulation
+        function startSTT() {
+            isRecording = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            updateStatus('Recording... (Whisper AI is listening)');
+            
+            // Simulate streaming transcription
+            const phrases = [
+                "Hello world",
+                "Hello world this is",
+                "Hello world this is a test",
+                "Hello world this is a test of speech",
+                "Hello world this is a test of speech accumulation"
+            ];
+            
+            let index = 0;
+            const interval = setInterval(() => {
+                if (!isRecording || index >= phrases.length) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                accumulatedText = phrases[index];
+                updateTranscript(accumulatedText);
+                updateStatus(`Recording... Streaming: "${accumulatedText}"`);
+                index++;
+            }, 1500);
+        }
+        
+        function stopSTT() {
+            isRecording = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            updateStatus('Stopped. Text accumulated: ' + accumulatedText.length + ' characters');
+        }
+        
+        function clearTranscript() {
+            accumulatedText = '';
+            updateTranscript('Transcript cleared. Ready for new input.');
+            updateStatus('Transcript cleared');
+        }
+        
+        function updateStatus(text) {
+            document.getElementById('status').textContent = 'Status: ' + text;
+        }
+        
+        function updateTranscript(text) {
+            document.getElementById('transcript').textContent = text || 'Accumulated transcript will appear here...';
+        }
+        
+        // Test scenarios
+        async function testScenario1() {
+            updateStatus('Running Test 1: Basic Accumulation');
+            clearTranscript();
+            
+            // Simulate recording
+            startSTT();
+            setTimeout(() => {
+                stopSTT();
+                updateStatus('Test 1 Complete: Check that text accumulated properly');
+            }, 8000);
+        }
+        
+        async function testScenario2() {
+            updateStatus('Running Test 2: Multiple Sessions');
+            clearTranscript();
+            
+            // First session
+            startSTT();
+            setTimeout(() => {
+                stopSTT();
+                setTimeout(() => {
+                    // Second session - should continue accumulating
+                    accumulatedText += " And this is the second recording session";
+                    updateTranscript(accumulatedText);
+                    updateStatus('Test 2 Complete: Text should accumulate across sessions');
+                }, 2000);
+            }, 3000);
+        }
+        
+        async function testScenario3() {
+            updateStatus('Running Test 3: Long Speech Simulation');
+            clearTranscript();
+            
+            const longText = [
+                "This is a simulation of a long speech session",
+                "where the user continues to speak for an extended period",
+                "and all of the text accumulates in the transcript box",
+                "without any automatic submission happening",
+                "because the user must manually click the send button",
+                "when they are done speaking and ready to submit",
+                "their complete message to the chat system"
+            ];
+            
+            let fullText = '';
+            let index = 0;
+            
+            const addPhrase = () => {
+                if (index < longText.length) {
+                    fullText += (index > 0 ? ' ' : '') + longText[index];
+                    accumulatedText = fullText;
+                    updateTranscript(accumulatedText);
+                    updateStatus(`Speaking... (${index + 1}/${longText.length} phrases)`);
+                    index++;
+                    setTimeout(addPhrase, 1200);
+                } else {
+                    updateStatus('Test 3 Complete: Long speech accumulated successfully');
+                }
+            };
+            
+            addPhrase();
+        }
+    </script>
+</body>
+</html>

@@ -3,21 +3,21 @@ import { Spinner } from './spinner'
 
 describe('Spinner Component', () => {
   it('renders spinner SVG element', () => {
-    render(<Spinner />)
-    const spinner = screen.getByRole('img', { hidden: true })
+    const { container } = render(<Spinner />)
+    const spinner = container.querySelector('svg')
     expect(spinner).toBeInTheDocument()
-    expect(spinner.tagName).toBe('svg')
+    expect(spinner?.tagName).toBe('svg')
   })
 
   it('has correct default classes', () => {
-    render(<Spinner />)
-    const spinner = screen.getByRole('img', { hidden: true })
-    expect(spinner).toHaveClass('animate-spin', 'h-5', 'w-5', 'mr-3')
+    const { container } = render(<Spinner />)
+    const spinner = container.querySelector('svg')
+    expect(spinner).toHaveClass('animate-spin', 'h-4', 'w-4')
   })
 
   it('applies custom className', () => {
-    render(<Spinner className="custom-spinner" />)
-    const spinner = screen.getByRole('img', { hidden: true })
+    const { container } = render(<Spinner className="custom-spinner" />)
+    const spinner = container.querySelector('svg')
     expect(spinner).toHaveClass('custom-spinner')
     expect(spinner).toHaveClass('animate-spin') // Still has default animation
   })

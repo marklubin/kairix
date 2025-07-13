@@ -47,11 +47,18 @@ describe('STTOverlay', () => {
   });
 
   it('should call onStop when button is clicked', () => {
+    // Mock desktop user agent
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      writable: true,
+      configurable: true
+    });
+    
     const sttState: STTState = { status: 'listening' };
     render(<STTOverlay sttState={sttState} onStop={mockOnStop} />);
     
     const button = screen.getByRole('button');
-    fireEvent.click(button);
+    fireEvent.mouseDown(button);
     
     expect(mockOnStop).toHaveBeenCalledTimes(1);
   });

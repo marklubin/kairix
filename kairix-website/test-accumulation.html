@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test STT Accumulation</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .transcript { 
+            border: 2px solid #333; 
+            padding: 20px; 
+            min-height: 300px; 
+            max-height: 500px; 
+            overflow-y: auto;
+            background: #f9f9f9;
+            font-size: 18px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+        .recording { background: red; color: white; }
+        .status { padding: 10px; background: #eee; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>STT Accumulation Test</h1>
+    
+    <div class="status">
+        <strong>Status:</strong> <span id="status">Ready</span>
+    </div>
+    
+    <button id="recordBtn" onclick="toggleRecord()">Start Recording</button>
+    <button onclick="testProvider()">Test Provider Directly</button>
+    <button onclick="clearAll()">Clear All</button>
+    
+    <h2>Accumulated Transcript:</h2>
+    <div class="transcript" id="transcript">No text yet...</div>
+    
+    <div class="status">
+        <strong>Debug Info:</strong>
+        <div id="debug"></div>
+    </div>
+
+    <script>
+        // Test the provider directly
+        let provider;
+        let isRecording = false;
+        
+        async function initProvider() {
+            // Import the provider class
+            const module = await import('./src/services/stt/providers/BrowserSTTProvider.js');
+            const BrowserSTTProvider = module.BrowserSTTProvider;
+            
+            provider = new BrowserSTTProvider('en-US', true, true);
+            
+            // Set up callback to show interim results
+            provider.onInterimResult = (transcript) => {
+                console.log('Interim result:', transcript);
+                document.getElementById('transcript').textContent = transcript;
+                document.getElementById('debug').innerHTML = 
+                    `Length: ${transcript.length} chars<br>` +
+                    `All Transcript: ${provider.allTranscript}<br>` +
+                    `Final Transcript: ${provider.finalTranscript}`;
+            };
+        }
+        
+        async function toggleRecord() {
+            if (!provider) {
+                await initProvider();
+            }
+            
+            const btn = document.getElementById('recordBtn');
+            
+            if (!isRecording) {
+                try {
+                    isRecording = true;
+                    btn.textContent = 'Stop Recording';
+                    btn.className = 'recording';
+                    document.getElementById('status').textContent = 'Starting...';
+                    
+                    await provider.startRecording();
+                    document.getElementById('status').textContent = 'Recording...';
+                } catch (error) {
+                    console.error('Start error:', error);
+                    document.getElementById('status').textContent = 'Error: ' + error.message;
+                    isRecording = false;
+                    btn.textContent = 'Start Recording';
+                    btn.className = '';
+                }
+            } else {
+                try {
+                    isRecording = false;
+                    btn.textContent = 'Start Recording';
+                    btn.className = '';
+                    document.getElementById('status').textContent = 'Stopping...';
+                    
+                    const finalText = await provider.stopRecording();
+                    document.getElementById('status').textContent = 'Stopped';
+                    document.getElementById('transcript').textContent = finalText;
+                    
+                    console.log('Final text:', finalText);
+                    console.log('Provider state:', {
+                        allTranscript: provider.allTranscript,
+                        finalTranscript: provider.finalTranscript
+                    });
+                } catch (error) {
+                    console.error('Stop error:', error);
+                    document.getElementById('status').textContent = 'Error: ' + error.message;
+                }
+            }
+        }
+        
+        async function testProvider() {
+            if (!provider) {
+                await initProvider();
+            }
+            
+            // Simulate adding text
+            provider.allTranscript = (provider.allTranscript || '') + ' [TEST TEXT ADDED] ';
+            document.getElementById('transcript').textContent = provider.allTranscript;
+            document.getElementById('debug').innerHTML = 
+                `Manually added text. All Transcript: ${provider.allTranscript}`;
+        }
+        
+        function clearAll() {
+            if (provider) {
+                provider.clearTranscript();
+            }
+            document.getElementById('transcript').textContent = 'Cleared...';
+            document.getElementById('status').textContent = 'Cleared';
+            document.getElementById('debug').innerHTML = '';
+        }
+        
+        // For module testing in browser
+        window.initProvider = initProvider;
+        window.provider = () => provider;
+    </script>
+</body>
+</html>

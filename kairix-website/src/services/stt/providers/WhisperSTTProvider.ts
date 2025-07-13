@@ -8,6 +8,11 @@ export class WhisperSTTProvider implements STTProvider {
   private audioChunks: Blob[] = [];
   private isRecording = false;
   private stream: MediaStream | null = null;
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private silenceDetectionTimer: NodeJS.Timeout | null = null;
+  private streamingInterval: NodeJS.Timeout | null = null;
+  private lastTranscription = '';
 
   private modelName: string;
   

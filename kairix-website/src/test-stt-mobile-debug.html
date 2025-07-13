@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mobile STT Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background: #f5f5f5;
+            touch-action: manipulation;
+        }
+        button {
+            font-size: 20px;
+            padding: 15px 30px;
+            margin: 10px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 300px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:active {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #log {
+            font-family: monospace;
+            font-size: 12px;
+            background: #f0f0f0;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .info {
+            color: blue;
+        }
+        #transcript {
+            min-height: 50px;
+            padding: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mobile STT Debug</h1>
+    
+    <div class="section">
+        <h3>Device Info</h3>
+        <div id="deviceInfo"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Controls</h3>
+        <button id="permissionBtn" onclick="requestPermission()">Request Mic Permission</button>
+        <button id="startBtn" onclick="startRecording()" disabled>Start Recording</button>
+        <button id="stopBtn" onclick="stopRecording()" disabled>Stop Recording</button>
+        <button id="clearBtn" onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="section">
+        <h3>Transcript</h3>
+        <div id="transcript">No transcript yet</div>
+    </div>
+    
+    <div class="section">
+        <h3>Debug Log</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        const transcriptDiv = document.getElementById('transcript');
+        const deviceInfoDiv = document.getElementById('deviceInfo');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const permissionBtn = document.getElementById('permissionBtn');
+        
+        let recognition = null;
+        let isRecording = false;
+        let stream = null;
+        
+        // Device detection
+        function detectDevice() {
+            const ua = navigator.userAgent;
+            const info = {
+                userAgent: ua,
+                isMobile: /Mobile|Android|iPhone|iPad/i.test(ua),
+                isIOS: /iPhone|iPad|iPod/i.test(ua),
+                isAndroid: /Android/i.test(ua),
+                browser: getBrowser(ua),
+                speechAPI: !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+            };
+            
+            deviceInfoDiv.innerHTML = `
+                <div>Mobile: ${info.isMobile ? 'Yes' : 'No'}</div>
+                <div>Platform: ${info.isIOS ? 'iOS' : info.isAndroid ? 'Android' : 'Desktop'}</div>
+                <div>Browser: ${info.browser}</div>
+                <div>Speech API: ${info.speechAPI ? 'Supported' : 'Not Supported'}</div>
+            `;
+            
+            log(`Device: ${JSON.stringify(info, null, 2)}`, 'info');
+            return info;
+        }
+        
+        function getBrowser(ua) {
+            if (ua.includes('Chrome')) return 'Chrome';
+            if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Edge')) return 'Edge';
+            return 'Unknown';
+        }
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+        
+        async function requestPermission() {
+            try {
+                log('Requesting microphone permission...', 'info');
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                log('Microphone permission granted', 'success');
+                
+                // Test the stream
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                source.connect(analyser);
+                
+                log('Audio stream active', 'success');
+                
+                permissionBtn.disabled = true;
+                startBtn.disabled = false;
+                
+                // Stop the test stream
+                stream.getTracks().forEach(track => track.stop());
+                audioContext.close();
+                
+            } catch (error) {
+                log(`Permission error: ${error.name} - ${error.message}`, 'error');
+                
+                if (error.name === 'NotAllowedError') {
+                    alert('Microphone permission denied. Please check your browser settings.');
+                } else if (error.name === 'NotFoundError') {
+                    alert('No microphone found. Please connect a microphone.');
+                }
+            }
+        }
+        
+        async function startRecording() {
+            try {
+                log('Starting recording...', 'info');
+                
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    throw new Error('Speech recognition not supported');
+                }
+                
+                // Get fresh microphone stream
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('Got fresh audio stream', 'success');
+                
+                // Create recognition instance
+                recognition = new SpeechRecognition();
+                
+                // Mobile-optimized settings
+                recognition.continuous = false; // Try non-continuous mode first
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                recognition.maxAlternatives = 1;
+                
+                log(`Recognition settings: continuous=${recognition.continuous}, interimResults=${recognition.interimResults}`, 'info');
+                
+                // Set up event handlers
+                recognition.onstart = () => {
+                    log('Recognition started (onstart)', 'success');
+                    isRecording = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                };
+                
+                recognition.onaudiostart = () => {
+                    log('Audio capture started (onaudiostart)', 'info');
+                };
+                
+                recognition.onsoundstart = () => {
+                    log('Sound detected (onsoundstart)', 'info');
+                };
+                
+                recognition.onspeechstart = () => {
+                    log('Speech detected (onspeechstart)', 'success');
+                };
+                
+                recognition.onresult = (event) => {
+                    log(`Result received: ${event.results.length} results`, 'success');
+                    
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
+                    for (let i = 0; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        const text = result[0].transcript;
+                        
+                        if (result.isFinal) {
+                            finalTranscript += text + ' ';
+                            log(`Final: "${text}" (confidence: ${result[0].confidence})`, 'success');
+                        } else {
+                            interimTranscript += text;
+                            log(`Interim: "${text}"`, 'info');
+                        }
+                    }
+                    
+                    transcriptDiv.innerHTML = `
+                        <strong>Final:</strong> ${finalTranscript || 'None'}<br>
+                        <strong>Interim:</strong> ${interimTranscript || 'None'}
+                    `;
+                };
+                
+                recognition.onerror = (event) => {
+                    log(`Error: ${event.error}`, 'error');
+                    
+                    // Detailed error handling
+                    switch(event.error) {
+                        case 'no-speech':
+                            log('No speech detected - try speaking louder', 'info');
+                            break;
+                        case 'audio-capture':
+                            log('Audio capture failed - microphone issue', 'error');
+                            break;
+                        case 'not-allowed':
+                            log('Permission denied - check browser settings', 'error');
+                            break;
+                        case 'aborted':
+                            log('Recognition aborted', 'info');
+                            break;
+                        default:
+                            log(`Unknown error: ${event.error}`, 'error');
+                    }
+                    
+                    stopRecording();
+                };
+                
+                recognition.onnomatch = () => {
+                    log('No speech match (onnomatch)', 'info');
+                };
+                
+                recognition.onsoundend = () => {
+                    log('Sound ended (onsoundend)', 'info');
+                };
+                
+                recognition.onspeechend = () => {
+                    log('Speech ended (onspeechend)', 'info');
+                };
+                
+                recognition.onend = () => {
+                    log('Recognition ended (onend)', 'info');
+                    isRecording = false;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    
+                    // Clean up stream
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                    }
+                };
+                
+                // Start recognition
+                log('Calling recognition.start()...', 'info');
+                recognition.start();
+                
+            } catch (error) {
+                log(`Start error: ${error.name} - ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+                
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        function stopRecording() {
+            log('Stopping recording...', 'info');
+            
+            if (recognition) {
+                recognition.stop();
+            }
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+        
+        // Initialize
+        detectDevice();
+        
+        // Check initial support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            log('getUserMedia not supported', 'error');
+            permissionBtn.disabled = true;
+        }
+        
+        if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+            log('Speech Recognition API not supported', 'error');
+            startBtn.disabled = true;
+        }
+        
+        // Prevent default touch behaviors
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                e.preventDefault();
+                e.target.click();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>STT Workflow Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            background: #f0f0f0;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .transcript {
+            padding: 20px;
+            background: #fffbea;
+            border: 1px solid #ddd;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .recording {
+            background: #ff4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>STT Text Accumulation Test</h1>
+    
+    <div class="status" id="status">Ready to test</div>
+    
+    <div>
+        <button id="toggleBtn" onclick="toggleRecording()">Start Recording</button>
+        <button onclick="clearTranscript()">Clear Transcript</button>
+        <button onclick="simulateLongSession()">Simulate Long Session</button>
+    </div>
+    
+    <h3>Accumulated Transcript:</h3>
+    <div class="transcript" id="transcript">
+        Transcript will appear here...
+    </div>
+    
+    <div class="status">
+        <strong>Test Instructions:</strong>
+        <ol>
+            <li>Click "Start Recording" and speak</li>
+            <li>Watch text accumulate in real-time</li>
+            <li>Click "Stop Recording" to pause</li>
+            <li>Click "Start Recording" again - text should continue accumulating</li>
+            <li>Test for 25+ minutes to verify no text loss</li>
+        </ol>
+    </div>
+
+    <script>
+        let recognition;
+        let isRecording = false;
+        let allTranscript = '';
+        let updateCount = 0;
+        
+        function initRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                // Update accumulated transcript
+                if (finalTranscript) {
+                    allTranscript += finalTranscript;
+                }
+                
+                // Show current state
+                const display = allTranscript + interimTranscript;
+                document.getElementById('transcript').textContent = display;
+                
+                // Auto-scroll to bottom
+                const transcriptEl = document.getElementById('transcript');
+                transcriptEl.scrollTop = transcriptEl.scrollHeight;
+                
+                // Update status
+                updateCount++;
+                document.getElementById('status').textContent = 
+                    `Recording... Updates: ${updateCount}, Length: ${display.length} chars`;
+            };
+            
+            recognition.onstart = () => {
+                console.log('Recognition started');
+                document.getElementById('status').textContent = 'Recognition started';
+            };
+            
+            recognition.onend = () => {
+                console.log('Recognition ended');
+                if (isRecording) {
+                    // Restart if we're still supposed to be recording
+                    recognition.start();
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Recognition error:', event.error);
+                document.getElementById('status').textContent = `Error: ${event.error}`;
+            };
+        }
+        
+        function toggleRecording() {
+            const btn = document.getElementById('toggleBtn');
+            
+            if (!isRecording) {
+                // Start recording
+                if (!recognition) {
+                    initRecognition();
+                }
+                isRecording = true;
+                recognition.start();
+                btn.textContent = 'Stop Recording';
+                btn.className = 'recording';
+            } else {
+                // Stop recording
+                isRecording = false;
+                recognition.stop();
+                btn.textContent = 'Start Recording';
+                btn.className = '';
+                document.getElementById('status').textContent = 
+                    `Stopped. Total length: ${allTranscript.length} chars`;
+            }
+        }
+        
+        function clearTranscript() {
+            allTranscript = '';
+            document.getElementById('transcript').textContent = 'Transcript cleared...';
+            updateCount = 0;
+            document.getElementById('status').textContent = 'Transcript cleared';
+        }
+        
+        function simulateLongSession() {
+            // Simulate 25 minutes of text accumulation
+            const phrases = [
+                "This is the beginning of a long recording session",
+                "I'm testing to make sure that text accumulates properly",
+                "Every phrase I speak should be added to the transcript",
+                "Nothing should be lost or overwritten",
+                "The text box should scroll as needed",
+                "I can talk for 25 minutes straight",
+                "And every single word will be captured",
+                "This is exactly what the user requested",
+                "A simple speech to text toggle",
+                "That accumulates all the text",
+                "Without any automatic submission",
+                "The user must manually click send",
+                "When they are ready to submit their message"
+            ];
+            
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index >= phrases.length) {
+                    clearInterval(interval);
+                    document.getElementById('status').textContent = 
+                        `Simulation complete. Total: ${allTranscript.length} chars`;
+                    return;
+                }
+                
+                allTranscript += phrases[index] + '. ';
+                document.getElementById('transcript').textContent = allTranscript;
+                
+                // Auto-scroll
+                const transcriptEl = document.getElementById('transcript');
+                transcriptEl.scrollTop = transcriptEl.scrollHeight;
+                
+                updateCount++;
+                document.getElementById('status').textContent = 
+                    `Simulating... ${index + 1}/${phrases.length} phrases`;
+                
+                index++;
+            }, 2000);
+        }
+        
+        // Initialize on load
+        window.onload = () => {
+            if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+                document.getElementById('status').textContent = 
+                    'Speech recognition not supported in this browser';
+            }
+        };
+    </script>
+</body>
+</html>

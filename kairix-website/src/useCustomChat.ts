@@ -17,6 +17,8 @@ export function useCustomChat() {
   const { sttService, sttState } = useSTT();
   const currentAssistantMessageIdRef = useRef<string | null>(null);
   const handleSubmitRef = useRef<(e?: React.FormEvent, overrideInput?: string) => Promise<void>>(null);
+  const sttToggleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isProcessingSTTRef = useRef(false);
 
   // Load chat history when model changes
   useEffect(() => {
@@ -38,6 +40,19 @@ export function useCustomChat() {
   const handleSTTToggle = useCallback(async () => {
     console.log('handleSTTToggle called, current STT state:', sttState);
     
+    // Prevent multiple rapid calls
+    if (isProcessingSTTRef.current) {
+      console.log('STT toggle already processing, ignoring...');
+      return;
+    }
+    
+    // Clear any existing timeout
+    if (sttToggleTimeoutRef.current) {
+      clearTimeout(sttToggleTimeoutRef.current);
+    }
+    
+    isProcessingSTTRef.current = true;
+    
     try {
       if (sttState.status === 'listening') {
         console.log('Stopping STT recording...');
@@ -45,23 +60,15 @@ export function useCustomChat() {
         const transcript = await sttService.stopRecording();
         console.log('STT stopped, transcript:', transcript);
         
-        // Auto-submit if enabled and we have a transcript
-        if (transcript && sttService.isAutoSubmitEnabled() && handleSubmitRef.current) {
-          console.log('Auto-submitting transcript:', transcript);
-          // Submit with the transcript
-          await handleSubmitRef.current(undefined, transcript);
-          // Clear input after submission
-          setInput('');
+        // NEVER auto-submit - just keep the accumulated text in input
+        if (transcript) {
+          console.log('Setting input with accumulated transcript:', transcript);
+          setInput(transcript);
         }
       } else {
         console.log('Starting STT recording...');
         
-        // Check if browser supports speech recognition
-        if (!(window as any).SpeechRecognition && !(window as any).webkitSpeechRecognition) {
-          console.error('Speech recognition not supported in this browser');
-          alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
-          return;
-        }
+        // No need to check for browser speech recognition - we're using Whisper
         
         // Interrupt TTS when starting STT
         if (isTTSEnabled && currentAssistantMessageIdRef.current) {
@@ -69,7 +76,7 @@ export function useCustomChat() {
           ttsService.interruptMessage(currentAssistantMessageIdRef.current);
         }
         
-        // Start recording
+        // Start recording - Whisper will accumulate from existing transcript
         console.log('Calling sttService.startRecording...');
         await sttService.startRecording(currentAssistantMessageIdRef.current || undefined);
         console.log('STT recording started successfully');
@@ -86,6 +93,11 @@ export function useCustomChat() {
           alert(`Speech recognition error: ${error.message}`);
         }
       }
+    } finally {
+      // Reset processing flag after a short delay
+      sttToggleTimeoutRef.current = setTimeout(() => {
+        isProcessingSTTRef.current = false;
+      }, 300);
     }
   }, [sttState, sttService, isTTSEnabled, ttsService]);
 
@@ -106,6 +118,11 @@ export function useCustomChat() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    
+    // Clear the STT transcript when message is sent
+    if (sttService && 'clearTranscript' in (sttService as any).provider) {
+      ((sttService as any).provider as any).clearTranscript();
+    }
 
     // Create a new message for the assistant that we'll update as we stream
     const assistantMessageId = (Date.now() + 1).toString();
@@ -274,35 +291,29 @@ export function useCustomChat() {
   useEffect(() => {
     console.log('STT State changed:', sttState);
     
-    // Stream interim results directly to input box
+    // Stream interim results directly to input box - this accumulates all text
     if (sttState.status === 'listening' && sttState.interimTranscript) {
-      console.log('Streaming interim transcript:', sttState.interimTranscript);
+      console.log('Streaming accumulated transcript:', sttState.interimTranscript);
       setInput(sttState.interimTranscript);
     }
     
-    // Handle final transcription
+    // Handle final transcription and auto-submit
     if (sttState.status === 'transcribed' && sttState.transcript) {
-      console.log('Final transcript:', sttState.transcript);
+      console.log('Final accumulated transcript:', sttState.transcript);
       
-      // Auto-submit if enabled
-      if (sttService.isAutoSubmitEnabled()) {
-        console.log('Auto-submitting with input:', sttState.transcript);
-        // Pass the transcript directly to handleSubmit
-        handleSubmit(undefined, sttState.transcript);
-        // Clear the input after submission
-        setInput('');
-        // Reset STT state to idle after submission to prevent repeated submits
+      // Set the input first
+      setInput(sttState.transcript);
+      
+      // Auto-submit by programmatically clicking the submit button
+      setTimeout(() => {
+        const submitButton = document.querySelector('button[type="submit"]');
+        if (submitButton instanceof HTMLButtonElement) {
+          submitButton.click();
+        }
         sttService.resetState();
-      } else {
-        // If not auto-submitting, set the transcript in the input
-        setInput(sttState.transcript);
-        // Reset to idle after a delay
-        setTimeout(() => {
-          sttService.resetState();
-        }, 500);
-      }
+      }, 100);
     }
-  }, [sttState, sttService, handleSubmit]);
+  }, [sttState, sttService]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

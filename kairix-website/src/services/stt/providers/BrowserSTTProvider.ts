@@ -11,11 +11,14 @@ export class BrowserSTTProvider implements STTProvider {
   private language: string;
   private continuous: boolean;
   private interimResults: boolean;
+  private startTime = 0;
   onInterimResult?: (transcript: string) => void;
 
   constructor(language: string = 'en-US', continuous: boolean = false, interimResults: boolean = true) {
     this.language = language;
-    this.continuous = continuous;
+    // Detect mobile and override continuous mode for better mobile support
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    this.continuous = isMobile ? false : continuous;
     this.interimResults = interimResults;
     
     // Check for browser support
@@ -24,6 +27,14 @@ export class BrowserSTTProvider implements STTProvider {
     if (!SpeechRecognition) {
       throw new Error('Speech recognition not supported in this browser');
     }
+
+    console.log('BrowserSTTProvider initialized:', {
+      language: this.language,
+      continuous: this.continuous,
+      interimResults: this.interimResults,
+      isMobile,
+      userAgent: navigator.userAgent
+    });
 
     this.createRecognition();
   }
@@ -62,30 +73,35 @@ export class BrowserSTTProvider implements STTProvider {
 
     this.recognition.onresult = (event: any) => {
       console.log('BrowserSTTProvider: onresult fired, results:', event.results);
-      let allText = '';
+      let interimText = '';
       let finalText = '';
 
       // Build complete transcript from all results
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = event.resultIndex || 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        allText += transcript + ' ';
         
         if (event.results[i].isFinal) {
           finalText += transcript + ' ';
+        } else {
+          interimText += transcript + ' ';
         }
       }
 
-      // Update transcripts
-      this.allTranscript = allText.trim();
+      // ALWAYS accumulate - never overwrite
       if (finalText) {
-        this.finalTranscript = finalText.trim();
+        // Add new final text to our accumulated transcript
+        this.allTranscript += (this.allTranscript ? ' ' : '') + finalText.trim();
+        this.finalTranscript = this.allTranscript;
       }
+      
+      // Show accumulated text plus current interim
+      const displayText = this.allTranscript + (this.allTranscript && interimText ? ' ' : '') + interimText.trim();
 
-      console.log('BrowserSTTProvider: Transcript update - all:', this.allTranscript, 'final:', this.finalTranscript);
+      console.log('BrowserSTTProvider: Transcript update - all:', this.allTranscript, 'final:', this.finalTranscript, 'interim:', interimText);
 
       // Always call callback with complete text so far
-      if (this.onInterimResult) {
-        this.onInterimResult(this.allTranscript);
+      if (this.onInterimResult && displayText) {
+        this.onInterimResult(displayText);
       }
     };
 
@@ -126,6 +142,19 @@ export class BrowserSTTProvider implements STTProvider {
 
     this.recognition.onend = () => {
       console.log('Recognition ended, all transcript:', this.allTranscript);
+      
+      // On mobile, if recognition ends too quickly (less than 1 second), restart it
+      const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile && this.isRecording && Date.now() - this.startTime < 1000) {
+        console.log('Mobile STT ended too quickly, restarting...');
+        try {
+          this.recognition.start();
+          return;
+        } catch (error) {
+          console.error('Failed to restart recognition:', error);
+        }
+      }
+      
       // Don't set isRecording to false here, it's managed by stopRecording
       if (this.currentResolve) {
         // Return all recognized text, not just final
@@ -147,16 +176,30 @@ export class BrowserSTTProvider implements STTProvider {
 
     console.log('BrowserSTTProvider: Starting recording');
     
-    // Don't recreate recognition here - it's already created in constructor
-    // Just reset the transcripts
+    // Don't reset allTranscript - keep accumulating
     this.isRecording = true;
     this.finalTranscript = '';
-    this.allTranscript = '';
+    // Keep allTranscript to accumulate across sessions
+    this.startTime = Date.now();
     
     try {
-      // Request microphone permission explicitly
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Request microphone permission explicitly with better mobile settings
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
       console.log('Microphone permission granted');
+      
+      // Stop the permission check stream immediately - we don't need it
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Small delay for mobile devices to release audio resources
+      if (/Mobile|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       
       // Start recognition
       this.recognition.start();
@@ -170,6 +213,12 @@ export class BrowserSTTProvider implements STTProvider {
           throw new Error('Microphone permission denied. Please allow microphone access.');
         } else if (error.name === 'NotFoundError') {
           throw new Error('No microphone found. Please connect a microphone.');
+        } else if (error.message.includes('recognition has already started')) {
+          // Handle case where recognition is already running
+          console.warn('Recognition already started, stopping and retrying...');
+          this.recognition.stop();
+          await new Promise(resolve => setTimeout(resolve, 200));
+          this.recognition.start();
         } else {
           throw new Error(`Failed to start recording: ${error.message}`);
         }
@@ -193,11 +242,24 @@ export class BrowserSTTProvider implements STTProvider {
   }
 
   abort(): void {
-    if (this.isRecording) {
-      this.recognition.abort();
-      this.isRecording = false;
-      this.currentResolve = null;
-      this.currentReject = null;
+    console.log('BrowserSTTProvider: abort called, isRecording:', this.isRecording);
+    
+    if (this.recognition) {
+      try {
+        this.recognition.abort();
+      } catch (error) {
+        console.error('Error aborting recognition:', error);
+      }
     }
+    
+    this.isRecording = false;
+    // Don't clear transcripts on abort - keep accumulated text
+    this.currentResolve = null;
+    this.currentReject = null;
+  }
+  
+  clearTranscript(): void {
+    this.allTranscript = '';
+    this.finalTranscript = '';
   }
 }

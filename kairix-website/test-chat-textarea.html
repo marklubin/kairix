@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Textarea Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .chat-container {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .input-area {
+            border-top: 1px solid #ccc;
+            background: white;
+            padding: 12px;
+        }
+        .input-container {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        .textarea-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .chat-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            overflow-y: auto;
+            min-height: 40px;
+            max-height: 200px;
+            box-sizing: border-box;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        .chat-textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        .button {
+            padding: 8px 16px;
+            height: 40px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button:hover {
+            background: #f5f5f5;
+        }
+        .send-button {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .send-button:hover {
+            background: #0056b3;
+        }
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .test-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        .test-info h3 {
+            margin-top: 0;
+        }
+        .test-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat Textarea Test</h1>
+    
+    <div class="chat-container">
+        <div class="messages-area">
+            <p>Messages will appear here...</p>
+        </div>
+        <div class="input-area">
+            <form id="chat-form">
+                <div class="input-container">
+                    <div class="textarea-wrapper">
+                        <textarea 
+                            id="chat-input" 
+                            class="chat-textarea" 
+                            placeholder="Type a message..."
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    <button type="button" class="button">🎤</button>
+                    <button type="submit" class="button send-button" id="send-button">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="test-info">
+        <h3>Test Instructions:</h3>
+        <ul>
+            <li>Type text and watch the textarea expand automatically</li>
+            <li>The textarea should grow up to 200px max height</li>
+            <li>When max height is reached, a scrollbar should appear</li>
+            <li>The buttons should always remain visible at the bottom</li>
+            <li>Press Enter to submit (Shift+Enter for new line)</li>
+            <li>The textarea should auto-scroll to the bottom when typing</li>
+            <li>You should be able to manually scroll up to see earlier text</li>
+        </ul>
+        <p><strong>Current textarea height:</strong> <span id="height-display">40px</span></p>
+        <p><strong>Scroll position:</strong> <span id="scroll-display">0</span></p>
+    </div>
+
+    <script>
+        const textarea = document.getElementById('chat-input');
+        const form = document.getElementById('chat-form');
+        const sendButton = document.getElementById('send-button');
+        const messagesArea = document.querySelector('.messages-area');
+        const heightDisplay = document.getElementById('height-display');
+        const scrollDisplay = document.getElementById('scroll-display');
+        
+        // Auto-resize function
+        function autoResize() {
+            // Reset height to get accurate scrollHeight
+            textarea.style.height = 'auto';
+            
+            // Calculate new height (max 200px)
+            const newHeight = Math.min(textarea.scrollHeight, 200);
+            textarea.style.height = newHeight + 'px';
+            
+            // Update height display
+            heightDisplay.textContent = newHeight + 'px';
+            
+            // Auto-scroll to bottom if user hasn't manually scrolled up
+            if (textarea.scrollHeight > textarea.clientHeight) {
+                // Check if user is near the bottom (within 10px)
+                const isNearBottom = textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight < 10;
+                if (isNearBottom) {
+                    textarea.scrollTop = textarea.scrollHeight;
+                }
+            }
+            
+            // Update scroll display
+            scrollDisplay.textContent = textarea.scrollTop;
+        }
+        
+        // Handle input changes
+        textarea.addEventListener('input', autoResize);
+        
+        // Handle scroll
+        textarea.addEventListener('scroll', () => {
+            scrollDisplay.textContent = textarea.scrollTop;
+        });
+        
+        // Handle Enter key
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitMessage();
+            }
+        });
+        
+        // Handle form submit
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitMessage();
+        });
+        
+        // Submit message function
+        function submitMessage() {
+            const message = textarea.value.trim();
+            if (message) {
+                // Add message to messages area
+                const messageEl = document.createElement('div');
+                messageEl.style.marginBottom = '10px';
+                messageEl.style.padding = '10px';
+                messageEl.style.background = 'white';
+                messageEl.style.borderRadius = '4px';
+                messageEl.textContent = message;
+                
+                if (messagesArea.firstElementChild.tagName === 'P') {
+                    messagesArea.innerHTML = '';
+                }
+                
+                messagesArea.appendChild(messageEl);
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+                
+                // Clear textarea
+                textarea.value = '';
+                autoResize();
+                textarea.focus();
+            }
+        }
+        
+        // Update send button state
+        textarea.addEventListener('input', () => {
+            sendButton.disabled = !textarea.value.trim();
+        });
+        
+        // Initial setup
+        sendButton.disabled = true;
+        autoResize();
+        
+        // Add some test content
+        const testButton = document.createElement('button');
+        testButton.textContent = 'Add Long Test Text';
+        testButton.style.marginTop = '10px';
+        testButton.onclick = () => {
+            textarea.value = 'This is a test message that spans multiple lines.\n\n' +
+                           'It demonstrates how the textarea expands automatically ' +
+                           'as you type more content. The textarea will grow up to ' +
+                           '200px in height, after which it will show a scrollbar.\n\n' +
+                           'The buttons at the bottom should always remain visible, ' +
+                           'and the textarea should auto-scroll to show the latest text ' +
+                           'as you type.\n\n' +
+                           'You can also manually scroll up to see earlier parts of your ' +
+                           'message while composing.';
+            autoResize();
+            textarea.dispatchEvent(new Event('input'));
+        };
+        document.querySelector('.test-info').appendChild(testButton);
+    </script>
+</body>
+</html>

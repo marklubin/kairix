@@ -16,7 +16,7 @@ function ChatContainer() {
   const { registerAction } = useHotkey()
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Array<{id: string, name: string}>>([])
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when messages change
@@ -88,6 +88,18 @@ function ChatContainer() {
   registerAction('toggleSTT', () => {
     chatHandler.handleSTTToggle();
   });
+
+  // Add Ctrl+V handler for STT toggle
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        chatHandler.handleSTTToggle();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [chatHandler.handleSTTToggle]);
 
   registerAction('newChat', () => {
     if (confirm('Are you sure you want to clear the chat history?')) {
@@ -267,17 +279,12 @@ function ChatContainer() {
 
               {/* STT Settings */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">STT</label>
+                <label className="text-sm font-medium">STT (Whisper AI)</label>
                 <div className="pl-4 space-y-2">
-                  <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={sttConfig.autoSubmit}
-                      onChange={(e) => updateSTTConfig({ autoSubmit: e.target.checked })}
-                      className="rounded"
-                    />
-                    Auto-submit
-                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Voice input uses Whisper AI running locally in your browser.
+                    Text accumulates as you speak - click send when done.
+                  </p>
                   <label className="flex items-center gap-2 text-xs">
                     <input
                       type="checkbox"
@@ -285,7 +292,7 @@ function ChatContainer() {
                       onChange={(e) => updateSTTConfig({ interimResults: e.target.checked })}
                       className="rounded"
                     />
-                    Show interim results
+                    Show real-time transcription
                   </label>
                 </div>
               </div>

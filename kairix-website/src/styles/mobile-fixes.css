@@ -1,0 +1,54 @@
+/* Mobile-specific fixes for STT functionality */
+
+/* Prevent touch delay and improve button responsiveness */
+button,
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Prevent double-tap zoom on buttons */
+button {
+  touch-action: manipulation;
+}
+
+/* Ensure proper button states on mobile */
+button:active {
+  opacity: 0.8;
+}
+
+/* Prevent text selection on mobile */
+.no-select {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Fix for iOS Safari audio issues */
+@supports (-webkit-touch-callout: none) {
+  audio {
+    -webkit-playsinline: true;
+    playsinline: true;
+  }
+}
+
+/* Prevent viewport bounce on iOS */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/* Ensure proper focus handling on mobile */
+:focus {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
