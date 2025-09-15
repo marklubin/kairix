@@ -62,7 +62,7 @@ class IncrementalReflectionPerceptor(Perceptor):
             try:
                 logger.info("Invoking summarization agent.")
                 run_result = await self.runtime.run(self.agent, text_to_summarize)
-                summary = run_result.data  # Extract the actual content from RunResult
+                summary = str(run_result.final_output)  # Extract the actual content from RunResult
                 logger.info("Got back summary, generating embedding.")
 
                 embedding = self.embedder.encode(summary).tolist()

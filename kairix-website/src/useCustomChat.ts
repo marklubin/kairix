@@ -19,6 +19,7 @@ export function useCustomChat() {
   const handleSubmitRef = useRef<(e?: React.FormEvent, overrideInput?: string) => Promise<void>>(null);
   const sttToggleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingSTTRef = useRef(false);
+  const sttAutoStopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load chat history when model changes
   useEffect(() => {
@@ -40,9 +41,21 @@ export function useCustomChat() {
   const handleSTTToggle = useCallback(async () => {
     console.log('handleSTTToggle called, current STT state:', sttState);
     
-    // Prevent multiple rapid calls
+    // Prevent multiple rapid calls and check for valid states
     if (isProcessingSTTRef.current) {
       console.log('STT toggle already processing, ignoring...');
+      return;
+    }
+    
+    // Don't allow toggle during processing state
+    if (sttState.status === 'processing') {
+      console.log('STT is processing, cannot toggle');
+      return;
+    }
+    
+    // Don't allow toggle while generating response
+    if (isLoading) {
+      console.log('Cannot toggle STT while generating response');
       return;
     }
     
@@ -56,19 +69,35 @@ export function useCustomChat() {
     try {
       if (sttState.status === 'listening') {
         console.log('Stopping STT recording...');
+        
+        // Clear auto-stop timeout
+        if (sttAutoStopTimeoutRef.current) {
+          clearTimeout(sttAutoStopTimeoutRef.current);
+          sttAutoStopTimeoutRef.current = null;
+        }
+        
         // Stop recording and get transcript
         const transcript = await sttService.stopRecording();
         console.log('STT stopped, transcript:', transcript);
         
-        // NEVER auto-submit - just keep the accumulated text in input
-        if (transcript) {
-          console.log('Setting input with accumulated transcript:', transcript);
+        // Auto-submit if we have a transcript
+        if (transcript && transcript.trim()) {
+          console.log('Auto-submitting transcript:', transcript);
           setInput(transcript);
+          // Use a small timeout to ensure input is set before submission
+          setTimeout(() => {
+            handleSubmitRef.current?.(undefined, transcript);
+          }, 100);
+        } else {
+          console.log('No transcript to submit');
         }
-      } else {
-        console.log('Starting STT recording...');
+      } else if (sttState.status === 'idle' || sttState.status === 'error' || sttState.status === 'transcribed') {
+        console.log('Starting STT recording from state:', sttState.status);
         
-        // No need to check for browser speech recognition - we're using Whisper
+        // Clear any previous input if we're in transcribed state
+        if (sttState.status === 'transcribed') {
+          setInput('');
+        }
         
         // Interrupt TTS when starting STT
         if (isTTSEnabled && currentAssistantMessageIdRef.current) {
@@ -80,6 +109,13 @@ export function useCustomChat() {
         console.log('Calling sttService.startRecording...');
         await sttService.startRecording(currentAssistantMessageIdRef.current || undefined);
         console.log('STT recording started successfully');
+        
+        // Set auto-stop timeout (60 seconds max recording)
+        sttAutoStopTimeoutRef.current = setTimeout(() => {
+          console.log('Auto-stopping STT after 60 seconds');
+          // Use sttService to check current state instead of stale closure
+          sttService.stopRecording().catch(console.error);
+        }, 60000);
       }
     } catch (error) {
       console.error('STT toggle error:', error);
@@ -89,9 +125,14 @@ export function useCustomChat() {
         // Check for common permission errors
         if (error.message.includes('Permission denied') || error.message.includes('NotAllowedError')) {
           alert('Microphone permission denied. Please allow microphone access and try again.');
+        } else if (error.message.includes('NotSupportedError')) {
+          alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
         } else {
           alert(`Speech recognition error: ${error.message}`);
         }
+        
+        // Reset to safe state on error
+        isProcessingSTTRef.current = false;
       }
     } finally {
       // Reset processing flag after a short delay
@@ -99,7 +140,7 @@ export function useCustomChat() {
         isProcessingSTTRef.current = false;
       }, 300);
     }
-  }, [sttState, sttService, isTTSEnabled, ttsService]);
+  }, [sttState, sttService, isTTSEnabled, ttsService, isLoading]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent, overrideInput?: string) => {
     e?.preventDefault();
@@ -330,6 +371,27 @@ export function useCustomChat() {
     // Also stop TTS
     ttsService.stop();
   }, [ttsService]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      if (sttToggleTimeoutRef.current) {
+        clearTimeout(sttToggleTimeoutRef.current);
+      }
+      if (sttAutoStopTimeoutRef.current) {
+        clearTimeout(sttAutoStopTimeoutRef.current);
+      }
+      // Stop recording if still active
+      if (sttState.status === 'listening') {
+        sttService.stopRecording().catch(console.error);
+      }
+      // Abort any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return {
     messages,

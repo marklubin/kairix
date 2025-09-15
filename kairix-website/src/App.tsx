@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ChatContainer from './Chat'
+import VoiceChat from './VoiceChat'
 import { TTSProvider } from './contexts/TTSContext'
 import { STTProvider } from './contexts/STTContext'
 import { HotkeyProvider } from './contexts/HotkeyContext'
@@ -10,6 +11,16 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route
+          path="/voice"
+          element={
+            <TTSProvider>
+              <STTProvider>
+                <VoiceChat />
+              </STTProvider>
+            </TTSProvider>
+          }
+        />
         <Route
           path="/*"
           element={

@@ -25,7 +25,9 @@ configuration_sets = {
         agent_configs={
             "conversationalist": AgentConfig(
                 name="conversationalist",
-                model="gpt-4.1"
+                model="gpt-4.1",
+                temperature=.7,
+                max_tokens=32768
             ),
             "query_generator": AgentConfig(
                 name="query_generator",

@@ -138,18 +138,27 @@ export function Chat({
               )}
             </div>
             
-            {/* Mic Button - no text */}
+            {/* Mic Button - Toggle (Latch) */}
             <Button
               type="button"
               size="icon"
               variant={sttState.status === 'listening' ? "destructive" : "outline"}
-              onClick={onSTTToggle}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Only allow toggle if not in a transitional state
+                if (sttState.status !== 'processing' && !isGenerating) {
+                  onSTTToggle();
+                }
+              }}
               disabled={isGenerating || sttState.status === 'processing'}
               data-testid="chat-mic-button"
-              className="h-10 w-10 touch-manipulation"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              className="h-10 w-10"
+              aria-label={sttState.status === 'listening' ? "Stop recording" : "Start recording"}
             >
-              {sttState.status === 'listening' ? (
+              {sttState.status === 'processing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : sttState.status === 'listening' ? (
                 <MicOff className="h-4 w-4" />
               ) : (
                 <Mic className="h-4 w-4" />

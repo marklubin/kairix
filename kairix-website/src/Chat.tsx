@@ -89,10 +89,16 @@ function ChatContainer() {
     chatHandler.handleSTTToggle();
   });
 
-  // Add Ctrl+V handler for STT toggle
+  // Add Ctrl+Space and Caps Lock handlers for STT toggle
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'space') {
+      // Ctrl+Space handler
+      if (e.ctrlKey && e.key === ' ') {
+        e.preventDefault();
+        chatHandler.handleSTTToggle();
+      }
+      // Caps Lock handler
+      else if (e.key === 'CapsLock') {
         e.preventDefault();
         chatHandler.handleSTTToggle();
       }
