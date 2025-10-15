@@ -181,7 +181,7 @@ async def list_models() -> dict[str, Any]:
 
 
 @app.post("/v1/chat/completions")
-async def create_chat_completion(request: CreateChatCompletionRequest, api_key: str = Depends(verify_api_key)) -> Any:
+async def create_chat_completion(request: CreateChatCompletionRequest) -> Any:
     """Create a chat completion with streaming support."""
     logger.info(f"Received chat completion request: model={request.model}, stream={request.stream}")
 

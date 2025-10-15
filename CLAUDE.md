@@ -133,10 +133,41 @@ apiana/
 
 ### Testing Strategy
 
-- Unit tests: Test individual components
-- Integration tests: Test pipeline workflows
-- UI automation tests: Test Gradio interface with Playwright
-- Run `make test-comprehensive` before committing
+**CRITICAL: All code changes MUST include tests and tests MUST be run before completion.**
+
+#### Testing Requirements
+1. **Mandatory Testing**: Every feature change, bug fix, or new functionality MUST have corresponding tests
+2. **Test Before Commit**: All tests must pass before considering work complete
+3. **Test Types**:
+   - Unit tests: Test individual components
+   - Integration tests: Test pipeline workflows
+   - UI automation tests: Test Gradio interface with Playwright
+   - End-to-end tests: Validate full user workflows
+
+#### Test Execution
+```bash
+# Run all tests before committing
+make test-comprehensive
+
+# For kairix-apps server changes
+cd kairix-apps && uv run python test_server.py
+
+# Run specific test suites
+make test              # Unit tests only
+make test-integ        # Integration tests
+make test-ui           # UI automation tests
+```
+
+#### Test Coverage Standards
+- **New Features**: Must have at least 80% test coverage
+- **API Endpoints**: Must test success cases, error cases, and edge cases
+- **UI Changes**: Must include automated UI tests
+- **Database Changes**: Must test migrations, queries, and data integrity
+
+#### Validation Requirements
+- **Model Selection**: Before saving a new model selection, the system must send a real test request to validate the model works
+- **Configuration Changes**: Must validate changes before persisting to Doppler/database
+- **API Changes**: Must test backward compatibility
 
 ### Future Considerations
 

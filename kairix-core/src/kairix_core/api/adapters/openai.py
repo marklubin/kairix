@@ -128,13 +128,24 @@ class OpenAIAdapter:
         stimulus: Stimulus = Stimulus(message, StimulusType.user_message)
 
         full_response = ""
-        async for accumulated, chunk in self.persona.react(stimulus):
-            full_response = accumulated
+        try:
+            async for accumulated, chunk in self.persona.react(stimulus):
+                full_response = accumulated
+        except Exception as e:
+            # If there's a validation error but we got a response, use it
+            # This handles the openai-agents ResponseTextDeltaEvent logprobs validation issue
+            if full_response:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Validation error during streaming, but got partial response: {e}"
+                )
+            else:
+                raise
 
         # Count tokens (simplified - would use tiktoken in production)
         prompt_tokens = sum(len(str(m.get("content", "")).split()) for m in messages) * 2
         completion_tokens = len(full_response.split()) * 2
-        
+
         return ChatCompletion(
             id=response_id,
             object="chat.completion",

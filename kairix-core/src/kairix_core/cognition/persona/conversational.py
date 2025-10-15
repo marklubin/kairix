@@ -59,11 +59,31 @@ class ConversationalPersona:
 
         i = 0
 
-        async for event in self.runner.run_streamed(self.actuating_agent, message).stream_events():
-            if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-                logger.debug(f"Chunk {i}, yielding from stream")
-                yield event.data.delta
-                i += 1
+        try:
+            async for event in self.runner.run_streamed(self.actuating_agent, message).stream_events():
+                if event.type == "raw_response_event":
+                    # Try to access delta directly, handling validation errors
+                    try:
+                        if isinstance(event.data, ResponseTextDeltaEvent):
+                            logger.debug(f"Chunk {i}, yielding from stream")
+                            yield event.data.delta
+                            i += 1
+                    except Exception as e:
+                        # If ResponseTextDeltaEvent validation fails, try to extract delta anyway
+                        if hasattr(event.data, 'delta'):
+                            logger.debug(f"Chunk {i}, yielding delta (bypassed validation)")
+                            yield event.data.delta
+                            i += 1
+                        elif hasattr(event, 'data') and isinstance(event.data, dict) and 'delta' in event.data:
+                            logger.debug(f"Chunk {i}, yielding delta from dict")
+                            yield event.data['delta']
+                            i += 1
+                        else:
+                            logger.warning(f"Could not extract delta from event: {e}")
+        except Exception as stream_error:
+            logger.error(f"Stream error occurred: {stream_error}", exc_info=True)
+            # Re-raise to be handled by caller
+            raise
 
     async def environment_updated(self, environment: PersonaEnvironment) -> None:
         logger.info("Received environment update. Trigger async updates.")
