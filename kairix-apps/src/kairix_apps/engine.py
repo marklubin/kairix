@@ -93,12 +93,37 @@ class KairixEngine:
 
         notebook = Notebook()
 
+        # Only include MCP server if it's properly connected
+        mcp_servers_list = []
+        try:
+            if agent_runtime.mcp_server and hasattr(agent_runtime.mcp_server, '_connected'):
+                mcp_servers_list = [agent_runtime.mcp_server]
+        except Exception:
+            logger.warning("MCP server not available for conversational agent")
+
+        # Load system prompt from database
+        from kairix_apps.prompt_manager import SystemPromptManager
+        prompt_manager = SystemPromptManager()
+        selected_prompt = prompt_manager.get_selected_prompt()
+
+        if selected_prompt:
+            # Use the selected prompt from database
+            prompt_template = selected_prompt.content
+            logger.info(f"Using system prompt: {selected_prompt.name} ({selected_prompt.prompt_id})")
+        else:
+            # Fallback to default v2 prompt if none selected
+            prompt_template = prompts.conversationalist_instruction_template_v2(
+                agent_name="{agent_name}", user_name="{user_name}"
+            )
+            logger.warning("No system prompt selected, using default v2")
+
+        # Format the prompt with actual names
+        instructions = prompt_template.format(agent_name=persona_name, user_name=user_name)
+
         conversational_agent: K_Agent = Agent(
             name="conversationalist",
-            instructions=prompts.conversationalist_instruction_template_v2(
-                agent_name=persona_name, user_name=user_name
-            ),
-            mcp_servers=[agent_runtime.mcp_server],
+            instructions=instructions,
+            mcp_servers=mcp_servers_list,
             tools=[
                 notebook.get_note,
                 notebook.list_titles,

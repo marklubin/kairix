@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kairix Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .info-value {
+            color: #333;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+        .form-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+        select {
+            cursor: pointer;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button.secondary {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            margin-top: 10px;
+        }
+        button.secondary:hover {
+            box-shadow: 0 10px 20px rgba(86, 171, 47, 0.4);
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .response.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .response.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .prompt-preview {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Kairix Admin Panel</h1>
+        <p class="subtitle">Server Management & Testing Interface</p>
+
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">Server Status</span>
+                <span class="info-value"><span class="status-badge status-online">● Online</span></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Persona Name</span>
+                <span class="info-value" id="persona-name">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">User Name</span>
+                <span class="info-value" id="user-name">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Server Port</span>
+                <span class="info-value" id="server-port">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Current Model</span>
+                <span class="info-value" id="current-model">Loading...</span>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Select Model</h2>
+            <form id="model-form">
+                <div class="form-group">
+                    <label for="model-select">Choose AI Model</label>
+                    <select id="model-select" name="model_id">
+                        <option value="">Loading models...</option>
+                    </select>
+                </div>
+                <button type="submit">Save Model Selection</button>
+            </form>
+            <div id="model-response" class="response"></div>
+        </div>
+
+        <div class="form-section">
+            <h2>System Prompt Configuration</h2>
+            <form id="prompt-form">
+                <div class="form-group">
+                    <label for="prompt-select">Choose System Prompt</label>
+                    <select id="prompt-select" name="prompt_id">
+                        <option value="">Loading prompts...</option>
+                    </select>
+                </div>
+                <button type="submit">Save Prompt Selection</button>
+            </form>
+            <div id="prompt-response" class="response"></div>
+
+            <div class="form-group" style="margin-top: 30px;">
+                <label for="prompt-preview">Current Prompt Preview</label>
+                <div id="prompt-preview" class="prompt-preview">Select a prompt to preview...</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Generate Custom Prompt with AI</h2>
+            <form id="generate-prompt-form">
+                <div class="form-group">
+                    <label for="requirements">Describe Your Ideal AI Assistant</label>
+                    <textarea id="requirements" name="requirements" placeholder="Example: I want a friendly assistant that helps with creative writing, is encouraging but also gives honest feedback, and has a warm conversational tone..." required></textarea>
+                </div>
+                <button type="submit">✨ Generate with AI</button>
+            </form>
+            <div id="generate-response" class="response"></div>
+
+            <div id="draft-editor" style="display: none; margin-top: 20px;">
+                <h3 style="color: #333; margin-bottom: 15px;">AI-Generated Draft</h3>
+                <div class="form-group">
+                    <label for="draft-name">Prompt Name</label>
+                    <input type="text" id="draft-name" placeholder="e.g., My Custom Assistant">
+                </div>
+                <div class="form-group">
+                    <label for="draft-description">Description</label>
+                    <input type="text" id="draft-description" placeholder="Brief description of this prompt">
+                </div>
+                <div class="form-group">
+                    <label for="draft-content">Prompt Content (edit as needed)</label>
+                    <textarea id="draft-content" style="min-height: 200px;"></textarea>
+                </div>
+                <button type="button" onclick="saveDraft()">💾 Save Custom Prompt</button>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Test Chat Completion</h2>
+            <form id="chat-form">
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" placeholder="Enter your message here..." required></textarea>
+                </div>
+                <button type="submit">Send Message</button>
+            </form>
+            <div id="response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentGeneratedPrompt = '';
+
+        // Load server info
+        function loadServerInfo() {
+            fetch('/admin/info')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('persona-name').textContent = data.persona_name || 'N/A';
+                    document.getElementById('user-name').textContent = data.user_name || 'N/A';
+                    document.getElementById('server-port').textContent = data.port || 'N/A';
+                    document.getElementById('current-model').textContent = data.current_model || 'N/A';
+                })
+                .catch(err => console.error('Error loading server info:', err));
+        }
+
+        // Load available models
+        function loadModels() {
+            fetch('/admin/models')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('model-select');
+                    select.innerHTML = '';
+
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.model_id;
+                        option.textContent = `${model.model_id} - ${model.description}`;
+                        if (model.is_selected) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                })
+                .catch(err => console.error('Error loading models:', err));
+        }
+
+        // Load available prompts
+        function loadPrompts() {
+            fetch('/admin/prompts')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('prompt-select');
+                    select.innerHTML = '';
+
+                    data.prompts.forEach(prompt => {
+                        const option = document.createElement('option');
+                        option.value = prompt.prompt_id;
+                        option.textContent = `${prompt.name} (${prompt.version})`;
+                        option.dataset.content = prompt.content;
+                        option.dataset.description = prompt.description;
+                        if (prompt.is_selected) {
+                            option.selected = true;
+                            document.getElementById('prompt-preview').textContent = prompt.content;
+                        }
+                        select.appendChild(option);
+                    });
+                })
+                .catch(err => console.error('Error loading prompts:', err));
+        }
+
+        // Update prompt preview when selection changes
+        document.getElementById('prompt-select').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const content = selectedOption.dataset.content || 'No content available';
+            document.getElementById('prompt-preview').textContent = content;
+        });
+
+        // Initial load
+        loadServerInfo();
+        loadModels();
+        loadPrompts();
+
+        // Handle model selection form submission
+        document.getElementById('model-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const modelSelect = document.getElementById('model-select');
+            const modelId = modelSelect.value;
+            const modelResponseDiv = document.getElementById('model-response');
+
+            modelResponseDiv.style.display = 'block';
+            modelResponseDiv.className = 'response';
+            modelResponseDiv.textContent = '⏳ Validating model ' + modelId + '...';
+
+            try {
+                const validateFormData = new FormData();
+                validateFormData.append('model_id', modelId);
+
+                const validateRes = await fetch('/admin/models/validate', {
+                    method: 'POST',
+                    body: validateFormData
+                });
+
+                const validateData = await validateRes.json();
+
+                if (!validateRes.ok || !validateData.valid) {
+                    modelResponseDiv.className = 'response error';
+                    modelResponseDiv.textContent = '✗ Model validation failed: ' + (validateData.error || 'Unknown error');
+                    return;
+                }
+
+                modelResponseDiv.textContent = '✓ Model validated. Saving selection...';
+
+                const formData = new FormData();
+                formData.append('model_id', modelId);
+
+                const res = await fetch('/admin/models/select', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    modelResponseDiv.className = 'response success';
+                    modelResponseDiv.textContent = '✓ ' + data.message + ' (Validated and saved)';
+                    setTimeout(() => {
+                        loadServerInfo();
+                        modelResponseDiv.style.display = 'none';
+                    }, 3000);
+                } else {
+                    modelResponseDiv.className = 'response error';
+                    modelResponseDiv.textContent = '✗ Error saving: ' + (data.detail || JSON.stringify(data));
+                }
+            } catch (err) {
+                modelResponseDiv.className = 'response error';
+                modelResponseDiv.textContent = '✗ Network Error: ' + err.message;
+            }
+        });
+
+        // Handle prompt selection form submission
+        document.getElementById('prompt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const promptSelect = document.getElementById('prompt-select');
+            const promptId = promptSelect.value;
+            const promptResponseDiv = document.getElementById('prompt-response');
+
+            promptResponseDiv.style.display = 'block';
+            promptResponseDiv.className = 'response';
+            promptResponseDiv.textContent = '⏳ Saving prompt selection...';
+
+            try {
+                const formData = new FormData();
+                formData.append('prompt_id', promptId);
+
+                const res = await fetch('/admin/prompts/select', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    promptResponseDiv.className = 'response success';
+                    promptResponseDiv.textContent = '✓ ' + data.message;
+                    setTimeout(() => {
+                        promptResponseDiv.style.display = 'none';
+                    }, 3000);
+                } else {
+                    promptResponseDiv.className = 'response error';
+                    promptResponseDiv.textContent = '✗ Error: ' + (data.detail || JSON.stringify(data));
+                }
+            } catch (err) {
+                promptResponseDiv.className = 'response error';
+                promptResponseDiv.textContent = '✗ Network Error: ' + err.message;
+            }
+        });
+
+        // Handle AI prompt generation
+        document.getElementById('generate-prompt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const requirements = document.getElementById('requirements').value;
+            const generateResponseDiv = document.getElementById('generate-response');
+
+            generateResponseDiv.style.display = 'block';
+            generateResponseDiv.className = 'response';
+            generateResponseDiv.textContent = '✨ Generating prompt with AI... This may take a moment...';
+
+            try {
+                const formData = new FormData();
+                formData.append('requirements', requirements);
+
+                const res = await fetch('/admin/prompts/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    generateResponseDiv.className = 'response success';
+                    generateResponseDiv.textContent = '✓ ' + data.message;
+
+                    currentGeneratedPrompt = data.generated_prompt;
+                    document.getElementById('draft-content').value = currentGeneratedPrompt;
+                    document.getElementById('draft-name').value = '';
+                    document.getElementById('draft-description').value = requirements.substring(0, 100);
+                    document.getElementById('draft-editor').style.display = 'block';
+
+                    setTimeout(() => {
+                        generateResponseDiv.style.display = 'none';
+                    }, 3000);
+                } else {
+                    generateResponseDiv.className = 'response error';
+                    generateResponseDiv.textContent = '✗ Error: ' + (data.detail || JSON.stringify(data));
+                }
+            } catch (err) {
+                generateResponseDiv.className = 'response error';
+                generateResponseDiv.textContent = '✗ Network Error: ' + err.message;
+            }
+        });
+
+        // Save draft prompt
+        async function saveDraft() {
+            const name = document.getElementById('draft-name').value;
+            const description = document.getElementById('draft-description').value;
+            const content = document.getElementById('draft-content').value;
+
+            if (!name || !content) {
+                alert('Please provide both a name and content for the prompt');
+                return;
+            }
+
+            const promptId = 'custom_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+            try {
+                const formData = new FormData();
+                formData.append('prompt_id', promptId);
+                formData.append('name', name);
+                formData.append('description', description);
+                formData.append('content', content);
+                formData.append('version', 'custom');
+
+                const res = await fetch('/admin/prompts/save', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✓ Prompt saved successfully!');
+                    document.getElementById('draft-editor').style.display = 'none';
+                    loadPrompts(); // Reload prompts to show new one
+                } else {
+                    alert('✗ Error saving prompt: ' + (data.detail || JSON.stringify(data)));
+                }
+            } catch (err) {
+                alert('✗ Network Error: ' + err.message);
+            }
+        }
+
+        // Handle chat completion form submission
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = document.getElementById('message').value;
+            const responseDiv = document.getElementById('response');
+
+            responseDiv.style.display = 'block';
+            responseDiv.className = 'response';
+            responseDiv.textContent = 'Sending message...';
+
+            try {
+                const res = await fetch('/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'admin'
+                    },
+                    body: JSON.stringify({
+                        model: 'kairix-conversational',
+                        messages: [{role: 'user', content: message}],
+                        stream: false
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    responseDiv.className = 'response success';
+                    if (data.choices && data.choices[0]) {
+                        responseDiv.textContent = '✓ Response: ' + (data.choices[0].message?.content || JSON.stringify(data));
+                    } else {
+                        responseDiv.textContent = '✓ Success: ' + JSON.stringify(data);
+                    }
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = '✗ Error: ' + (data.detail || JSON.stringify(data));
+                }
+            } catch (err) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '✗ Network Error: ' + err.message;
+            }
+        });
+    </script>
+</body>
+</html>
