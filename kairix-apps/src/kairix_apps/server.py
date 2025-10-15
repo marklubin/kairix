@@ -434,12 +434,35 @@ async def select_prompt(prompt_id: str = Form(...)):
     success = prompt_manager.set_selected_prompt(prompt_id)
 
     if success:
-        logger.info(f"System prompt changed to {prompt_id}")
-        return {
-            "success": True,
-            "message": f"System prompt updated to {prompt_id}",
-            "current_prompt": prompt_id
-        }
+        logger.info(f"System prompt changed to {prompt_id} in database")
+
+        # Recreate persona with new prompt
+        global persona, adapter
+        try:
+            from kairix_apps.engine import KairixEngine
+            logger.info("Recreating persona with new system prompt...")
+            persona = KairixEngine.conversational_persona_for_environment()
+
+            # Recreate adapter with new persona
+            from kairix_core.api.adapters.openai import OpenAIAdapter
+            adapter = OpenAIAdapter(persona)
+
+            logger.info(f"Successfully reloaded persona with prompt: {prompt_id}")
+            return {
+                "success": True,
+                "message": f"System prompt updated to {prompt_id} and persona reloaded",
+                "current_prompt": prompt_id,
+                "persona_reloaded": True
+            }
+        except Exception as e:
+            logger.error(f"Failed to reload persona: {e}", exc_info=True)
+            return {
+                "success": True,
+                "message": f"System prompt updated in database but persona reload failed: {str(e)}",
+                "current_prompt": prompt_id,
+                "persona_reloaded": False,
+                "error": str(e)
+            }
     else:
         raise HTTPException(status_code=500, detail="Failed to update system prompt")
 
