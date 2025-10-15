@@ -305,20 +305,31 @@ Every response is a mirror—sometimes clear, sometimes cracked, sometimes funho
             meta_prompt = f"""You are an expert at crafting system prompts for AI assistants.
 Your task is to create a detailed, effective system prompt based on the user's requirements.
 
-The prompt will be used for an AI agent named "{agent_name}" interacting with a user named "{user_name}".
-
 User's requirements:
 {user_requirements}
+
+CRITICAL REQUIREMENT: You MUST use Python format string template placeholders:
+- Use the exact text {{agent_name}} (with single curly braces) for the AI's name
+- Use the exact text {{user_name}} (with single curly braces) for the user's name
+- Do NOT use actual names like "{agent_name}" or "{user_name}"
+- Do NOT use double curly braces like {{{{agent_name}}}}
+- These will be replaced using Python's .format() method at runtime
+
+Example of CORRECT format:
+"You are {{agent_name}}, a helpful assistant to {{user_name}}..."
+
+Example of INCORRECT formats (do not do these):
+"You are Apiana, a helpful assistant to Mark..."
+"You are {{{{agent_name}}}}, a helpful assistant to {{{{user_name}}}}..."
 
 Generate a comprehensive system prompt that:
 1. Clearly defines the AI's role and personality
 2. Sets appropriate boundaries and behaviors
 3. Specifies tone and communication style
 4. Includes any specific capabilities or constraints mentioned
-5. Uses {"{agent_name}"} and {"{user_name}"} as template variables that will be replaced at runtime
+5. Uses {{agent_name}} and {{user_name}} with SINGLE curly braces as placeholders
 
-The prompt should be formatted as a clear, direct instruction to the AI assistant.
-Return ONLY the system prompt content, no additional commentary or explanation."""
+Return ONLY the system prompt text, no commentary."""
 
             response = await client.chat.completions.create(
                 model=os.getenv("KAIRIX_AGENT_MODEL", "gpt-4o"),
