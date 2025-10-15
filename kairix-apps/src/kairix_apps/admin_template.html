@@ -275,9 +275,12 @@
     <script>
         let currentGeneratedPrompt = '';
 
+        // Get the API base path - use /api/ for production (served via reverse proxy)
+        const API_BASE = window.location.hostname === 'localhost' ? '' : '/api';
+
         // Load server info
         function loadServerInfo() {
-            fetch('/admin/info')
+            fetch(`${API_BASE}/admin/info`)
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('persona-name').textContent = data.persona_name || 'N/A';
@@ -290,7 +293,7 @@
 
         // Load available models
         function loadModels() {
-            fetch('/admin/models')
+            fetch(`${API_BASE}/admin/models`)
                 .then(res => res.json())
                 .then(data => {
                     const select = document.getElementById('model-select');
@@ -311,7 +314,7 @@
 
         // Load available prompts
         function loadPrompts() {
-            fetch('/admin/prompts')
+            fetch(`${API_BASE}/admin/prompts`)
                 .then(res => res.json())
                 .then(data => {
                     const select = document.getElementById('prompt-select');
@@ -360,7 +363,7 @@
                 const validateFormData = new FormData();
                 validateFormData.append('model_id', modelId);
 
-                const validateRes = await fetch('/admin/models/validate', {
+                const validateRes = await fetch(`${API_BASE}/admin/models/validate`, {
                     method: 'POST',
                     body: validateFormData
                 });
@@ -378,7 +381,7 @@
                 const formData = new FormData();
                 formData.append('model_id', modelId);
 
-                const res = await fetch('/admin/models/select', {
+                const res = await fetch(`${API_BASE}/admin/models/select`, {
                     method: 'POST',
                     body: formData
                 });
@@ -417,7 +420,7 @@
                 const formData = new FormData();
                 formData.append('prompt_id', promptId);
 
-                const res = await fetch('/admin/prompts/select', {
+                const res = await fetch(`${API_BASE}/admin/prompts/select`, {
                     method: 'POST',
                     body: formData
                 });
@@ -454,7 +457,7 @@
                 const formData = new FormData();
                 formData.append('requirements', requirements);
 
-                const res = await fetch('/admin/prompts/generate', {
+                const res = await fetch(`${API_BASE}/admin/prompts/generate`, {
                     method: 'POST',
                     body: formData
                 });
@@ -505,7 +508,7 @@
                 formData.append('content', content);
                 formData.append('version', 'custom');
 
-                const res = await fetch('/admin/prompts/save', {
+                const res = await fetch(`${API_BASE}/admin/prompts/save`, {
                     method: 'POST',
                     body: formData
                 });
@@ -535,7 +538,7 @@
             responseDiv.textContent = 'Sending message...';
 
             try {
-                const res = await fetch('/v1/chat/completions', {
+                const res = await fetch(`${API_BASE}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
