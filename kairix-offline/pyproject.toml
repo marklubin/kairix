@@ -22,7 +22,6 @@ dependencies = [
     "rich>=14.0.0",
     "semchunk>=3.2.1",
     "sentence-transformers>=4.1.0",
-    "torch>=2.7.0",
     "testcontainers>=4.10.0",
     "chatformat>=1.2",
     "openai-agents>=0.0.19",
