@@ -69,9 +69,11 @@ class ModelManager:
         conn.close()
 
     def _prepopulate_models(self, cursor):
-        """Prepopulate database with current OpenAI models."""
+        """Prepopulate database with current OpenAI models (October 2025)."""
         openai_models = [
-            ("gpt-4.1", "openai", "GPT-4.1 - Latest flagship model with improved reasoning"),
+            ("gpt-5", "openai", "GPT-5 - Latest flagship model (Oct 2025)"),
+            ("gpt-5-turbo", "openai", "GPT-5 Turbo - High performance variant"),
+            ("gpt-4.1", "openai", "GPT-4.1 - Previous flagship with improved reasoning"),
             ("gpt-4o", "openai", "GPT-4 Optimized - Faster, more efficient GPT-4"),
             ("gpt-4o-mini", "openai", "GPT-4 Optimized Mini - Lightweight, cost-effective"),
             ("gpt-4-turbo", "openai", "GPT-4 Turbo - High performance variant"),
@@ -82,7 +84,7 @@ class ModelManager:
         ]
 
         # Get current model from environment or use default
-        current_model = os.getenv("KAIRIX_AGENT_MODEL", "gpt-4.1")
+        current_model = os.getenv("KAIRIX_AGENT_MODEL", "gpt-5")
 
         for model_id, provider, description in openai_models:
             is_selected = 1 if model_id == current_model else 0
