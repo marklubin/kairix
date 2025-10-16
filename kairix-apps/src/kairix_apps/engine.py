@@ -93,13 +93,9 @@ class KairixEngine:
 
         notebook = Notebook()
 
-        # Only include MCP server if it's properly connected
-        mcp_servers_list = []
-        try:
-            if agent_runtime.mcp_server and hasattr(agent_runtime.mcp_server, '_connected'):
-                mcp_servers_list = [agent_runtime.mcp_server]
-        except Exception:
-            logger.warning("MCP server not available for conversational agent")
+        # Include MCP filesystem server for tool access
+        mcp_servers_list = [agent_runtime.mcp_server] if agent_runtime.mcp_server else []
+        logger.info(f"Configured {len(mcp_servers_list)} MCP server(s) for conversational agent")
 
         # Load system prompt from database
         from kairix_apps.prompt_manager import SystemPromptManager
