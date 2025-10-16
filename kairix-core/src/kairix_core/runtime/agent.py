@@ -33,10 +33,6 @@ def _get_environment_configuration_set():
     return configuration_sets[get_or_raise("KAIRIX_AGENT_CONFIGURATION_SET_KEY")]
 
 
-def _get_magg_path():
-    return str(get_or_raise("KAIRIX_MAGG_EXECUTABLE"))
-
-
 set_default_openai_api("chat_completions")
 set_tracing_disabled(True)
 
@@ -81,13 +77,18 @@ class AgentRuntime:
         if self.model_provider.provider_map is not None:
             self.model_provider.provider_map.set_mapping(available_provider_mappings)
 
-        magg_path: str = _get_magg_path()
+        # Set up MCP filesystem server for tool access
+        import os
+        mcp_test_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "kairix-apps", "mcp-test-files")
+        mcp_test_dir = os.path.abspath(mcp_test_dir)
+
         mcp_params: MCPServerStdioParams = MCPServerStdioParams(
-            command=magg_path,
-            args=["serve"]
+            command="npx",
+            args=["-y", "@modelcontextprotocol/server-filesystem", mcp_test_dir]
         )
 
         self.mcp_server = MCPServerStdio(params=mcp_params)
+        logger.info(f"MCP filesystem server configured for directory: {mcp_test_dir}")
 
     def _get_agent_config(self, agent: Agent) -> AgentConfig:
         """Get configuration for a specific agent.
