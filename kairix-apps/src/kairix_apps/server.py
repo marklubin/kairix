@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
     from kairix_apps.model_manager import ModelManager
     from kairix_apps.prompt_manager import SystemPromptManager
+    from kairix_apps.mcpjungle_manager import MCPJungleManager
 
 logging_runtime = LoggingRuntime()
 logger = logging_runtime.logger
@@ -37,6 +38,7 @@ adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
 model_manager: "ModelManager | None" = None
 prompt_manager: "SystemPromptManager | None" = None
+mcpjungle_manager: "MCPJungleManager | None" = None
 
 # Container specific configurations
 port: int = int(get_or_raise("KAIRIX_SERVER_PORT"))
@@ -60,10 +62,19 @@ async def verify_api_key(x_api_key: str = Header(...)) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialize and cleanup resources."""
-    global adapter, persona, model_manager, prompt_manager
+    global adapter, persona, model_manager, prompt_manager, mcpjungle_manager
 
     try:
         logger.info("Starting Kairix API server...")
+
+        # Initialize MCPJungle manager and start it
+        from kairix_apps.mcpjungle_manager import MCPJungleManager
+        mcpjungle_manager = MCPJungleManager(port=8080)
+        try:
+            await mcpjungle_manager.start()
+            logger.info(f"MCPJungle started successfully at {mcpjungle_manager.get_mcp_endpoint()}")
+        except Exception as mcp_error:
+            logger.warning(f"Failed to start MCPJungle, continuing without it: {mcp_error}")
 
         # Initialize model manager
         from kairix_apps.model_manager import ModelManager
@@ -120,6 +131,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
             yield
         finally:
+            # Stop MCPJungle
+            if mcpjungle_manager:
+                try:
+                    await mcpjungle_manager.stop()
+                except Exception as e:
+                    logger.warning(f"Error stopping MCPJungle: {e}")
+
             if mcp_context:
                 try:
                     await mcp_context.__aexit__(None, None, None)
@@ -286,6 +304,15 @@ async def admin_panel():
 async def admin_info():
     """Get server information for admin panel."""
     current_model = model_manager.get_selected_model() if model_manager else "Unknown"
+    mcpjungle_status = "offline"
+    mcpjungle_endpoint = None
+
+    if mcpjungle_manager:
+        is_healthy = await mcpjungle_manager.health_check()
+        mcpjungle_status = "online" if is_healthy else "offline"
+        if is_healthy:
+            mcpjungle_endpoint = mcpjungle_manager.get_mcp_endpoint()
+
     return {
         "status": "online",
         "persona_name": os.getenv("KAIRIX_PERSONA_NAME", "Unknown"),
@@ -293,7 +320,9 @@ async def admin_info():
         "port": port,
         "adapter_initialized": adapter is not None,
         "persona_initialized": persona is not None,
-        "current_model": current_model
+        "current_model": current_model,
+        "mcpjungle_status": mcpjungle_status,
+        "mcpjungle_endpoint": mcpjungle_endpoint
     }
 
 
