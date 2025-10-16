@@ -9,6 +9,11 @@ kairix.net {
         reverse_proxy localhost:8000
     }
 
+    # Reverse proxy for MCPJungle
+    handle /jungle/* {
+        reverse_proxy localhost:8080
+    }
+
     # Serve website
     handle {
         reverse_proxy localhost:3000
@@ -40,6 +45,11 @@ dev.kairix.net {
             # Better handling for streaming responses
             flush_interval -1
         }
+    }
+
+    # Reverse proxy for MCPJungle
+    handle /jungle/* {
+        reverse_proxy localhost:8080
     }
 
     # Serve website
