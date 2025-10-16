@@ -5,6 +5,7 @@ inference providers, and execution environments. It supports multiple providers
 (OpenAI, Ollama, llama.cpp) and handles both sync and async execution modes.
 """
 
+import os
 from agents import (
     Agent,
     ModelProvider,
@@ -16,7 +17,7 @@ from agents import (
     set_default_openai_api,
     set_tracing_disabled,
 )
-from agents.mcp.server import MCPServerStdio, MCPServerStdioParams
+from agents.mcp.server import MCPServerSse, MCPServerSseParams
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 
 from kairix_core.configuration.agent import configuration_sets, provider_mappings
@@ -77,18 +78,17 @@ class AgentRuntime:
         if self.model_provider.provider_map is not None:
             self.model_provider.provider_map.set_mapping(available_provider_mappings)
 
-        # Set up MCP filesystem server for tool access
-        import os
-        mcp_test_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "kairix-apps", "mcp-test-files")
-        mcp_test_dir = os.path.abspath(mcp_test_dir)
+        # Connect to MCPEz aggregator via SSE
+        # MCPEz manages all MCP servers (filesystem, weather, etc.) via its web UI
+        mcpez_url = os.getenv("KAIRIX_MCPEZ_URL", "http://localhost:8088")
+        app_id = os.getenv("KAIRIX_MCP_APP_ID", "kairix-agent")
+        sse_endpoint = f"{mcpez_url}/mcp/{app_id}/sse"
 
-        mcp_params: MCPServerStdioParams = MCPServerStdioParams(
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-filesystem", mcp_test_dir]
-        )
+        sse_params: MCPServerSseParams = MCPServerSseParams(url=sse_endpoint)
+        self.mcp_server = MCPServerSse(params=sse_params)
 
-        self.mcp_server = MCPServerStdio(params=mcp_params)
-        logger.info(f"MCP filesystem server configured for directory: {mcp_test_dir}")
+        logger.info(f"MCP server configured: {sse_endpoint}")
+        logger.info(f"Configure MCP servers at: {mcpez_url}")
 
     def _get_agent_config(self, agent: Agent) -> AgentConfig:
         """Get configuration for a specific agent.
