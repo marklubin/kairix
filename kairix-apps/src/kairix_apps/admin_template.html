@@ -195,6 +195,14 @@
                 <span class="info-label">Current Model</span>
                 <span class="info-value" id="current-model">Loading...</span>
             </div>
+            <div class="info-row">
+                <span class="info-label">MCPEz Status</span>
+                <span class="info-value" id="mcpez-status">Loading...</span>
+            </div>
+            <div class="info-row" id="mcpez-url-row" style="display: none;">
+                <span class="info-label">MCPEz Web UI</span>
+                <span class="info-value"><a id="mcpez-url" href="#" target="_blank" style="color: #667eea;">Open UI</a></span>
+            </div>
         </div>
 
         <div class="form-section">
@@ -287,6 +295,22 @@
                     document.getElementById('user-name').textContent = data.user_name || 'N/A';
                     document.getElementById('server-port').textContent = data.port || 'N/A';
                     document.getElementById('current-model').textContent = data.current_model || 'N/A';
+
+                    // Display MCPEz status
+                    const mcpezStatusEl = document.getElementById('mcpez-status');
+                    const mcpezUrlRow = document.getElementById('mcpez-url-row');
+                    const mcpezUrlLink = document.getElementById('mcpez-url');
+
+                    if (data.mcpez_status === 'online') {
+                        mcpezStatusEl.innerHTML = '<span class="status-badge status-online">● Online</span>';
+                        if (data.mcpez_url) {
+                            mcpezUrlLink.href = data.mcpez_url;
+                            mcpezUrlRow.style.display = 'flex';
+                        }
+                    } else {
+                        mcpezStatusEl.textContent = 'Offline';
+                        mcpezUrlRow.style.display = 'none';
+                    }
                 })
                 .catch(err => console.error('Error loading server info:', err));
         }
