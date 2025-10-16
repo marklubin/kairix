@@ -9,9 +9,9 @@ kairix.net {
         reverse_proxy localhost:8000
     }
 
-    # Reverse proxy for MCPJungle
-    handle /jungle/* {
-        reverse_proxy localhost:8080
+    # Reverse proxy for MCPEz
+    handle /mcpez/* {
+        reverse_proxy localhost:8088
     }
 
     # Serve website
@@ -47,9 +47,9 @@ dev.kairix.net {
         }
     }
 
-    # Reverse proxy for MCPJungle
-    handle /jungle/* {
-        reverse_proxy localhost:8080
+    # Reverse proxy for MCPEz
+    handle /mcpez/* {
+        reverse_proxy localhost:8088
     }
 
     # Serve website

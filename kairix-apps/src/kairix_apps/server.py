@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
     from kairix_apps.model_manager import ModelManager
     from kairix_apps.prompt_manager import SystemPromptManager
-    from kairix_apps.mcpjungle_manager import MCPJungleManager
+    from kairix_apps.mcpez_manager import MCPEzManager
 
 logging_runtime = LoggingRuntime()
 logger = logging_runtime.logger
@@ -38,7 +38,7 @@ adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
 model_manager: "ModelManager | None" = None
 prompt_manager: "SystemPromptManager | None" = None
-mcpjungle_manager: "MCPJungleManager | None" = None
+mcpez_manager: "MCPEzManager | None" = None
 
 # Container specific configurations
 port: int = int(get_or_raise("KAIRIX_SERVER_PORT"))
@@ -62,16 +62,16 @@ async def verify_api_key(x_api_key: str = Header(...)) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialize and cleanup resources."""
-    global adapter, persona, model_manager, prompt_manager, mcpjungle_manager
+    global adapter, persona, model_manager, prompt_manager, mcpez_manager
 
     try:
         logger.info("Starting Kairix API server...")
 
-        # Initialize MCPJungle manager and start it (required for server startup)
-        from kairix_apps.mcpjungle_manager import MCPJungleManager
-        mcpjungle_manager = MCPJungleManager(port=8080)
-        await mcpjungle_manager.start()
-        logger.info(f"MCPJungle started successfully at {mcpjungle_manager.get_mcp_endpoint()}")
+        # Initialize MCPEz manager and start it (required for server startup)
+        from kairix_apps.mcpez_manager import MCPEzManager
+        mcpez_manager = MCPEzManager(port=8088)
+        await mcpez_manager.start()
+        logger.info(f"MCPEz started successfully at {mcpez_manager.get_web_ui_url()}")
 
         # Initialize model manager
         from kairix_apps.model_manager import ModelManager
@@ -128,12 +128,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
             yield
         finally:
-            # Stop MCPJungle
-            if mcpjungle_manager:
+            # Stop MCPEz
+            if mcpez_manager:
                 try:
-                    await mcpjungle_manager.stop()
+                    await mcpez_manager.stop()
                 except Exception as e:
-                    logger.warning(f"Error stopping MCPJungle: {e}")
+                    logger.warning(f"Error stopping MCPEz: {e}")
 
             if mcp_context:
                 try:
@@ -301,14 +301,14 @@ async def admin_panel():
 async def admin_info():
     """Get server information for admin panel."""
     current_model = model_manager.get_selected_model() if model_manager else "Unknown"
-    mcpjungle_status = "offline"
-    mcpjungle_endpoint = None
+    mcpez_status = "offline"
+    mcpez_url = None
 
-    if mcpjungle_manager:
-        is_healthy = await mcpjungle_manager.health_check()
-        mcpjungle_status = "online" if is_healthy else "offline"
+    if mcpez_manager:
+        is_healthy = await mcpez_manager.health_check()
+        mcpez_status = "online" if is_healthy else "offline"
         if is_healthy:
-            mcpjungle_endpoint = mcpjungle_manager.get_mcp_endpoint()
+            mcpez_url = mcpez_manager.get_web_ui_url()
 
     return {
         "status": "online",
@@ -318,8 +318,8 @@ async def admin_info():
         "adapter_initialized": adapter is not None,
         "persona_initialized": persona is not None,
         "current_model": current_model,
-        "mcpjungle_status": mcpjungle_status,
-        "mcpjungle_endpoint": mcpjungle_endpoint
+        "mcpez_status": mcpez_status,
+        "mcpez_url": mcpez_url
     }
 
 
