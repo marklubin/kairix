@@ -1,8 +1,9 @@
-"""Functional tests for MCP server integration with conversational agent."""
+"""Functional tests for MCP server integration with conversational agent via MCPEz."""
 import asyncio
 import os
 import pytest
 import pytest_asyncio
+import httpx
 from pathlib import Path
 
 # Set up test environment before imports
@@ -19,6 +20,22 @@ os.environ["KAIRIX_SERVER_PORT"] = "8000"
 from kairix_core.runtime.logging import LoggingRuntime
 
 logger = LoggingRuntime().logger
+
+
+def check_mcpez_available():
+    """Check if MCPEz is running and accessible."""
+    try:
+        response = httpx.get("http://localhost:8088", timeout=2)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+# Skip all tests if MCPEz is not running
+pytestmark = pytest.mark.skipif(
+    not check_mcpez_available(),
+    reason="MCPEz not running. See docs/MCPEZ_SETUP.md for setup instructions"
+)
 
 
 @pytest_asyncio.fixture

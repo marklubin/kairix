@@ -1,7 +1,8 @@
-"""Simple MCP integration test to verify tools are accessible."""
+"""Simple MCP integration test to verify tools are accessible via MCPEz."""
 import os
 import pytest
 import pytest_asyncio
+import httpx
 
 # Set up test environment
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -11,6 +12,22 @@ os.environ["KAIRIX_AGENT_CONFIGURATION_SET_KEY"] = "openai"
 from kairix_core.runtime.logging import LoggingRuntime
 
 logger = LoggingRuntime().logger
+
+
+def check_mcpez_available():
+    """Check if MCPEz is running and accessible."""
+    try:
+        response = httpx.get("http://localhost:8088", timeout=2)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+# Skip all tests if MCPEz is not running
+pytestmark = pytest.mark.skipif(
+    not check_mcpez_available(),
+    reason="MCPEz not running. Start with: docker ps | grep mcpez"
+)
 
 
 @pytest_asyncio.fixture
