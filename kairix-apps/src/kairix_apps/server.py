@@ -67,14 +67,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         logger.info("Starting Kairix API server...")
 
-        # Initialize MCPJungle manager and start it
+        # Initialize MCPJungle manager and start it (required for server startup)
         from kairix_apps.mcpjungle_manager import MCPJungleManager
         mcpjungle_manager = MCPJungleManager(port=8080)
-        try:
-            await mcpjungle_manager.start()
-            logger.info(f"MCPJungle started successfully at {mcpjungle_manager.get_mcp_endpoint()}")
-        except Exception as mcp_error:
-            logger.warning(f"Failed to start MCPJungle, continuing without it: {mcp_error}")
+        await mcpjungle_manager.start()
+        logger.info(f"MCPJungle started successfully at {mcpjungle_manager.get_mcp_endpoint()}")
 
         # Initialize model manager
         from kairix_apps.model_manager import ModelManager
