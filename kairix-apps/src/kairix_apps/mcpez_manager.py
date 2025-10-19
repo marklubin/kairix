@@ -145,7 +145,6 @@ class MCPEzManager:
             return
 
         self._ensure_repo()
-        self._build_image()
         self._stop_existing_container()
 
         logger.info(f"Starting MCPEz container on port {self.port}")
@@ -153,7 +152,10 @@ class MCPEzManager:
         # Create volume for data persistence
         volume_name = f"{self.container_name}-data"
 
-        # Start the container
+        # Determine image name (Podman prefixes with localhost/)
+        image_name = f"localhost/{MCPEZ_IMAGE}" if self.runtime == "podman" else MCPEZ_IMAGE
+
+        # Try to start the container (if image doesn't exist, this will fail and we'll build it)
         cmd = [
             self.runtime, "run",
             "-d",  # Detached mode
@@ -161,10 +163,16 @@ class MCPEzManager:
             "--name", self.container_name,
             "-v", f"{volume_name}:/data",  # Persistent volume
             "--restart", "unless-stopped",  # Auto-restart
-            MCPEZ_IMAGE
+            image_name
         ]
 
         exitcode, stdout, stderr = self._run_command(cmd)
+
+        # If image doesn't exist, build it and try again
+        if exitcode != 0 and "No such image" in stderr:
+            logger.info("Image not found, building it...")
+            self._build_image()
+            exitcode, stdout, stderr = self._run_command(cmd)
 
         if exitcode != 0:
             logger.error(f"Failed to start container: {stderr}")
