@@ -128,6 +128,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         persona = KairixEngine.conversational_persona_for_environment()
         logger.info("Persona created successfully")
 
+        # Connect MCP servers
+        await persona.connect()
+        logger.info("MCP servers connected successfully")
+
         # Create adapter
         adapter = OpenAIAdapter(persona)
         logger.info("OpenAI adapter initialized successfully")
