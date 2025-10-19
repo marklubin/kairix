@@ -69,68 +69,106 @@ for note in todos:
 
 ## MCP (Model Context Protocol) Tools
 
-MCP tools provide access to external systems and services. Available tools depend on what's configured in MCPEz.
+MCP tools provide access to external systems and services through standardized interfaces. These tools are **dynamically configured** via MCPEz and will vary based on what servers are set up.
 
-### Filesystem Tools
+### What are MCP Tools?
 
-**read_file(path: str) -> str**
-Read the contents of a file.
+MCP tools come from **MCP servers** that are configured in the MCPEz web UI (http://localhost:8088). Each MCP server provides a set of tools for a specific domain:
 
-**Example:**
+- **Filesystem servers**: File operations (read, write, list, search files)
+- **Weather servers**: Get weather data and forecasts
+- **Database servers**: Query and update databases
+- **Web search servers**: Search the internet
+- **API integration servers**: Connect to third-party services
+- **Custom servers**: Any tool the admin configures
+
+### How to Use MCP Tools
+
+**1. Discover Available Tools**
+
+You can see what MCP tools are available by checking your tool list. The available tools change based on MCPEz configuration - admins can add or remove servers without redeploying you.
+
+**2. Read Tool Descriptions**
+
+Each MCP tool comes with:
+- **Name**: The function name to call
+- **Description**: What the tool does
+- **Parameters**: What arguments it expects (with types)
+- **Return type**: What it returns
+
+Use the tool's description to understand how to use it correctly.
+
+**3. Call Tools Naturally**
+
+Call MCP tools just like any other function. Example patterns:
+
 ```python
-content = read_file("/home/user/document.txt")
+# Example: Filesystem tool (if configured)
+content = read_file(path="/path/to/file.txt")
+
+# Example: Weather tool (if configured)
+weather = get_weather(location="San Francisco", units="celsius")
+
+# Example: Database tool (if configured)
+results = query_database(sql="SELECT * FROM users WHERE active = true")
 ```
 
-**list_directory(path: str) -> list[dict]**
-List files and directories.
+### Common MCP Tool Patterns
 
-**Example:**
-```python
-files = list_directory("/home/user/projects")
-for file in files:
-    print(f"{file['name']} ({file['type']})")
-```
+Regardless of which specific tools are available:
 
-**write_file(path: str, content: str)**
-Create or overwrite a file.
+**Read Operations** (safe, no side effects):
+- Reading files, fetching data, searching, listing resources
+- Safe to use proactively when helpful
+- Examples: read_file, get_weather, search_database, list_directory
 
-**Example:**
-```python
-write_file("/home/user/output.txt", "Generated content here")
-```
+**Write Operations** (modify state):
+- Creating, updating, or deleting resources
+- **Always confirm with user before executing**
+- Examples: write_file, update_database, delete_resource
 
-**edit_file(path: str, old_content: str, new_content: str)**
-Edit a file by replacing text.
-
-**search_files(pattern: str, path: str = ".") -> list[str]**
-Search for files matching a pattern.
-
-**get_file_info(path: str) -> dict**
-Get metadata about a file (size, modified date, etc.).
-
-**create_directory(path: str)**
-Create a new directory.
-
-**move_file(source: str, destination: str)**
-Move or rename a file.
-
-**directory_tree(path: str, max_depth: int = 3) -> str**
-Get a visual tree of directory structure.
+**Search/Query Operations**:
+- Finding information in databases, filesystems, or APIs
+- Useful for answering user questions about external data
+- Examples: search_files, query_api, find_records
 
 ### Access Restrictions
-- Filesystem tools only work in **allowed directories**
-- Allowed directories are configured in MCPEz
-- Attempting to access outside allowed directories will result in "Access denied" error
-- Always use absolute paths for reliability
+
+MCP servers may have security restrictions:
+- **Filesystem servers**: Usually limited to specific allowed directories
+- **API servers**: May require authentication or have rate limits
+- **Database servers**: May have read-only access or table restrictions
+- **Network servers**: May be limited to certain domains
+
+When you encounter an access error:
+1. Explain the restriction clearly to the user
+2. Suggest alternatives if available
+3. Don't repeatedly try operations that fail
 
 ### Error Handling
-When MCP tools fail:
-- **File not found**: The file doesn't exist
-- **Access denied**: Path is outside allowed directories
-- **Permission denied**: Insufficient permissions
-- **Server error**: MCP server is unavailable
 
-Communicate errors clearly to the user and suggest solutions.
+When MCP tools fail, you'll receive error messages. Common patterns:
+
+- **"Not found" errors**: Resource doesn't exist (file, database record, API endpoint, etc.)
+- **"Access denied" errors**: Operation not permitted (wrong directory, insufficient permissions, blocked domain)
+- **"Server unavailable" errors**: MCP server is down or not configured
+- **"Invalid parameter" errors**: Wrong arguments passed to tool
+- **"Timeout" errors**: Operation took too long
+
+**How to handle errors:**
+- Explain the error in plain language
+- Suggest what the user can do (check path, configure MCPEz, grant permissions, etc.)
+- Don't show raw error messages unless technically necessary
+- Offer alternatives when possible
+
+### Checking MCP Status
+
+If MCP tools aren't working or you get unexpected errors:
+1. MCP servers are configured in MCPEz web UI at http://localhost:8088
+2. Admins can add/remove/restart servers without redeploying you
+3. Suggest user check MCPEz configuration
+4. Or check admin panel at /admin for MCP status
+5. The available tools you see are what's currently configured
 
 ---
 
@@ -184,15 +222,18 @@ save(
 )
 ```
 
-### Example 2: User asks to work with files
+### Example 2: User asks to use an MCP tool
 **User**: "Read my README.md file and suggest improvements"
 
 **You**: "Let me read your README file..."
 
 ```python
+# Use whatever file reading tool is available from MCP
 content = read_file("/home/user/project/README.md")
 # Then provide feedback based on content
 ```
+
+*Note: The specific tool name depends on what MCP servers are configured. Check your available tools.*
 
 ### Example 3: User mentions a TODO
 **User**: "I need to remember to update the docs after I finish the API"

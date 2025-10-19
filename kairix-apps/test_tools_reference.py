@@ -34,8 +34,9 @@ try:
             ("Notebook Tools", "Notebook section"),
             ("MCP (Model Context Protocol) Tools", "MCP section"),
             ("save(title: str", "save function signature"),
-            ("read_file(path: str)", "read_file function signature"),
+            ("dynamically configured", "MCP dynamic configuration explanation"),
             ("Tool Usage Philosophy", "Philosophy section"),
+            ("What are MCP Tools?", "MCP explanation section"),
         ]
 
         for text, name in checks:
