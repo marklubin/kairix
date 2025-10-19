@@ -69,10 +69,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         import subprocess
         from pathlib import Path
 
-        mcp_config_path = Path(__file__).parent.parent / "mcp_config.json"
+        mcp_config_path = Path(__file__).parent.parent.parent / "mcp_config.json"
         if mcp_config_path.exists():
             logger.info("Validating MCP server configuration...")
-            validate_script = Path(__file__).parent.parent / "validate_mcp_servers.py"
+            validate_script = Path(__file__).parent.parent.parent / "validate_mcp_servers.py"
 
             result = subprocess.run(
                 ["python", str(validate_script)],
