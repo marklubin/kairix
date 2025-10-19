@@ -85,10 +85,19 @@ class MCPEzManager:
 
     def _build_image(self) -> None:
         """Build MCPEz container image."""
-        # Check if image already exists
+        # Check if image already exists (check both mcpez:latest and localhost/mcpez:latest for Podman)
         exitcode, stdout, stderr = self._run_command([
             self.runtime, "images", "-q", MCPEZ_IMAGE
         ])
+
+        # Also check for localhost-prefixed name (Podman adds this prefix)
+        if exitcode == 0 and not stdout.strip():
+            exitcode2, stdout2, stderr2 = self._run_command([
+                self.runtime, "images", "-q", f"localhost/{MCPEZ_IMAGE}"
+            ])
+            if exitcode2 == 0 and stdout2.strip():
+                logger.info(f"MCPEz container image already exists: localhost/{MCPEZ_IMAGE}")
+                return
 
         if exitcode == 0 and stdout.strip():
             logger.info(f"MCPEz container image already exists: {MCPEZ_IMAGE}")
