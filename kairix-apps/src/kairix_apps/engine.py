@@ -93,8 +93,8 @@ class KairixEngine:
 
         notebook = Notebook()
 
-        # Include MCP filesystem server for tool access
-        mcp_servers_list = [agent_runtime.mcp_server] if agent_runtime.mcp_server else []
+        # Include MCP servers from config file for tool access
+        mcp_servers_list = agent_runtime.mcp_servers
         logger.info(f"Configured {len(mcp_servers_list)} MCP server(s) for conversational agent")
 
         # Load system prompt from database
