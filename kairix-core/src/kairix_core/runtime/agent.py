@@ -5,7 +5,9 @@ inference providers, and execution environments. It supports multiple providers
 (OpenAI, Ollama, llama.cpp) and handles both sync and async execution modes.
 """
 
+import json
 import os
+from pathlib import Path
 from agents import (
     Agent,
     ModelProvider,
@@ -17,7 +19,7 @@ from agents import (
     set_default_openai_api,
     set_tracing_disabled,
 )
-from agents.mcp.server import MCPServerSse, MCPServerSseParams
+from agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStdioParams
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 
 from kairix_core.configuration.agent import configuration_sets, provider_mappings
@@ -78,17 +80,33 @@ class AgentRuntime:
         if self.model_provider.provider_map is not None:
             self.model_provider.provider_map.set_mapping(available_provider_mappings)
 
-        # Connect to MCPEz aggregator via SSE
-        # MCPEz manages all MCP servers (filesystem, weather, etc.) via its web UI
-        mcpez_url = os.getenv("KAIRIX_MCPEZ_URL", "http://localhost:8088")
-        app_id = os.getenv("KAIRIX_MCP_APP_ID", "kairix-agent")
-        sse_endpoint = f"{mcpez_url}/mcp/{app_id}/sse"
+        # Load MCP servers from config file
+        self.mcp_servers: list[MCPServer] = []
+        mcp_config_path = Path(os.getenv("KAIRIX_MCP_CONFIG_PATH", "mcp_config.json"))
 
-        sse_params: MCPServerSseParams = MCPServerSseParams(url=sse_endpoint)
-        self.mcp_server = MCPServerSse(params=sse_params)
+        if mcp_config_path.exists():
+            logger.info(f"Loading MCP configuration from: {mcp_config_path}")
+            try:
+                with open(mcp_config_path) as f:
+                    mcp_config = json.load(f)
 
-        logger.info(f"MCP server configured: {sse_endpoint}")
-        logger.info(f"Configure MCP servers at: {mcpez_url}")
+                for server_name, server_config in mcp_config.get("mcpServers", {}).items():
+                    command = server_config["command"]
+                    args = server_config.get("args", [])
+                    env = server_config.get("env")
+
+                    params = MCPServerStdioParams(command=command, args=args, env=env)
+                    mcp_server = MCPServerStdio(params=params)
+                    self.mcp_servers.append(mcp_server)
+
+                    logger.info(f"Configured MCP server: {server_name} ({command})")
+
+                logger.info(f"Loaded {len(self.mcp_servers)} MCP server(s)")
+            except Exception as e:
+                logger.error(f"Failed to load MCP configuration: {e}")
+                raise
+        else:
+            logger.warning(f"No MCP config found at {mcp_config_path}")
 
     def _get_agent_config(self, agent: Agent) -> AgentConfig:
         """Get configuration for a specific agent.
