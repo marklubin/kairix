@@ -1,5 +1,6 @@
-"""MCPEz Docker container manager for Kairix."""
+"""MCPEz Docker/Podman container manager for Kairix."""
 import asyncio
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -14,7 +15,7 @@ MCPEZ_CONTAINER = "kairix-mcpez"
 
 
 class MCPEzManager:
-    """Manages the MCPEz Docker container lifecycle."""
+    """Manages the MCPEz Docker/Podman container lifecycle."""
 
     def __init__(self, port: int = 8088, data_dir: Optional[Path] = None):
         """Initialize MCPEz manager.
@@ -29,6 +30,26 @@ class MCPEzManager:
 
         self.repo_dir = self.data_dir / "repo"
         self.container_name = MCPEZ_CONTAINER
+
+        # Auto-detect container runtime (docker or podman)
+        self.runtime = self._detect_container_runtime()
+        logger.info(f"Using container runtime: {self.runtime}")
+
+    def _detect_container_runtime(self) -> str:
+        """Detect which container runtime is available.
+
+        Returns:
+            "docker" or "podman"
+
+        Raises:
+            RuntimeError: If neither docker nor podman is available
+        """
+        if shutil.which("docker"):
+            return "docker"
+        elif shutil.which("podman"):
+            return "podman"
+        else:
+            raise RuntimeError("Neither docker nor podman is installed. Please install one to use MCPEz.")
 
     def _run_command(self, cmd: list[str], cwd: Optional[Path] = None) -> tuple[int, str, str]:
         """Run a shell command and return exit code, stdout, stderr."""
@@ -63,31 +84,31 @@ class MCPEzManager:
         logger.info("MCPEz repository cloned successfully")
 
     def _build_image(self) -> None:
-        """Build MCPEz Docker image."""
+        """Build MCPEz container image."""
         # Check if image already exists
         exitcode, stdout, stderr = self._run_command([
-            "docker", "images", "-q", MCPEZ_IMAGE
+            self.runtime, "images", "-q", MCPEZ_IMAGE
         ])
 
         if exitcode == 0 and stdout.strip():
-            logger.info(f"MCPEz Docker image already exists: {MCPEZ_IMAGE}")
+            logger.info(f"MCPEz container image already exists: {MCPEZ_IMAGE}")
             return
 
-        logger.info("Building MCPEz Docker image...")
+        logger.info(f"Building MCPEz container image with {self.runtime}...")
         exitcode, stdout, stderr = self._run_command([
-            "docker", "build", "-t", MCPEZ_IMAGE, "."
+            self.runtime, "build", "-f", "dockerfile", "-t", MCPEZ_IMAGE, "."
         ], cwd=self.repo_dir)
 
         if exitcode != 0:
-            logger.error(f"Failed to build Docker image: {stderr}")
-            raise RuntimeError(f"Failed to build MCPEz Docker image: {stderr}")
+            logger.error(f"Failed to build container image: {stderr}")
+            raise RuntimeError(f"Failed to build MCPEz container image: {stderr}")
 
-        logger.info("MCPEz Docker image built successfully")
+        logger.info("MCPEz container image built successfully")
 
     def _is_container_running(self) -> bool:
         """Check if the MCPEz container is running."""
         exitcode, stdout, stderr = self._run_command([
-            "docker", "ps", "-q", "-f", f"name={self.container_name}"
+            self.runtime, "ps", "-q", "-f", f"name={self.container_name}"
         ])
 
         return exitcode == 0 and bool(stdout.strip())
@@ -96,16 +117,16 @@ class MCPEzManager:
         """Stop and remove existing container if it exists."""
         # Check if container exists (running or stopped)
         exitcode, stdout, stderr = self._run_command([
-            "docker", "ps", "-a", "-q", "-f", f"name={self.container_name}"
+            self.runtime, "ps", "-a", "-q", "-f", f"name={self.container_name}"
         ])
 
         if exitcode == 0 and stdout.strip():
             logger.info(f"Stopping existing container: {self.container_name}")
-            self._run_command(["docker", "stop", self.container_name])
-            self._run_command(["docker", "rm", self.container_name])
+            self._run_command([self.runtime, "stop", self.container_name])
+            self._run_command([self.runtime, "rm", self.container_name])
 
     async def start(self) -> None:
-        """Start MCPEz Docker container."""
+        """Start MCPEz container."""
         if self._is_container_running():
             logger.warning("MCPEz is already running")
             return
@@ -121,7 +142,7 @@ class MCPEzManager:
 
         # Start the container
         cmd = [
-            "docker", "run",
+            self.runtime, "run",
             "-d",  # Detached mode
             "-p", f"{self.port}:80",  # Map port
             "--name", self.container_name,
@@ -143,7 +164,7 @@ class MCPEzManager:
         if not self._is_container_running():
             # Check logs for error
             exitcode, stdout, stderr = self._run_command([
-                "docker", "logs", self.container_name
+                self.runtime, "logs", self.container_name
             ])
             logger.error(f"Container failed to start. Logs: {stdout}\n{stderr}")
             raise RuntimeError("MCPEz container terminated immediately after start")
@@ -151,7 +172,7 @@ class MCPEzManager:
         logger.info(f"MCPEz started successfully at http://localhost:{self.port}")
 
     async def stop(self) -> None:
-        """Stop MCPEz Docker container."""
+        """Stop MCPEz container."""
         if not self._is_container_running():
             logger.warning("MCPEz is not running")
             return
@@ -159,7 +180,7 @@ class MCPEzManager:
         logger.info("Stopping MCPEz container")
 
         exitcode, stdout, stderr = self._run_command([
-            "docker", "stop", self.container_name
+            self.runtime, "stop", self.container_name
         ])
 
         if exitcode != 0:

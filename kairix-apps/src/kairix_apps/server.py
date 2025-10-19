@@ -67,16 +67,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         logger.info("Starting Kairix API server...")
 
-        # Try to start MCPEz manager (optional - server continues without it)
-        try:
-            from kairix_apps.mcpez_manager import MCPEzManager
-            mcpez_manager = MCPEzManager(port=8088)
-            await mcpez_manager.start()
-            logger.info(f"MCPEz started successfully at {mcpez_manager.get_web_ui_url()}")
-        except Exception as mcpez_error:
-            logger.warning(f"MCPEz not available, continuing without MCP aggregator: {mcpez_error}")
-            logger.warning("MCP tools will not be available. Install Docker/Podman to enable MCPEz.")
-            mcpez_manager = None
+        # Initialize MCPEz manager and start it (required for server startup)
+        from kairix_apps.mcpez_manager import MCPEzManager
+        mcpez_manager = MCPEzManager(port=8088)
+        await mcpez_manager.start()
+        logger.info(f"MCPEz started successfully at {mcpez_manager.get_web_ui_url()}")
 
         # Initialize model manager
         from kairix_apps.model_manager import ModelManager
