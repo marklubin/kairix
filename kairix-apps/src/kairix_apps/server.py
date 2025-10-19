@@ -124,31 +124,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         from kairix_apps.engine import KairixEngine
 
-        # Try to start MCP server, but don't fail if it's not available
-        mcp_context = None
-        try:
-            mcp_context = agent_runtime.mcp_server
-            await mcp_context.__aenter__()
-            logger.info("MCP server context entered")
-        except Exception as mcp_error:
-            logger.warning(f"MCP server not available, continuing without it: {mcp_error}")
+        # Create persona using KairixEngine
+        persona = KairixEngine.conversational_persona_for_environment()
+        logger.info("Persona created successfully")
 
-        try:
-            # Create persona using KairixEngine
-            persona = KairixEngine.conversational_persona_for_environment()
-            logger.info("Persona created successfully")
+        # Create adapter
+        adapter = OpenAIAdapter(persona)
+        logger.info("OpenAI adapter initialized successfully")
 
-            # Create adapter
-            adapter = OpenAIAdapter(persona)
-            logger.info("OpenAI adapter initialized successfully")
-
-            yield
-        finally:
-            if mcp_context:
-                try:
-                    await mcp_context.__aexit__(None, None, None)
-                except Exception as e:
-                    logger.warning(f"Error closing MCP context: {e}")
+        yield
 
     except Exception as e:
         logger.error(f"Failed to initialize server: {e}", exc_info=True)
