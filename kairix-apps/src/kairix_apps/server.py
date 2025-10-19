@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
     from kairix_apps.model_manager import ModelManager
     from kairix_apps.prompt_manager import SystemPromptManager
-    from kairix_apps.mcpez_manager import MCPEzManager
 
 logging_runtime = LoggingRuntime()
 logger = logging_runtime.logger
@@ -38,7 +37,6 @@ adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
 model_manager: "ModelManager | None" = None
 prompt_manager: "SystemPromptManager | None" = None
-mcpez_manager: "MCPEzManager | None" = None
 
 # Container specific configurations
 port: int = int(get_or_raise("KAIRIX_SERVER_PORT"))
@@ -62,16 +60,34 @@ async def verify_api_key(x_api_key: str = Header(...)) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialize and cleanup resources."""
-    global adapter, persona, model_manager, prompt_manager, mcpez_manager
+    global adapter, persona, model_manager, prompt_manager
 
     try:
         logger.info("Starting Kairix API server...")
 
-        # Initialize MCPEz manager and start it (required for server startup)
-        from kairix_apps.mcpez_manager import MCPEzManager
-        mcpez_manager = MCPEzManager(port=8088)
-        await mcpez_manager.start()
-        logger.info(f"MCPEz started successfully at {mcpez_manager.get_web_ui_url()}")
+        # Validate MCP servers (required for server startup)
+        import subprocess
+        from pathlib import Path
+
+        mcp_config_path = Path(__file__).parent.parent / "mcp_config.json"
+        if mcp_config_path.exists():
+            logger.info("Validating MCP server configuration...")
+            validate_script = Path(__file__).parent.parent / "validate_mcp_servers.py"
+
+            result = subprocess.run(
+                ["python", str(validate_script)],
+                cwd=str(validate_script.parent),
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                logger.error(f"MCP validation failed:\n{result.stdout}\n{result.stderr}")
+                raise RuntimeError("MCP server validation failed. Server cannot start.")
+
+            logger.info("MCP servers validated successfully")
+        else:
+            logger.warning(f"No MCP config found at {mcp_config_path}, skipping validation")
 
         # Initialize model manager
         from kairix_apps.model_manager import ModelManager
@@ -128,13 +144,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
             yield
         finally:
-            # Stop MCPEz
-            if mcpez_manager:
-                try:
-                    await mcpez_manager.stop()
-                except Exception as e:
-                    logger.warning(f"Error stopping MCPEz: {e}")
-
             if mcp_context:
                 try:
                     await mcp_context.__aexit__(None, None, None)
@@ -301,14 +310,6 @@ async def admin_panel():
 async def admin_info():
     """Get server information for admin panel."""
     current_model = model_manager.get_selected_model() if model_manager else "Unknown"
-    mcpez_status = "offline"
-    mcpez_url = None
-
-    if mcpez_manager:
-        is_healthy = await mcpez_manager.health_check()
-        mcpez_status = "online" if is_healthy else "offline"
-        if is_healthy:
-            mcpez_url = mcpez_manager.get_web_ui_url()
 
     return {
         "status": "online",
@@ -317,9 +318,7 @@ async def admin_info():
         "port": port,
         "adapter_initialized": adapter is not None,
         "persona_initialized": persona is not None,
-        "current_model": current_model,
-        "mcpez_status": mcpez_status,
-        "mcpez_url": mcpez_url
+        "current_model": current_model
     }
 
 

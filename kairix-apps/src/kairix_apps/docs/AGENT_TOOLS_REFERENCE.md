@@ -69,11 +69,11 @@ for note in todos:
 
 ## MCP (Model Context Protocol) Tools
 
-MCP tools provide access to external systems and services through standardized interfaces. These tools are **dynamically configured** via MCPEz and will vary based on what servers are set up.
+MCP tools provide access to external systems and services through standardized interfaces. These tools are **dynamically configured** via the MCP configuration file and will vary based on what servers are set up.
 
 ### What are MCP Tools?
 
-MCP tools come from **MCP servers** that are configured in the MCPEz web UI (http://localhost:8088). Each MCP server provides a set of tools for a specific domain:
+MCP tools come from **MCP servers** that are configured in `mcp_config.json`. Each MCP server provides a set of tools for a specific domain:
 
 - **Filesystem servers**: File operations (read, write, list, search files)
 - **Weather servers**: Get weather data and forecasts
@@ -86,7 +86,7 @@ MCP tools come from **MCP servers** that are configured in the MCPEz web UI (htt
 
 **1. Discover Available Tools**
 
-You can see what MCP tools are available by checking your tool list. The available tools change based on MCPEz configuration - admins can add or remove servers without redeploying you.
+You can see what MCP tools are available by checking your tool list. The available tools change based on MCP configuration - admins can add or remove servers in `mcp_config.json` without redeploying you.
 
 **2. Read Tool Descriptions**
 
@@ -157,17 +157,17 @@ When MCP tools fail, you'll receive error messages. Common patterns:
 
 **How to handle errors:**
 - Explain the error in plain language
-- Suggest what the user can do (check path, configure MCPEz, grant permissions, etc.)
+- Suggest what the user can do (check path, update MCP config, grant permissions, etc.)
 - Don't show raw error messages unless technically necessary
 - Offer alternatives when possible
 
 ### Checking MCP Status
 
 If MCP tools aren't working or you get unexpected errors:
-1. MCP servers are configured in MCPEz web UI at http://localhost:8088
-2. Admins can add/remove/restart servers without redeploying you
-3. Suggest user check MCPEz configuration
-4. Or check admin panel at /admin for MCP status
+1. MCP servers are configured in `mcp_config.json`
+2. Admins can add/remove/restart servers by editing the config file
+3. Suggest user check the MCP configuration file
+4. Check admin panel at /admin for server status
 5. The available tools you see are what's currently configured
 
 ---
@@ -263,9 +263,9 @@ project_notes = search_by_tag("project")
 ## Tool Availability
 
 - **Notebook tools**: Always available
-- **MCP tools**: Available when MCPEz is configured
-  - Check admin panel at /admin for MCP status
-  - New tools can be added via MCPEz web UI without code changes
-  - Configure at: http://localhost:8088 (default)
+- **MCP tools**: Available when MCP servers are configured
+  - Check admin panel at /admin for server status
+  - New tools can be added via `mcp_config.json` without code changes
+  - Configuration file: `mcp_config.json` in the project root
 
-If MCP tools aren't working, inform the user and suggest checking the MCPEz configuration.
+If MCP tools aren't working, inform the user and suggest checking the MCP configuration file.
