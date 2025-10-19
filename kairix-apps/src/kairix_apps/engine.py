@@ -116,6 +116,16 @@ class KairixEngine:
         # Format the prompt with actual names
         instructions = prompt_template.format(agent_name=persona_name, user_name=user_name)
 
+        # Append tools reference documentation
+        from pathlib import Path
+        tools_ref_path = Path(__file__).parent / "docs" / "AGENT_TOOLS_REFERENCE.md"
+        if tools_ref_path.exists():
+            tools_reference = tools_ref_path.read_text()
+            instructions = f"{instructions}\n\n---\n\n{tools_reference}"
+            logger.info("Appended tools reference to system prompt")
+        else:
+            logger.warning(f"Tools reference not found at {tools_ref_path}")
+
         conversational_agent: K_Agent = Agent(
             name="conversationalist",
             instructions=instructions,
