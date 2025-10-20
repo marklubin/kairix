@@ -59,7 +59,7 @@ def get_note_content(title: str) -> str:
 
 
 @function_tool
-def save(title: str, content: str, tags: Optional[set[str]] = None) -> None:
+def save(title: str, content: str, tags: Optional[set[str]] = None) -> str:
     """Save a note with given title, content, and tags."""
     logger.info(f"[AGENT_NOTEBOOK] Persona saving to notebook: {title}")
     tags = tags or set()
@@ -70,6 +70,7 @@ def save(title: str, content: str, tags: Optional[set[str]] = None) -> None:
         note.content = content
         note.tags.update(tags)
         note.modified_at = datetime.now()
+        action = "updated"
     else:
         logger.info("[AGENT_NOTEBOOK] Creating new note.")
         note = Note(
@@ -80,8 +81,10 @@ def save(title: str, content: str, tags: Optional[set[str]] = None) -> None:
             tags=tags
         )
         _notebook[title] = note
+        action = "created"
 
     logger.info(f"[AGENT_NOTEBOOK] Saved note for {title}, Note was:\n {note}")
+    return f"Successfully {action} note '{title}'"
 
 
 @function_tool
