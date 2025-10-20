@@ -17,6 +17,7 @@ from kairix_core.api.models import CreateChatCompletionRequest, Model
 from kairix_core.cognition import ConversationalPersona
 from kairix_core.runtime.agent import AgentRuntime
 from kairix_core.runtime.logging import LoggingRuntime
+from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.environmental_context import PersonaEnvironment
 from kairix_core.util.utils import get_or_raise
 from typing_extensions import Any
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
 logging_runtime = LoggingRuntime()
 logger = logging_runtime.logger
 agent_runtime = AgentRuntime()
+storage_runtime = StorageRuntime()
 
 # Global instances
 adapter: OpenAIAdapter | None = None
@@ -535,6 +537,123 @@ async def generate_prompt(requirements: str = Form(...)):
 
     except Exception as e:
         logger.error(f"Error generating prompt: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/admin/reflections")
+async def get_reflections(
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 100,
+    offset: int = 0
+):
+    """Get all reflective summaries with optional date filtering."""
+    if not storage_runtime:
+        raise HTTPException(status_code=500, detail="Storage runtime not initialized")
+
+    try:
+        from kairix_core.types.db import MemoryShard, Agent
+        from datetime import datetime as dt
+
+        with storage_runtime.session() as session:
+            # Query memory shards
+            query = session.query(MemoryShard).join(Agent)
+
+            # Apply date filters if provided
+            if start_date:
+                start_dt = dt.fromisoformat(start_date)
+                query = query.filter(MemoryShard.created_at >= start_dt)
+
+            if end_date:
+                end_dt = dt.fromisoformat(end_date)
+                query = query.filter(MemoryShard.created_at <= end_dt)
+
+            # Order by most recent first
+            query = query.order_by(MemoryShard.created_at.desc())
+
+            # Apply pagination
+            total = query.count()
+            shards = query.offset(offset).limit(limit).all()
+
+            # Format results
+            results = []
+            for shard in shards:
+                results.append({
+                    "id": shard.id,
+                    "contents": shard.contents,
+                    "created_at": shard.created_at.isoformat(),
+                    "agent_name": shard.agent.name if shard.agent else "Unknown"
+                })
+
+            return {
+                "reflections": results,
+                "total": total,
+                "limit": limit,
+                "offset": offset
+            }
+
+    except Exception as e:
+        logger.error(f"Error fetching reflections: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/admin/reflections/search")
+async def search_reflections(
+    query: str = Form(...),
+    limit: int = Form(10)
+):
+    """Search reflective summaries using vector similarity."""
+    if not storage_runtime:
+        raise HTTPException(status_code=500, detail="Storage runtime not initialized")
+
+    if not persona:
+        raise HTTPException(status_code=500, detail="Persona not initialized")
+
+    try:
+        from kairix_core.types.db import MemoryShard, Agent
+        from kairix_core.embedding.nomic import NomicEmbedding
+        import numpy as np
+
+        # Generate embedding for the search query
+        embedder = NomicEmbedding()
+        query_embedding = embedder.encode(query).tolist()
+
+        with storage_runtime.session() as session:
+            # Get all memory shards
+            shards = session.query(MemoryShard).join(Agent).all()
+
+            # Calculate cosine similarity for each shard
+            results = []
+            for shard in shards:
+                # Convert stored embedding to numpy array
+                shard_embedding = np.array(shard.embedding)
+                query_vec = np.array(query_embedding)
+
+                # Calculate cosine similarity
+                similarity = np.dot(shard_embedding, query_vec) / (
+                    np.linalg.norm(shard_embedding) * np.linalg.norm(query_vec)
+                )
+
+                results.append({
+                    "id": shard.id,
+                    "contents": shard.contents,
+                    "created_at": shard.created_at.isoformat(),
+                    "agent_name": shard.agent.name if shard.agent else "Unknown",
+                    "similarity": float(similarity)
+                })
+
+            # Sort by similarity (highest first)
+            results.sort(key=lambda x: x["similarity"], reverse=True)
+
+            # Return top results
+            return {
+                "results": results[:limit],
+                "query": query,
+                "total_searched": len(shards)
+            }
+
+    except Exception as e:
+        logger.error(f"Error searching reflections: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

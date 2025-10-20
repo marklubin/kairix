@@ -167,6 +167,41 @@
             max-height: 300px;
             overflow-y: auto;
         }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+            margin: 0;
+            width: auto;
+        }
+        .tab:hover {
+            color: #667eea;
+            transform: none;
+            box-shadow: none;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -174,7 +209,17 @@
         <h1>🤖 Kairix Admin Panel</h1>
         <p class="subtitle">Server Management & Testing Interface</p>
 
-        <div class="info-section">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('info')">📊 Server Info</button>
+            <button class="tab" onclick="switchTab('models')">🤖 Models</button>
+            <button class="tab" onclick="switchTab('prompts')">📝 Prompts</button>
+            <button class="tab" onclick="switchTab('reflections')">💭 Reflections</button>
+            <button class="tab" onclick="switchTab('test')">🧪 Test Chat</button>
+        </div>
+
+        <div id="tab-info" class="tab-content active">
+            <h2>Server Information</h2>
+            <div class="info-section">
             <div class="info-row">
                 <span class="info-label">Server Status</span>
                 <span class="info-value"><span class="status-badge status-online">● Online</span></span>
@@ -204,8 +249,9 @@
                 <span class="info-value"><a id="mcpez-url" href="#" target="_blank" style="color: #667eea;">Open UI</a></span>
             </div>
         </div>
+        </div>
 
-        <div class="form-section">
+        <div id="tab-models" class="tab-content">
             <h2>Select Model</h2>
             <form id="model-form">
                 <div class="form-group">
@@ -219,7 +265,7 @@
             <div id="model-response" class="response"></div>
         </div>
 
-        <div class="form-section">
+        <div id="tab-prompts" class="tab-content">
             <h2>System Prompt Configuration</h2>
             <form id="prompt-form">
                 <div class="form-group">
@@ -267,7 +313,35 @@
             </div>
         </div>
 
-        <div class="form-section">
+        <div id="tab-reflections" class="tab-content">
+            <h2>Reflective Summaries</h2>
+
+            <div class="form-group">
+                <label for="search-query">Search Reflections (Vector Similarity)</label>
+                <input type="text" id="search-query" placeholder="Enter search query...">
+                <button type="button" onclick="searchReflections()" style="margin-top: 10px;">🔍 Search</button>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="start-date">Start Date</label>
+                    <input type="date" id="start-date">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="end-date">End Date</label>
+                    <input type="date" id="end-date">
+                </div>
+            </div>
+
+            <button type="button" onclick="loadReflections()" style="margin-top: 10px;">📅 Filter by Date</button>
+            <button type="button" onclick="clearFilters()" class="secondary" style="margin-top: 10px;">Clear Filters</button>
+
+            <div id="reflections-list" style="margin-top: 30px;">
+                <p style="color: #666;">Loading reflections...</p>
+            </div>
+        </div>
+
+        <div id="tab-test" class="tab-content">
             <h2>Test Chat Completion</h2>
             <form id="chat-form">
                 <div class="form-group">
@@ -285,6 +359,27 @@
 
         // Get the API base path - use /api/ for production (served via reverse proxy)
         const API_BASE = window.location.hostname === 'localhost' ? '' : '/api';
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Remove active from all tab buttons
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+            // Mark button as active
+            event.target.classList.add('active');
+
+            // Load data when switching to reflections tab
+            if (tabName === 'reflections') {
+                loadReflections();
+            }
+        }
 
         // Load server info
         function loadServerInfo() {
@@ -367,10 +462,93 @@
             document.getElementById('prompt-preview').textContent = content;
         });
 
+        // Load reflections
+        function loadReflections() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            let url = `${API_BASE}/admin/reflections?limit=50`;
+            if (startDate) url += `&start_date=${startDate}T00:00:00`;
+            if (endDate) url += `&end_date=${endDate}T23:59:59`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    displayReflections(data.reflections, `Showing ${data.reflections.length} of ${data.total} reflections`);
+                })
+                .catch(err => {
+                    console.error('Error loading reflections:', err);
+                    document.getElementById('reflections-list').innerHTML = '<p style="color: red;">Error loading reflections: ' + err.message + '</p>';
+                });
+        }
+
+        function searchReflections() {
+            const query = document.getElementById('search-query').value;
+            if (!query.trim()) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('query', query);
+            formData.append('limit', '20');
+
+            fetch(`${API_BASE}/admin/reflections/search`, {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const title = `Search results for "${data.query}" (searched ${data.total_searched} reflections)`;
+                    displayReflections(data.results, title, true);
+                })
+                .catch(err => {
+                    console.error('Error searching reflections:', err);
+                    document.getElementById('reflections-list').innerHTML = '<p style="color: red;">Error searching: ' + err.message + '</p>';
+                });
+        }
+
+        function displayReflections(reflections, title, showSimilarity = false) {
+            const container = document.getElementById('reflections-list');
+
+            if (!reflections || reflections.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No reflections found.</p>';
+                return;
+            }
+
+            let html = `<h3 style="color: #333; margin-bottom: 15px;">${title}</h3>`;
+
+            reflections.forEach(reflection => {
+                const date = new Date(reflection.created_at).toLocaleString();
+                const similarity = showSimilarity ? `<div style="margin-top: 5px;"><strong>Similarity:</strong> ${(reflection.similarity * 100).toFixed(1)}%</div>` : '';
+
+                html += `
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #667eea;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="font-size: 12px; color: #888;">📅 ${date}</span>
+                            <span style="font-size: 12px; color: #888;">🤖 ${reflection.agent_name}</span>
+                        </div>
+                        ${similarity}
+                        <div style="margin-top: 15px; color: #333; line-height: 1.6; white-space: pre-wrap;">${reflection.contents}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function clearFilters() {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.getElementById('search-query').value = '';
+            loadReflections();
+        }
+
         // Initial load
         loadServerInfo();
         loadModels();
         loadPrompts();
+        // Reflections load when tab is opened
 
         // Handle model selection form submission
         document.getElementById('model-form').addEventListener('submit', async (e) => {
