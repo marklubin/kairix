@@ -9,7 +9,7 @@ from typing import AsyncIterator
 
 from .conversational import ConversationalPersona
 from kairix_core.types.cognition import Stimulus
-from .notebook import Notebook
+from . import notebook
 
 class Persona(ABC):
     """Abstract base class for agent personas.
@@ -31,4 +31,4 @@ class Persona(ABC):
         pass
 
 
-__all__ = ["ConversationalPersona", "Persona", "Notebook"]
+__all__ = ["ConversationalPersona", "Persona", "notebook"]
