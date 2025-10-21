@@ -91,8 +91,6 @@ class KairixEngine:
             storage=storage_runtime
         )
 
-        notebook = Notebook()
-
         # Include MCP servers from config file for tool access
         mcp_servers_list = agent_runtime.mcp_servers
         logger.info(f"Configured {len(mcp_servers_list)} MCP server(s) for conversational agent")
