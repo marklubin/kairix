@@ -213,6 +213,7 @@
             <button class="tab active" onclick="switchTab('info')">📊 Server Info</button>
             <button class="tab" onclick="switchTab('models')">🤖 Models</button>
             <button class="tab" onclick="switchTab('prompts')">📝 Prompts</button>
+            <button class="tab" onclick="switchTab('mcp-tools')">🔧 MCP Tools</button>
             <button class="tab" onclick="switchTab('reflections')">💭 Reflections</button>
             <button class="tab" onclick="switchTab('test')">🧪 Test Chat</button>
         </div>
@@ -313,6 +314,31 @@
             </div>
         </div>
 
+        <div id="tab-mcp-tools" class="tab-content">
+            <h2>MCP Tools</h2>
+            <p class="subtitle">All registered MCP server tools and native agent tools</p>
+
+            <div id="mcp-tools-summary" class="info-section">
+                <div class="info-row">
+                    <span class="info-label">MCP Servers</span>
+                    <span class="info-value" id="mcp-servers-count">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Native Tools</span>
+                    <span class="info-value" id="native-tools-count">Loading...</span>
+                </div>
+            </div>
+
+            <div id="mcp-tools-list" style="margin-top: 30px;">
+                <p style="color: #666;">Loading MCP tools...</p>
+            </div>
+
+            <div id="native-tools-list" style="margin-top: 30px;">
+                <h3 style="color: #333; margin-bottom: 15px;">Native Agent Tools</h3>
+                <p style="color: #666;">Loading native tools...</p>
+            </div>
+        </div>
+
         <div id="tab-reflections" class="tab-content">
             <h2>Reflective Summaries</h2>
 
@@ -375,9 +401,11 @@
             // Mark button as active
             event.target.classList.add('active');
 
-            // Load data when switching to reflections tab
+            // Load data when switching tabs
             if (tabName === 'reflections') {
                 loadReflections();
+            } else if (tabName === 'mcp-tools') {
+                loadMCPTools();
             }
         }
 
@@ -542,6 +570,82 @@
             document.getElementById('end-date').value = '';
             document.getElementById('search-query').value = '';
             loadReflections();
+        }
+
+        // Load MCP tools
+        function loadMCPTools() {
+            fetch(`${API_BASE}/admin/mcp-tools`)
+                .then(res => res.json())
+                .then(data => {
+                    // Update summary counts
+                    document.getElementById('mcp-servers-count').textContent = data.total_mcp_servers || 0;
+                    document.getElementById('native-tools-count').textContent = data.total_native_tools || 0;
+
+                    // Display MCP tools by server
+                    const mcpToolsContainer = document.getElementById('mcp-tools-list');
+                    let mcpHtml = '<h3 style="color: #333; margin-bottom: 15px;">MCP Server Tools</h3>';
+
+                    if (Object.keys(data.mcp_tools).length === 0) {
+                        mcpHtml += '<p style="color: #666;">No MCP servers configured.</p>';
+                    } else {
+                        for (const [serverName, tools] of Object.entries(data.mcp_tools)) {
+                            mcpHtml += `
+                                <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                                    <h4 style="color: #333; margin-bottom: 15px; font-size: 18px;">🖥️ ${serverName}</h4>
+                                    <div style="color: #666; margin-bottom: 10px;">${tools.length} tool(s)</div>
+                            `;
+
+                            if (tools.length === 0) {
+                                mcpHtml += '<p style="color: #888; font-style: italic;">No tools available</p>';
+                            } else {
+                                tools.forEach(tool => {
+                                    mcpHtml += `
+                                        <div style="background: white; border-radius: 6px; padding: 15px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                                            <div style="font-weight: 600; color: #333; margin-bottom: 5px;">🔧 ${tool.name}</div>
+                                            <div style="color: #666; font-size: 14px; margin-bottom: 10px;">${tool.description}</div>
+                                            ${tool.input_schema && Object.keys(tool.input_schema).length > 0 ? `
+                                                <details style="margin-top: 10px;">
+                                                    <summary style="cursor: pointer; color: #667eea; font-size: 13px;">View Input Schema</summary>
+                                                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px; overflow-x: auto; font-size: 12px;">${JSON.stringify(tool.input_schema, null, 2)}</pre>
+                                                </details>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                });
+                            }
+
+                            mcpHtml += '</div>';
+                        }
+                    }
+
+                    mcpToolsContainer.innerHTML = mcpHtml;
+
+                    // Display native tools
+                    const nativeToolsContainer = document.getElementById('native-tools-list');
+                    let nativeHtml = '<h3 style="color: #333; margin-bottom: 15px;">Native Agent Tools</h3>';
+
+                    if (data.native_tools.length === 0) {
+                        nativeHtml += '<p style="color: #666;">No native tools registered.</p>';
+                    } else {
+                        nativeHtml += '<div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border-left: 4px solid #56ab2f;">';
+                        data.native_tools.forEach(tool => {
+                            nativeHtml += `
+                                <div style="background: white; border-radius: 6px; padding: 15px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                                    <div style="font-weight: 600; color: #333; margin-bottom: 5px;">⚙️ ${tool.name}</div>
+                                    <div style="color: #666; font-size: 14px;">${tool.description}</div>
+                                </div>
+                            `;
+                        });
+                        nativeHtml += '</div>';
+                    }
+
+                    nativeToolsContainer.innerHTML = nativeHtml;
+                })
+                .catch(err => {
+                    console.error('Error loading MCP tools:', err);
+                    document.getElementById('mcp-tools-list').innerHTML = '<p style="color: red;">Error loading MCP tools: ' + err.message + '</p>';
+                    document.getElementById('native-tools-list').innerHTML = '<p style="color: red;">Error loading native tools: ' + err.message + '</p>';
+                });
         }
 
         // Initial load

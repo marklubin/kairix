@@ -78,7 +78,7 @@ def test_manual_vectors():
     """, (query_binary,))
     
     results = cursor.fetchall()
-    logger.info(f"Search results (searching with vector similar to ID 1):")
+    logger.info("Search results (searching with vector similar to ID 1):")
     for id, distance in results:
         logger.info(f"  ID: {id}, Distance: {distance:.6f}")
     
@@ -101,7 +101,7 @@ def test_manual_vectors():
     """, (query_binary,))
     
     results = cursor.fetchall()
-    logger.info(f"All vectors after JSON insert:")
+    logger.info("All vectors after JSON insert:")
     for id, distance in results:
         logger.info(f"  ID: {id}, Distance: {distance:.6f}")
     
@@ -127,7 +127,7 @@ def test_manual_vectors():
     """, (sample_binary,))
     
     results = cursor.fetchall()
-    logger.info(f"Search with sample embedding:")
+    logger.info("Search with sample embedding:")
     for id, distance in results:
         logger.info(f"  ID: {id}, Distance: {distance:.6f}")
     

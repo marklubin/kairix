@@ -21,15 +21,15 @@ class LoggingRuntime:
         self.file_handler = None
         self.logger = logging.getLogger(logger_name)
 
-
-
         log_level = os.getenv("KAIRIX_LOG_LEVEL") or "DEBUG"
 
+        # Set up file handler first (if KAIRIX_USE_LOG_FILE is set)
+        self.setup_logfile()
 
         # Create a simple console handler with our format
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(logging.Formatter(fmt=LoggingRuntime.FORMAT, datefmt=LoggingRuntime.DTF))
-        
+
         handlers = [console_handler, self.file_handler] if self.file_handler else [console_handler]
 
         logging.basicConfig(

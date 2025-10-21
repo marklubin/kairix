@@ -12,10 +12,10 @@ Key Concepts:
 - Self-modification through versioned code perceptors
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 import inspect
 import importlib.util
 import hashlib

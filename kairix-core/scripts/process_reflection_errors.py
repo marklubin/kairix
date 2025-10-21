@@ -11,13 +11,10 @@ from doppler_client import inject_doppler_env
 from diskcache import FanoutCache
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-import json
-from datetime import datetime
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kairix_core.storage.persistence import MemoryShard, Agent
 from src.kairix_core.data_access.agent_dao import AgentDAO
 from src.kairix_core.data_access.memory_dao import MemoryDAO
 from src.kairix_core.integrations.litellm import get_embedder
@@ -70,7 +67,7 @@ def main():
             print(f"Processing summary for agent: {agent_name}")
             
             # Find or create agent
-            with Session(engine) as session:
+            with Session(engine):
                 db_agent = agent_dao.find_one_by(name=agent_name)
                 if not db_agent:
                     print(f"Creating new agent: {agent_name}")
@@ -80,7 +77,7 @@ def main():
             embedding = embedder.embed_text(summary_text)
             
             # Create memory shard
-            with Session(engine) as session:
+            with Session(engine):
                 memory_dao.create(
                     contents=summary_text,
                     embedding_type="kairix-default-768",
@@ -97,7 +94,7 @@ def main():
             print(f"Error processing key {key}: {str(e)}")
             errors += 1
     
-    print(f"\nBackfill complete:")
+    print("\nBackfill complete:")
     print(f"  Processed: {processed}")
     print(f"  Errors: {errors}")
     print(f"  Remaining in cache: {len(cache)}")

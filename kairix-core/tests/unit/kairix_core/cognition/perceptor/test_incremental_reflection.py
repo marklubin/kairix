@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, MagicMock, patch, AsyncMock
+from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 import numpy as np
 
@@ -143,7 +143,7 @@ class TestIncrementalReflectionPerceptor:
                 )
             
             # Run perception
-            result = await perceptor.perceive(messages)
+            await perceptor.perceive(messages)
             
             # Verify memory_dao.create was called with correct types
             mock_memory_dao.create.assert_called_once()

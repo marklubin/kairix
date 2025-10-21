@@ -335,7 +335,7 @@ class SelfModifyingAgent:
                 )
 
             # Apply modifications
-            current_files = self._snapshot_current_files()
+            self._snapshot_current_files()
 
             # Apply changes
             for file_path, new_content in proposal.code_changes.items():

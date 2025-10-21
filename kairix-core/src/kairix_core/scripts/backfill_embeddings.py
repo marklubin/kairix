@@ -18,7 +18,8 @@ if __name__ == "__main__":
             try:
                 embedding = embedder.encode(shard.contents).tolist()[0]
                 shard.embedding = embedding
-                if i % 10 == 0: logger.info(f"Progress: {i}/{len(shards)}")
+                if i % 10 == 0:
+                    logger.info(f"Progress: {i}/{len(shards)}")
             except Exception as e:
                 logger.error(f"Shard {shard.id}: {e}")
         

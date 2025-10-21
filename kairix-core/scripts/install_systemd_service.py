@@ -8,7 +8,7 @@ K_DIR = os.getenv("K_DIR")
 K_USR = os.getenv("K_USR")
 
 
-if not K_DIR or not K_USR
+if not K_DIR or not K_USR:
     print("Missing required env vars.")
     sys.exit(1)
 

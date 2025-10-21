@@ -80,15 +80,14 @@ class AgentRuntime:
         if self.model_provider.provider_map is not None:
             self.model_provider.provider_map.set_mapping(available_provider_mappings)
 
-        # Load MCP servers from config file
+        # Load MCP servers from MCP_CONFIG_JSON environment variable (Doppler-provided)
         self.mcp_servers: list[MCPServer] = []
-        mcp_config_path = Path(os.getenv("KAIRIX_MCP_CONFIG_PATH", "mcp_config.json"))
+        mcp_config_json = os.getenv("MCP_CONFIG_JSON")
 
-        if mcp_config_path.exists():
-            logger.info(f"Loading MCP configuration from: {mcp_config_path}")
+        if mcp_config_json:
+            logger.info("Loading MCP configuration from MCP_CONFIG_JSON environment variable")
             try:
-                with open(mcp_config_path) as f:
-                    mcp_config = json.load(f)
+                mcp_config = json.loads(mcp_config_json)
 
                 for server_name, server_config in mcp_config.get("mcpServers", {}).items():
                     command = server_config["command"]
@@ -106,7 +105,7 @@ class AgentRuntime:
                 logger.error(f"Failed to load MCP configuration: {e}")
                 raise
         else:
-            logger.warning(f"No MCP config found at {mcp_config_path}")
+            logger.warning("No MCP_CONFIG_JSON environment variable set")
 
     def _get_agent_config(self, agent: Agent) -> AgentConfig:
         """Get configuration for a specific agent.

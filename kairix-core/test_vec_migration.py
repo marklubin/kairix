@@ -224,7 +224,7 @@ class TestVecMigration:
             logger.info("✅ ALL TESTS PASSED! sqlite-vec migration successful!")
             logger.info("=" * 60)
             
-        except Exception as e:
+        except Exception:
             logger.error("\n" + "=" * 60)
             logger.error("❌ TEST FAILED!")
             logger.error("=" * 60)

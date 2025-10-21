@@ -657,6 +657,62 @@ async def search_reflections(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@app.get("/admin/mcp-tools")
+async def get_mcp_tools():
+    """Get all registered MCP tools from the persona."""
+    if not persona:
+        raise HTTPException(status_code=500, detail="Persona not initialized")
+
+    try:
+        # Get the actuating agent from persona
+        agent = persona.actuating_agent
+
+        # Collect all MCP tools grouped by server
+        mcp_tools_by_server = {}
+
+        if hasattr(agent, 'mcp_servers') and agent.mcp_servers:
+            for server in agent.mcp_servers:
+                server_name = server.name if hasattr(server, 'name') else str(server)
+
+                # Get tools from this server
+                if hasattr(server, 'list_tools'):
+                    try:
+                        tools_list = await server.list_tools()
+                        mcp_tools_by_server[server_name] = [
+                            {
+                                "name": tool.name if hasattr(tool, 'name') else str(tool),
+                                "description": tool.description if hasattr(tool, 'description') else "No description",
+                                "input_schema": tool.inputSchema if hasattr(tool, 'inputSchema') else {}
+                            }
+                            for tool in (tools_list.tools if hasattr(tools_list, 'tools') else tools_list)
+                        ]
+                    except Exception as e:
+                        logger.warning(f"Could not list tools for server {server_name}: {e}")
+                        mcp_tools_by_server[server_name] = []
+
+        # Also collect native tools
+        native_tools = []
+        if hasattr(agent, 'tools') and agent.tools:
+            for tool in agent.tools:
+                tool_name = tool.name if hasattr(tool, 'name') else str(tool)
+                tool_desc = tool.description if hasattr(tool, 'description') else "No description"
+                native_tools.append({
+                    "name": tool_name,
+                    "description": tool_desc
+                })
+
+        return {
+            "mcp_tools": mcp_tools_by_server,
+            "native_tools": native_tools,
+            "total_mcp_servers": len(mcp_tools_by_server),
+            "total_native_tools": len(native_tools)
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching MCP tools: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 if __name__ == "__main__":
     import uvicorn
 
