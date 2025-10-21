@@ -12,7 +12,7 @@ from kairix_core.cognition.perceptor.sqlite_conversation_history import (
     SQLiteConversationHistoryPerceptor,
 )
 from kairix_core.cognition.perceptor.summary_insight import SummaryInsightPerceptor
-from kairix_core.cognition.persona import ConversationalPersona, Notebook
+from kairix_core.cognition.persona import ConversationalPersona, notebook
 from kairix_core.cognition.stores.sqlite_embedded_data import create_memory_shard_store
 from kairix_core.embedding.nomic import NomicEmbedding
 from kairix_core.prompt import system_instructions
@@ -126,6 +126,14 @@ class KairixEngine:
         else:
             logger.warning(f"Tools reference not found at {tools_ref_path}")
 
+        # Append Agent Unconditional Context (if it exists)
+        unconditional_context = notebook.load_unconditional_context_for_system_prompt()
+        if unconditional_context:
+            instructions = f"{instructions}\n\n---\n\n# YOUR UNCONDITIONAL CONTEXT\n\n{unconditional_context}"
+            logger.info(f"Appended unconditional context to system prompt ({len(unconditional_context)} chars)")
+        else:
+            logger.info("No unconditional context found, skipping")
+
         conversational_agent: K_Agent = Agent(
             name="conversationalist",
             instructions=instructions,
@@ -136,7 +144,10 @@ class KairixEngine:
                 notebook.save,
                 notebook.get_note_content,
                 notebook.maybe_note,
-                notebook.search_by_tag
+                notebook.search_by_tag,
+                notebook.get_unconditional_context,
+                notebook.update_unconditional_context,
+                notebook.append_unconditional_context
             ]
 
         )
