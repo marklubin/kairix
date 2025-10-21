@@ -19,7 +19,13 @@ from agents import (
     set_default_openai_api,
     set_tracing_disabled,
 )
-from agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStdioParams
+from agents.mcp.server import (
+    MCPServer,
+    MCPServerStdio,
+    MCPServerStdioParams,
+    MCPServerStreamableHttp,
+    MCPServerStreamableHttpParams,
+)
 from agents.models.multi_provider import MultiProvider, MultiProviderMap
 
 from kairix_core.configuration.agent import configuration_sets, provider_mappings
@@ -90,15 +96,35 @@ class AgentRuntime:
                 mcp_config = json.loads(mcp_config_json)
 
                 for server_name, server_config in mcp_config.get("mcpServers", {}).items():
-                    command = server_config["command"]
-                    args = server_config.get("args", [])
-                    env = server_config.get("env")
+                    server_type = server_config.get("type", "stdio")
 
-                    params = MCPServerStdioParams(command=command, args=args, env=env)
-                    mcp_server = MCPServerStdio(params=params)
+                    if server_type == "http":
+                        # HTTP-based MCP server
+                        url = server_config.get("url")
+                        headers = server_config.get("headers", {})
+
+                        if not url:
+                            logger.error(f"HTTP MCP server '{server_name}' missing 'url' field")
+                            continue
+
+                        params = MCPServerStreamableHttpParams(url=url, headers=headers)
+                        mcp_server = MCPServerStreamableHttp(params=params)
+                        logger.info(f"Configured HTTP MCP server: {server_name} ({url})")
+                    else:
+                        # Stdio-based MCP server (default)
+                        command = server_config.get("command")
+                        args = server_config.get("args", [])
+                        env = server_config.get("env")
+
+                        if not command:
+                            logger.error(f"Stdio MCP server '{server_name}' missing 'command' field")
+                            continue
+
+                        params = MCPServerStdioParams(command=command, args=args, env=env)
+                        mcp_server = MCPServerStdio(params=params)
+                        logger.info(f"Configured stdio MCP server: {server_name} ({command})")
+
                     self.mcp_servers.append(mcp_server)
-
-                    logger.info(f"Configured MCP server: {server_name} ({command})")
 
                 logger.info(f"Loaded {len(self.mcp_servers)} MCP server(s)")
             except Exception as e:
