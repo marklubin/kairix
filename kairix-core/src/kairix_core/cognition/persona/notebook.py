@@ -137,6 +137,7 @@ def update_unconditional_context(content: str) -> str:
         note = _notebook[_UNCONDITIONAL_CONTEXT_KEY]
         note.content = content
         note.modified_at = datetime.now()
+        _notebook[_UNCONDITIONAL_CONTEXT_KEY] = note  # Save back to notebook
     else:
         note = Note(
             title=_UNCONDITIONAL_CONTEXT_KEY,
@@ -181,6 +182,7 @@ def append_unconditional_context(additional_content: str) -> str:
         note = _notebook[_UNCONDITIONAL_CONTEXT_KEY]
         note.content = new_content
         note.modified_at = datetime.now()
+        _notebook[_UNCONDITIONAL_CONTEXT_KEY] = note  # Save back to notebook
     else:
         note = Note(
             title=_UNCONDITIONAL_CONTEXT_KEY,
