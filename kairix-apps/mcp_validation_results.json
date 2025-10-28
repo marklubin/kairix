@@ -1,0 +1,17 @@
+[
+  {
+    "name": "filesystem",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-filesystem",
+      "/home/kairix"
+    ],
+    "description": "Access to filesystem operations",
+    "status": "error",
+    "tools": [],
+    "resources": [],
+    "prompts": [],
+    "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+  }
+]

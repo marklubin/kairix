@@ -29,6 +29,7 @@ class IncrementalReflectionPerceptor(Perceptor):
                  summarization_interval: int = 20):
         self.summarization_interval = summarization_interval
         self._pending_messages: list[str] = []
+        self._message_pair_count: int = 0  # Track message pairs instead of individual messages
         self.agent = agent
         self.runtime = runtime
         self.embedder = embedder
@@ -38,7 +39,7 @@ class IncrementalReflectionPerceptor(Perceptor):
     async def perceive(self, stimulus: Stimulus) -> List[Perception]:
         logger.info("In the incremental reflection perceptor.")
         logger.info(f"""
-                {len(self._pending_messages)} of {self.summarization_interval} into summarization interval.
+                {self._message_pair_count} message pairs of {self.summarization_interval} into summarization interval.
         """)
 
 
@@ -48,15 +49,18 @@ class IncrementalReflectionPerceptor(Perceptor):
         elif stimulus.type == StimulusType.self_perception:
             logger.info(_LOG_PREFIX)
             self._pending_messages.append(f"Assistant: {stimulus.content}")
+            # Increment pair count only after assistant response (completes the pair)
+            self._message_pair_count += 1
         else:
             logger.info(f"{__name__} not responding to stimulus, {stimulus.type}")
             return []
 
-        if len(self._pending_messages) >= self.summarization_interval:
+        if self._message_pair_count >= self.summarization_interval:
             logger.info("Hit summarization interval, starting new summarization task.")
 
             text_to_summarize = "\n".join(self._pending_messages)
             self._pending_messages = []
+            self._message_pair_count = 0  # Reset pair count after summarization
             label = f"incremental-reflection-v1.{self.agent.name}.{datetime.datetime.now(tz=utc)}"
 
             try:

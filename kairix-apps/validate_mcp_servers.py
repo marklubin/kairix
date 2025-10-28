@@ -12,8 +12,13 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
-async def validate_server(name: str, config: dict[str, Any]) -> dict[str, Any]:
+async def validate_server(name: str, config: dict[str, Any], timeout: int = 10) -> dict[str, Any]:
     """Validate a single MCP server.
+
+    Args:
+        name: Server name
+        config: Server configuration
+        timeout: Timeout in seconds for validation (default: 10)
 
     Returns:
         Dict with validation results including tools, resources, prompts, and any errors
@@ -38,55 +43,63 @@ async def validate_server(name: str, config: dict[str, Any]) -> dict[str, Any]:
             env=config.get("env")
         )
 
-        # Connect to the server
-        async with stdio_client(server_params) as (read, write):
-            async with ClientSession(read, write) as session:
-                # Initialize the session
-                await session.initialize()
+        # Wrap the entire validation in a timeout
+        async def validate_with_connection():
+            # Connect to the server
+            async with stdio_client(server_params) as (read, write):
+                async with ClientSession(read, write) as session:
+                    # Initialize the session
+                    await session.initialize()
 
-                # List available tools
-                tools_result = await session.list_tools()
-                result["tools"] = [
-                    {
-                        "name": tool.name,
-                        "description": tool.description or "",
-                        "inputSchema": tool.inputSchema
-                    }
-                    for tool in tools_result.tools
-                ]
-
-                # List available resources
-                try:
-                    resources_result = await session.list_resources()
-                    result["resources"] = [
+                    # List available tools
+                    tools_result = await session.list_tools()
+                    result["tools"] = [
                         {
-                            "uri": resource.uri,
-                            "name": resource.name,
-                            "description": resource.description or "",
-                            "mimeType": resource.mimeType
+                            "name": tool.name,
+                            "description": tool.description or "",
+                            "inputSchema": tool.inputSchema
                         }
-                        for resource in resources_result.resources
+                        for tool in tools_result.tools
                     ]
-                except Exception as e:
-                    # Some servers may not support resources
-                    result["resources"] = []
 
-                # List available prompts
-                try:
-                    prompts_result = await session.list_prompts()
-                    result["prompts"] = [
-                        {
-                            "name": prompt.name,
-                            "description": prompt.description or ""
-                        }
-                        for prompt in prompts_result.prompts
-                    ]
-                except Exception as e:
-                    # Some servers may not support prompts
-                    result["prompts"] = []
+                    # List available resources
+                    try:
+                        resources_result = await session.list_resources()
+                        result["resources"] = [
+                            {
+                                "uri": resource.uri,
+                                "name": resource.name,
+                                "description": resource.description or "",
+                                "mimeType": resource.mimeType
+                            }
+                            for resource in resources_result.resources
+                        ]
+                    except Exception as e:
+                        # Some servers may not support resources
+                        result["resources"] = []
 
-                result["status"] = "ok"
+                    # List available prompts
+                    try:
+                        prompts_result = await session.list_prompts()
+                        result["prompts"] = [
+                            {
+                                "name": prompt.name,
+                                "description": prompt.description or ""
+                            }
+                            for prompt in prompts_result.prompts
+                        ]
+                    except Exception as e:
+                        # Some servers may not support prompts
+                        result["prompts"] = []
 
+                    result["status"] = "ok"
+
+        # Run validation with timeout
+        await asyncio.wait_for(validate_with_connection(), timeout=timeout)
+
+    except asyncio.TimeoutError:
+        result["status"] = "error"
+        result["error"] = f"Validation timed out after {timeout} seconds"
     except Exception as e:
         result["status"] = "error"
         result["error"] = str(e)
