@@ -1,5 +1,6 @@
 """FastAPI server implementation for KairixEngine with OpenAI-compatible API."""
 import os
+import time
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["KAIRIX_APP_ID"] = "server"
@@ -20,12 +21,16 @@ from kairix_core.runtime.logging import LoggingRuntime
 from kairix_core.runtime.storage import StorageRuntime
 from kairix_core.types.environmental_context import PersonaEnvironment
 from kairix_core.util.utils import get_or_raise
+from starlette.middleware.base import BaseHTTPMiddleware
 from typing_extensions import Any
 
+from kairix_apps.db_wrapper import is_shadow_environment
 from kairix_apps.service_types import ContextUpdateRequest, ContextUpdateResponse
+from kairix_apps.telemetry_manager import TelemetryManager
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
+
     from kairix_apps.model_manager import ModelManager
     from kairix_apps.prompt_manager import SystemPromptManager
 
@@ -39,6 +44,7 @@ adapter: OpenAIAdapter | None = None
 persona: ConversationalPersona | None = None
 model_manager: "ModelManager | None" = None
 prompt_manager: "SystemPromptManager | None" = None
+telemetry_manager: TelemetryManager | None = None
 
 # Container specific configurations
 port: int = int(get_or_raise("KAIRIX_SERVER_PORT"))
@@ -59,13 +65,74 @@ async def verify_api_key(x_api_key: str = Header(...)) -> str:
     return x_api_key
 
 
+class TelemetryMiddleware(BaseHTTPMiddleware):
+    """Middleware to track request telemetry."""
+
+    async def dispatch(self, request: Request, call_next):
+        """Track request metrics."""
+        if telemetry_manager is None:
+            return await call_next(request)
+
+        # Extract client information
+        client_ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+
+        # Start tracking request
+        request_id = telemetry_manager.start_request(
+            endpoint=str(request.url.path),
+            method=request.method,
+            client_ip=client_ip,
+            user_agent=user_agent,
+        )
+
+        # Track timing
+        start_time = time.time()
+        status_code = 500  # Default to error if something goes wrong
+        error_type = None
+        error_message = None
+
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            return response
+
+        except Exception as e:
+            error_type = type(e).__name__
+            error_message = str(e)
+            logger.error(f"Request {request_id} failed with error: {e}", exc_info=True)
+            raise
+
+        finally:
+            # Calculate duration and end tracking
+            duration_ms = (time.time() - start_time) * 1000
+
+            try:
+                telemetry_manager.end_request(
+                    request_id=request_id,
+                    status_code=status_code,
+                    duration_ms=duration_ms,
+                    error_type=error_type,
+                    error_message=error_message,
+                )
+            except Exception as telemetry_error:
+                logger.warning(f"Failed to record telemetry for request {request_id}: {telemetry_error}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialize and cleanup resources."""
-    global adapter, persona, model_manager, prompt_manager
+    global adapter, persona, model_manager, prompt_manager, telemetry_manager
 
     try:
         logger.info("Starting Kairix API server...")
+
+        # Initialize telemetry manager
+        telemetry_manager = TelemetryManager()
+        if is_shadow_environment():
+            logger.info("Running in SHADOW environment - telemetry active, DB access read-only")
+        else:
+            logger.info("Running in PRODUCTION environment - telemetry active")
+        logger.info("Telemetry manager initialized")
 
         # Validate MCP servers (required for server startup)
         import subprocess
@@ -108,13 +175,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Monkey-patch ResponseTextDeltaEvent to make logprobs optional
         # This fixes validation error with openai-agents library
         try:
-            from openai.types.responses.response_text_delta_event import ResponseTextDeltaEvent, Logprob
-            from typing import List, Optional
+            from typing import Optional
+
+            from openai.types.responses.response_text_delta_event import Logprob, ResponseTextDeltaEvent
 
             # Get the pydantic model fields
             if hasattr(ResponseTextDeltaEvent, 'model_fields'):
                 # Pydantic v2
-                ResponseTextDeltaEvent.model_fields['logprobs'].annotation = Optional[List[Logprob]]
+                ResponseTextDeltaEvent.model_fields['logprobs'].annotation = Optional[list[Logprob]]
                 ResponseTextDeltaEvent.model_fields['logprobs'].default = None
                 # Rebuild the model to apply changes
                 ResponseTextDeltaEvent.model_rebuild()
@@ -159,6 +227,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add telemetry middleware
+app.add_middleware(TelemetryMiddleware)
 
 
 @app.exception_handler(RequestValidationError)
@@ -473,7 +544,7 @@ async def select_prompt(prompt_id: str = Form(...)):
             logger.error(f"Failed to reload persona: {e}", exc_info=True)
             return {
                 "success": True,
-                "message": f"System prompt updated in database but persona reload failed: {str(e)}",
+                "message": f"System prompt updated in database but persona reload failed: {e!s}",
                 "current_prompt": prompt_id,
                 "persona_reloaded": False,
                 "error": str(e)
@@ -552,8 +623,9 @@ async def get_reflections(
         raise HTTPException(status_code=500, detail="Storage runtime not initialized")
 
     try:
-        from kairix_core.types.db import MemoryShard, Agent
         from datetime import datetime as dt
+
+        from kairix_core.types.db import Agent, MemoryShard
 
         with storage_runtime.session() as session:
             # Query memory shards
@@ -610,9 +682,9 @@ async def search_reflections(
         raise HTTPException(status_code=500, detail="Persona not initialized")
 
     try:
-        from kairix_core.types.db import MemoryShard, Agent
-        from kairix_core.embedding.nomic import NomicEmbedding
         import numpy as np
+        from kairix_core.embedding.nomic import NomicEmbedding
+        from kairix_core.types.db import Agent, MemoryShard
 
         # Generate embedding for the search query
         embedder = NomicEmbedding()
@@ -710,6 +782,120 @@ async def get_mcp_tools():
 
     except Exception as e:
         logger.error(f"Error fetching MCP tools: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/admin/telemetry/metrics")
+async def get_telemetry_metrics(
+    start_time: str | None = None,
+    end_time: str | None = None,
+    endpoint: str | None = None,
+    model_id: str | None = None,
+    range_hours: int | None = 24,
+):
+    """Get aggregated telemetry metrics for a time range.
+
+    Args:
+        start_time: ISO format datetime string (optional)
+        end_time: ISO format datetime string (optional)
+        endpoint: Filter by specific endpoint (optional)
+        model_id: Filter by specific model (optional)
+        range_hours: Number of hours to look back if start_time not provided (default: 24)
+    """
+    if telemetry_manager is None:
+        raise HTTPException(status_code=503, detail="Telemetry not initialized")
+
+    try:
+        from datetime import datetime, timedelta
+
+        # Parse or calculate time range
+        if start_time:
+            start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+        else:
+            start_dt = datetime.utcnow() - timedelta(hours=range_hours)
+
+        end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else datetime.utcnow()
+
+        # Get metrics from telemetry manager
+        metrics = telemetry_manager.get_metrics(
+            start_time=start_dt,
+            end_time=end_dt,
+            endpoint=endpoint,
+            model_id=model_id,
+        )
+
+        return {
+            "metrics": metrics,
+            "time_range": {
+                "start": start_dt.isoformat(),
+                "end": end_dt.isoformat(),
+                "hours": (end_dt - start_dt).total_seconds() / 3600,
+            },
+            "filters": {
+                "endpoint": endpoint,
+                "model_id": model_id,
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting telemetry metrics: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/admin/telemetry/timeseries")
+async def get_telemetry_timeseries(
+    start_time: str | None = None,
+    end_time: str | None = None,
+    endpoint: str | None = None,
+    interval_minutes: int = 5,
+    range_hours: int | None = 24,
+):
+    """Get time-series telemetry data for charting.
+
+    Args:
+        start_time: ISO format datetime string (optional)
+        end_time: ISO format datetime string (optional)
+        endpoint: Filter by specific endpoint (optional)
+        interval_minutes: Time bucket size in minutes (default: 5)
+        range_hours: Number of hours to look back if start_time not provided (default: 24)
+    """
+    if telemetry_manager is None:
+        raise HTTPException(status_code=503, detail="Telemetry not initialized")
+
+    try:
+        from datetime import datetime, timedelta
+
+        # Parse or calculate time range
+        if start_time:
+            start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+        else:
+            start_dt = datetime.utcnow() - timedelta(hours=range_hours)
+
+        end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else datetime.utcnow()
+
+        # Get timeseries from telemetry manager
+        timeseries = telemetry_manager.get_timeseries(
+            start_time=start_dt,
+            end_time=end_dt,
+            interval_minutes=interval_minutes,
+            endpoint=endpoint,
+        )
+
+        return {
+            "data": timeseries,
+            "time_range": {
+                "start": start_dt.isoformat(),
+                "end": end_dt.isoformat(),
+                "hours": (end_dt - start_dt).total_seconds() / 3600,
+            },
+            "config": {
+                "interval_minutes": interval_minutes,
+                "endpoint": endpoint,
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting telemetry timeseries: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

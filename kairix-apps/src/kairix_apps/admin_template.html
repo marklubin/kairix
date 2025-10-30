@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kairix Admin Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -215,6 +216,7 @@
             <button class="tab" onclick="switchTab('prompts')">📝 Prompts</button>
             <button class="tab" onclick="switchTab('mcp-tools')">🔧 MCP Tools</button>
             <button class="tab" onclick="switchTab('reflections')">💭 Reflections</button>
+            <button class="tab" onclick="switchTab('telemetry')">📈 Telemetry</button>
             <button class="tab" onclick="switchTab('test')">🧪 Test Chat</button>
         </div>
 
@@ -367,6 +369,75 @@
             </div>
         </div>
 
+        <div id="tab-telemetry" class="tab-content">
+            <h2>Request Telemetry & Analytics</h2>
+
+            <div class="form-group">
+                <label>Time Range</label>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="loadTelemetry(1)" class="secondary">1 Hour</button>
+                    <button type="button" onclick="loadTelemetry(6)" class="secondary">6 Hours</button>
+                    <button type="button" onclick="loadTelemetry(24)" class="secondary">24 Hours</button>
+                    <button type="button" onclick="loadTelemetry(168)" class="secondary">7 Days</button>
+                    <button type="button" onclick="loadTelemetry(720)" class="secondary">30 Days</button>
+                </div>
+            </div>
+
+            <div id="telemetry-metrics" style="margin-top: 20px;">
+                <div class="info-section">
+                    <h3 style="margin-bottom: 15px;">Request Metrics</h3>
+                    <div class="info-row">
+                        <span class="info-label">Total Requests</span>
+                        <span class="info-value" id="metric-total-requests">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Error Count</span>
+                        <span class="info-value" id="metric-error-count">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Error Rate</span>
+                        <span class="info-value" id="metric-error-rate">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Avg Duration</span>
+                        <span class="info-value" id="metric-avg-duration">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">P50 Duration</span>
+                        <span class="info-value" id="metric-p50-duration">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">P95 Duration</span>
+                        <span class="info-value" id="metric-p95-duration">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">P99 Duration</span>
+                        <span class="info-value" id="metric-p99-duration">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Tokens</span>
+                        <span class="info-value" id="metric-total-tokens">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Streaming Requests</span>
+                        <span class="info-value" id="metric-streaming-requests">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="telemetry-chart" style="margin-top: 30px;">
+                <h3>Request Timeline</h3>
+                <canvas id="requests-chart" style="max-height: 300px;"></canvas>
+            </div>
+
+            <div id="telemetry-endpoints" style="margin-top: 30px;">
+                <h3>Requests by Endpoint</h3>
+                <div id="endpoint-breakdown" class="info-section">
+                    <p style="color: #666;">Loading endpoint breakdown...</p>
+                </div>
+            </div>
+        </div>
+
         <div id="tab-test" class="tab-content">
             <h2>Test Chat Completion</h2>
             <form id="chat-form">
@@ -406,6 +477,8 @@
                 loadReflections();
             } else if (tabName === 'mcp-tools') {
                 loadMCPTools();
+            } else if (tabName === 'telemetry') {
+                loadTelemetry(24);  // Default to 24 hours
             }
         }
 
@@ -875,6 +948,134 @@
                 responseDiv.textContent = '✗ Network Error: ' + err.message;
             }
         });
+
+        // Telemetry chart instance
+        let telemetryChart = null;
+
+        // Load telemetry data
+        async function loadTelemetry(rangeHours) {
+            try {
+                // Fetch metrics
+                const metricsResponse = await fetch(`${API_BASE}/admin/telemetry/metrics?range_hours=${rangeHours}`);
+                const metricsData = await metricsResponse.json();
+
+                // Update metrics display
+                const metrics = metricsData.metrics;
+                document.getElementById('metric-total-requests').textContent = metrics.total_requests || 0;
+                document.getElementById('metric-error-count').textContent = metrics.error_count || 0;
+                document.getElementById('metric-error-rate').textContent =
+                    metrics.error_rate ? metrics.error_rate.toFixed(2) + '%' : '0%';
+                document.getElementById('metric-avg-duration').textContent =
+                    metrics.avg_duration_ms ? metrics.avg_duration_ms.toFixed(2) + ' ms' : 'N/A';
+                document.getElementById('metric-p50-duration').textContent =
+                    metrics.p50_duration_ms ? metrics.p50_duration_ms.toFixed(2) + ' ms' : 'N/A';
+                document.getElementById('metric-p95-duration').textContent =
+                    metrics.p95_duration_ms ? metrics.p95_duration_ms.toFixed(2) + ' ms' : 'N/A';
+                document.getElementById('metric-p99-duration').textContent =
+                    metrics.p99_duration_ms ? metrics.p99_duration_ms.toFixed(2) + ' ms' : 'N/A';
+                document.getElementById('metric-total-tokens').textContent =
+                    (metrics.total_tokens || 0).toLocaleString();
+                document.getElementById('metric-streaming-requests').textContent = metrics.streaming_requests || 0;
+
+                // Update endpoint breakdown
+                const endpointDiv = document.getElementById('endpoint-breakdown');
+                if (metrics.endpoint_breakdown && metrics.endpoint_breakdown.length > 0) {
+                    endpointDiv.innerHTML = metrics.endpoint_breakdown.map(item => `
+                        <div class="info-row">
+                            <span class="info-label">${item.endpoint}</span>
+                            <span class="info-value">${item.count} requests</span>
+                        </div>
+                    `).join('');
+                } else {
+                    endpointDiv.innerHTML = '<p style="color: #666;">No requests in this time range</p>';
+                }
+
+                // Fetch timeseries data
+                const timeseriesResponse = await fetch(`${API_BASE}/admin/telemetry/timeseries?range_hours=${rangeHours}&interval_minutes=5`);
+                const timeseriesData = await timeseriesResponse.json();
+
+                // Prepare chart data
+                const labels = timeseriesData.data.map(item => {
+                    const date = new Date(item.timestamp);
+                    return date.toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                });
+                const requestCounts = timeseriesData.data.map(item => item.request_count);
+                const avgDurations = timeseriesData.data.map(item => item.avg_duration_ms);
+
+                // Destroy existing chart if it exists
+                if (telemetryChart) {
+                    telemetryChart.destroy();
+                }
+
+                // Create chart
+                const ctx = document.getElementById('requests-chart').getContext('2d');
+                telemetryChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Requests',
+                                data: requestCounts,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                yAxisID: 'y',
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Avg Duration (ms)',
+                                data: avgDurations,
+                                borderColor: '#764ba2',
+                                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                                yAxisID: 'y1',
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Request Count'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Duration (ms)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } catch (err) {
+                console.error('Error loading telemetry:', err);
+                document.getElementById('endpoint-breakdown').innerHTML =
+                    `<p style="color: #e74c3c;">Error loading telemetry: ${err.message}</p>`;
+            }
+        }
     </script>
 </body>
 </html>
