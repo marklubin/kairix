@@ -7,7 +7,6 @@ inference providers, and execution environments. It supports multiple providers
 
 import json
 import os
-from pathlib import Path
 from agents import (
     Agent,
     ModelProvider,
