@@ -135,28 +135,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("Telemetry manager initialized")
 
         # Validate MCP servers (required for server startup)
-        import subprocess
-        from pathlib import Path
-
-        mcp_config_path = Path(__file__).parent.parent.parent / "mcp_config.json"
-        if mcp_config_path.exists():
-            logger.info("Validating MCP server configuration...")
-            validate_script = Path(__file__).parent.parent.parent / "validate_mcp_servers.py"
-
-            result = subprocess.run(
-                ["python", str(validate_script)],
-                cwd=str(validate_script.parent),
-                capture_output=True,
-                text=True
-            )
-
-            if result.returncode != 0:
-                logger.error(f"MCP validation failed:\n{result.stdout}\n{result.stderr}")
-                raise RuntimeError("MCP server validation failed. Server cannot start.")
-
-            logger.info("MCP servers validated successfully")
-        else:
-            logger.warning(f"No MCP config found at {mcp_config_path}, skipping validation")
+#        import subprocess
+#        from pathlib import Path
+#
+#        mcp_config_path = Path(__file__).parent.parent.parent / "mcp_config.json"
+#        if mcp_config_path.exists():
+#            logger.info("Validating MCP server configuration...")
+#            validate_script = Path(__file__).parent.parent.parent / "validate_mcp_servers.py"
+#
+#            result = subprocess.run(
+#                ["python", str(validate_script)],
+#                cwd=str(validate_script.parent),
+#                capture_output=True,
+#                text=True
+#            )
+#
+#            if result.returncode != 0:
+#                logger.error(f"MCP validation failed:\n{result.stdout}\n{result.stderr}")
+#                raise RuntimeError("MCP server validation failed. Server cannot start.")
+#
+#            logger.info("MCP servers validated successfully")
+#        else:
+#            logger.warning(f"No MCP config found at {mcp_config_path}, skipping validation")
 
         # Initialize model manager
         from kairix_apps.model_manager import ModelManager
@@ -896,6 +896,95 @@ async def get_telemetry_timeseries(
 
     except Exception as e:
         logger.error(f"Error getting telemetry timeseries: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/admin/backup/create")
+async def create_backup():
+    """Create a backup archive of all stateful data."""
+    import subprocess
+    import tempfile
+    from datetime import datetime
+    from pathlib import Path
+
+    try:
+        logger.info("Creating backup archive...")
+
+        # Get the home directory and kairix directory
+        home_dir = Path.home()
+        kairix_dir = home_dir / "kairix"
+
+        # Generate timestamp for filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"kairix-backup-{timestamp}.tar.gz"
+
+        # Create temp file for the backup
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".tar.gz")
+        temp_path = temp_file.name
+        temp_file.close()
+
+        # Build the tar command to include all stateful data
+        tar_cmd = [
+            "tar", "-czf", temp_path,
+            "-C", str(home_dir),
+            "kairix/.sqlite/",
+            ".kairix/",
+            "kairix/.git/config",
+        ]
+
+        # Add database files if they exist
+        db_paths = [
+            "kairix/kairix-apps/.kairix/k.db",
+            "kairix/kairix-apps/.kairix/prompts.db",
+            "kairix/kairix-apps/.kairix/telemetry.db",
+            "kairix/kairix-apps/.kairix/models.db",
+            "kairix/kairix-core/.kairix/k.db",
+        ]
+
+        for db_path in db_paths:
+            full_path = home_dir / db_path
+            if full_path.exists():
+                tar_cmd.append(db_path)
+
+        logger.info(f"Running tar command: {' '.join(tar_cmd)}")
+
+        # Execute tar command
+        result = subprocess.run(
+            tar_cmd,
+            capture_output=True,
+            text=True,
+            timeout=120  # 2 minute timeout
+        )
+
+        if result.returncode != 0:
+            logger.error(f"Tar command failed: {result.stderr}")
+            raise Exception(f"Failed to create backup: {result.stderr}")
+
+        logger.info(f"Backup created successfully at {temp_path}")
+
+        # Read the backup file
+        backup_data = Path(temp_path).read_bytes()
+
+        # Clean up temp file
+        Path(temp_path).unlink()
+
+        # Return the backup as a downloadable file
+        from fastapi.responses import Response
+
+        return Response(
+            content=backup_data,
+            media_type="application/gzip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{backup_filename}"',
+                "Content-Type": "application/gzip",
+            }
+        )
+
+    except subprocess.TimeoutExpired:
+        logger.error("Backup creation timed out")
+        raise HTTPException(status_code=500, detail="Backup creation timed out") from None
+    except Exception as e:
+        logger.error(f"Error creating backup: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

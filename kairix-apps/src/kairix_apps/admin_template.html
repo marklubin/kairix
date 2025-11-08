@@ -203,6 +203,10 @@
         .tab-content.active {
             display: block;
         }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
     </style>
 </head>
 <body>
@@ -217,6 +221,7 @@
             <button class="tab" onclick="switchTab('mcp-tools')">🔧 MCP Tools</button>
             <button class="tab" onclick="switchTab('reflections')">💭 Reflections</button>
             <button class="tab" onclick="switchTab('telemetry')">📈 Telemetry</button>
+            <button class="tab" onclick="switchTab('backup')">💾 Backup</button>
             <button class="tab" onclick="switchTab('test')">🧪 Test Chat</button>
         </div>
 
@@ -434,6 +439,42 @@
                 <h3>Requests by Endpoint</h3>
                 <div id="endpoint-breakdown" class="info-section">
                     <p style="color: #666;">Loading endpoint breakdown...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-backup" class="tab-content">
+            <h2>💾 Backup Manager</h2>
+            <p class="subtitle">Create and download backup snapshots of stateful data</p>
+
+            <div class="info-section">
+                <h3 style="margin-bottom: 15px;">What's Included in Backup</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✅ Conversation databases (mark.db, Mark.db)</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✅ System prompts (prompts.db)</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✅ Telemetry data (telemetry.db)</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✅ Model configurations (models.db)</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✅ Kairix core data (k.db)</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">✅ Incremental reflections (summaries table)</li>
+                    <li style="padding: 8px 0;">✅ Home directory configs</li>
+                </ul>
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label>Backup includes ~167MB of conversation history and reflection data</label>
+                    <button type="button" onclick="createBackup()" style="margin-top: 15px;">
+                        📦 Create & Download Backup
+                    </button>
+                </div>
+                <div id="backup-status" class="response"></div>
+                <div id="backup-progress" style="display: none; margin-top: 20px;">
+                    <p style="text-align: center; color: #667eea; font-weight: 600;">
+                        ⏳ Creating backup... This may take 30-60 seconds
+                    </p>
+                    <div style="width: 100%; height: 4px; background: #e0e0e0; border-radius: 2px; overflow: hidden; margin-top: 10px;">
+                        <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2, #667eea); animation: shimmer 1.5s infinite; background-size: 200% 100%;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1074,6 +1115,65 @@
                 console.error('Error loading telemetry:', err);
                 document.getElementById('endpoint-breakdown').innerHTML =
                     `<p style="color: #e74c3c;">Error loading telemetry: ${err.message}</p>`;
+            }
+        }
+
+        // Backup functionality
+        async function createBackup() {
+            const statusDiv = document.getElementById('backup-status');
+            const progressDiv = document.getElementById('backup-progress');
+            const button = event.target;
+
+            // Show progress, hide previous status
+            statusDiv.style.display = 'none';
+            progressDiv.style.display = 'block';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/backup/create`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                // Get the filename from Content-Disposition header
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'kairix-backup.tar.gz';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+
+                // Download the file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Show success
+                progressDiv.style.display = 'none';
+                statusDiv.className = 'response success';
+                statusDiv.innerHTML = `✅ Backup created successfully! Download started: ${filename}`;
+                statusDiv.style.display = 'block';
+
+            } catch (err) {
+                console.error('Error creating backup:', err);
+                progressDiv.style.display = 'none';
+                statusDiv.className = 'response error';
+                statusDiv.innerHTML = `❌ Error creating backup: ${err.message}`;
+                statusDiv.style.display = 'block';
+            } finally {
+                button.disabled = false;
             }
         }
     </script>
