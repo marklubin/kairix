@@ -1,178 +1,137 @@
-# CLAUDE.md
+# Learning Kotlin Multiplatform - Project Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Learning Approach
 
-## Project Overview
+This project follows a hands-on, collaborative learning approach:
 
-Apiana AI is a comprehensive system for building memory-enabled AI agents. This monorepo contains the reference implementation for creating AI systems with persistent, experiential memory that can remember, reflect, and evolve with users over time.
+### Philosophy
+- **Learn by doing** - Build real features rather than just reading about concepts
+- **Guided exploration** - Balance between teaching concepts and letting you discover
+- **Incremental complexity** - Start simple, build up to advanced features
+- **Real-world focus** - Work toward the actual goal (AI voice interface app)
+- **Collaboration over automation** - You'll implement key design decisions; I'll handle boilerplate
 
-## Common Development Commands
+### How We Work Together
+1. **I provide context** - Explain what we're building and why it matters
+2. **You make decisions** - Choose approaches for meaningful features (2-10 lines of key logic)
+3. **I handle scaffolding** - Set up structure, boilerplate, and routine code
+4. **We learn together** - Insights about patterns, architecture, and how things connect
 
-```bash
-# Install dependencies (using uv package manager)
-uv sync
+### When to Request Your Input
+I'll ask you to contribute code when:
+- There are multiple valid approaches (error handling strategies, data structures)
+- Business logic involves design decisions
+- Key algorithms or interface definitions need to be written
+- The decision teaches an important concept
 
-# Run the new modular ChatGPT Export CLI (recommended)
-uv run chatgpt-export-v2 -i export.json -o output/
+---
 
-# Use local LLM with the CLI
-uv run chatgpt-export-v2 -i export.json -o output/ --local-llm microsoft/DialoGPT-small --quantize-4bit
+## Journal Entry Format
 
-# Run the ChatGPT Export TUI application
-uv run chatgpt-export-tui
+At the end of each learning session (or when you say "journal this"), create an entry in **`./journal/session-XX.md`** following this format:
 
-# Run the Gradio Web UI for pipeline execution
-uv run python launch_gradio.py
-# Opens web interface at http://localhost:7860
+### Session Template
+```markdown
+---
 
-# Run tests
-make test              # Unit tests only
-make test-integ        # Integration tests
-make test-ui           # UI automation tests
-make test-comprehensive # All tests with environment checks
+## Session [N] - [Date: YYYY-MM-DD]
 
-# Run linting and auto-fix
-uv run ruff check --fix
+### Goals
+- [ ] Goal 1
+- [ ] Goal 2
 
-# Run type checking with mypy (includes async/await checking)
-just mypy
+### What We Covered
+- Topic 1: Brief description
+- Topic 2: Brief description
 
-# Run all checks (linting + type checking)
-just check
+### Key Concepts Learned
+1. **Concept Name**: Explanation
+2. **Concept Name**: Explanation
 
-# Run with hot reload during development
-uv run textual run --dev apiana/applications/chatgpt_export/tui.py
+### What We Built
+- Feature/file created
+- Code written (file paths and key changes)
+
+### Insights & Aha Moments
+- Important realization or pattern discovered
+- Connection to previous knowledge
+
+### Challenges & Solutions
+- **Challenge**: Description
+- **Solution**: How we resolved it
+
+### Next Steps
+- [ ] Next task to tackle
+- [ ] Questions to explore
+
+### Questions/Blockers
+- Any unresolved questions or blockers to address next time
 ```
 
-## Code Architecture
+---
 
-### Module Structure
+## Learning Journal
 
-```
-apiana/
-├── applications/          # User-facing applications
-│   ├── batch/            # Batch processing pipelines
-│   ├── chatgpt_export/   # CLI and TUI for ChatGPT exports
-│   └── gradio/           # Web UI with automatic pipeline discovery
-├── core/                 # Core functionality
-│   ├── components/       # Reusable pipeline components
-│   ├── pipelines/        # Pipeline system and builder
-│   └── providers/        # LLM and embedding providers
-├── stores/               # Storage backends
-│   └── neo4j/           # Graph storage with vector support
-└── types/               # Data models and configurations
-```
+**Session entries are stored in the `./journal/` directory:**
+- [Session 1](./journal/session-01.md) - KMP setup, project structure
+- [Session 2](./journal/session-02.md) - Gradle, source sets
+- [Session 3](./journal/session-03.md) - Xcode compatibility, iOS build
+- [Session 4](./journal/session-04.md) - First Kotlin code, Compose state
+- [Session 5](./journal/session-05.md) - Letta API, Ktor, coroutines
+- [Session 6](./journal/session-06.md) - UI polish, state hoisting
+- [Session 7](./journal/session-07.md) - expect/actual, speech recognition design
+- [Session 8](./journal/session-08.md) - iOS speech recognition implementation
+- [Session 9](./journal/session-09.md) - Python backend, FastAPI, WebSockets
+- [Session 10](./journal/session-10.md) - Pydantic, Anthropic streaming
+- [Session 11](./journal/session-11.md) - Letta provider, Podman
+- [Session 12](./journal/session-12.md) - Pipecat voice pipeline
+- [Session 13](./journal/session-13.md) - UserTurnAggregator state machine
+- [Session 14](./journal/session-14.md) - KMP voice app rebuild
+- [Session 15](./journal/session-15.md) - Protobuf, VoiceSession, end-to-end
+- [Session 16](./journal/session-16.md) - Progressive summarization design
+- [Session 17](./journal/session-17.md) - Session summarization implementation
+- [Session 18](./journal/session-18.md) - Soft reset fix, Docker deployment
+- [Session 19](./journal/session-19.md) - Python CLI voice client
+- [Session 20](./journal/session-20.md) - Deepgram TTS, logging, stability testing
+- [Session 21](./journal/session-21.md) - Postgres events, LISTEN/NOTIFY, Alembic
+- [Session 22](./journal/session-22.md) - Redis pub/sub events, transcript consolidation
+- [Session 23](./journal/session-23.md) - KMP event display UI, sealed interface pattern
 
-### Core Components
+---
 
-1. **Pipeline System** (`apiana/core/pipelines/`):
-   - Component-based architecture
-   - Type validation and compatibility checking
-   - Progress tracking and error handling
-   - Extensible through factory pattern
+# Topics to Revisit Later
 
-2. **Components** (`apiana/core/components/`):
-   - Readers: ChatGPTExportReader, TextReader, FragmentListReader
-   - Transforms: ValidationTransform, SummarizerTransform, EmbeddingTransform
-   - Chunkers: ConversationChunkerComponent
-   - Writers: ChatFragmentWriter, MemoryBlockWriter, PipelineRunWriter
-   - Managers: PipelineRunManager for execution tracking
+These are concepts that came up during sessions but need deeper exploration when there's more time/energy:
 
-3. **Storage Layer** (`apiana/stores/neo4j/`):
-   - **ApplicationStore**: Shared storage for ChatFragments and pipeline metadata
-   - **AgentMemoryStore**: Agent-specific memories with automatic agent_id tagging
-   - Works with Neo4j Community Edition (single database)
-   - Vector index support for similarity search
+1. **Threading + Asyncio interaction** (Session 12, 2025-11-30)
+   - Why `asyncio.get_event_loop()` fails in background threads
+   - How `call_soon_threadsafe()` bridges threads to the event loop
+   - The pattern: capture loop reference in main thread, use from background thread
+   - Related: Python 3.10+ deprecation of `get_event_loop()` in favor of `get_running_loop()`
 
-4. **Pipeline Factories** (`pipelines.py`):
-   - `chatgpt_full_processing_pipeline`: Complete processing with memory generation
-   - `chatgpt_fragment_only_pipeline`: Simple fragment storage
-   - `fragment_to_memory_pipeline`: Convert fragments to memories
-   - `dummy_test_pipeline`: Safe testing pipeline
+2. **Audio feedback loop prevention** (Session 12, 2025-11-30)
+   - Mic picks up speaker output, causing echo/feedback
+   - Solution: mute mic during TTS playback
+   - Pipecat may have built-in support for this (check `allow_interruptions` behavior)
 
-5. **Gradio Application** (`apiana/applications/gradio/`):
-   - Automatic pipeline discovery from `pipelines.py`
-   - Dynamic UI generation based on function signatures
-   - Real-time execution progress tracking
-   - Custom monochrome theme
+3. **VAD tuning - still too aggressive** (Session 12, 2025-11-30)
+   - Even with `stop_secs=1.5` and `utterance_end_ms=2000`, messages still fragment
+   - Possible causes to investigate:
+     - VAD `min_volume` threshold may need adjustment
+     - Deepgram may have additional endpointing settings
+     - Check if there's a max utterance length somewhere
+     - May need to disable VAD entirely and rely only on Deepgram's utterance detection
+   - Debug by watching logs for "User stopped speaking" timing vs actual speech
 
-### Key Implementation Details
+4. **Barge-in / interruption handling** (Session 14, 2025-12-01)
+   - System AEC may not be enough - user might want to interrupt AI mid-speech
+   - Don't want to mute mic during playback (kills natural conversation)
+   - Need to investigate: how does Pipecat's `allow_interruptions=True` actually work?
+   - May need server-side logic to detect "user is speaking over TTS" vs "echo"
 
-- **Memory Types**: Experiential, Conceptual, Reference, Reflective, Task State
-- **Data Models**: Using dataclasses and Neomodel for graph storage
-- **Neo4j Support**: Works with Community Edition using agent_id properties
-- **Type System**: Strong typing with runtime validation
-- **Testing**: Comprehensive unit, integration, and UI automation tests
-
-### Development Notes
-
-- Always use `uv` for package management (not pip)
-- Import modules unconditionally at the top of files
-- Follow component input/output type specifications
-- Neo4j Community Edition is sufficient (no Enterprise features required)
-- Run `uv run ruff check --fix` after making changes
-- The project uses a component-based pipeline architecture
-
-### Adding New Features
-
-1. **New Pipeline Components**:
-   - Inherit from appropriate base class (Component, Reader, Writer, etc.)
-   - Define input_types and output_types
-   - Implement process() method
-   - Add tests in tests/unit/core/components/
-
-2. **New Pipelines**:
-   - Add factory function to `pipelines.py`
-   - Add metadata to `PIPELINE_REGISTRY`
-   - The Gradio UI will automatically discover it
-
-3. **New Storage Backends**:
-   - Implement store interface in `apiana/stores/`
-   - Ensure agent_id filtering is supported
-   - Add appropriate tests
-
-### Testing Strategy
-
-**CRITICAL: All code changes MUST include tests and tests MUST be run before completion.**
-
-#### Testing Requirements
-1. **Mandatory Testing**: Every feature change, bug fix, or new functionality MUST have corresponding tests
-2. **Test Before Commit**: All tests must pass before considering work complete
-3. **Test Types**:
-   - Unit tests: Test individual components
-   - Integration tests: Test pipeline workflows
-   - UI automation tests: Test Gradio interface with Playwright
-   - End-to-end tests: Validate full user workflows
-
-#### Test Execution
-```bash
-# Run all tests before committing
-make test-comprehensive
-
-# For kairix-apps server changes
-cd kairix-apps && uv run python test_server.py
-
-# Run specific test suites
-make test              # Unit tests only
-make test-integ        # Integration tests
-make test-ui           # UI automation tests
-```
-
-#### Test Coverage Standards
-- **New Features**: Must have at least 80% test coverage
-- **API Endpoints**: Must test success cases, error cases, and edge cases
-- **UI Changes**: Must include automated UI tests
-- **Database Changes**: Must test migrations, queries, and data integrity
-
-#### Validation Requirements
-- **Model Selection**: Before saving a new model selection, the system must send a real test request to validate the model works
-- **Configuration Changes**: Must validate changes before persisting to Doppler/database
-- **API Changes**: Must test backward compatibility
-
-### Future Considerations
-
-- Additional vector database backends (Chroma, Weaviate)
-- Multi-agent memory sharing protocols
-- Reflection scheduling and automated journaling
-- Memory export/import tools
-- Enhanced pipeline visualization
+5. **VAD tuning per input source** (Session 20, 2025-12-05)
+   - Current config: `stop_secs=1.5`, defaults for everything else
+   - Available params: `confidence` (0.7), `start_secs` (0.2), `stop_secs`, `min_volume` (0.6)
+   - Different mics/speakers/environments need different tuning
+   - Consider: calibration process, runtime config, or per-client settings
+   - Smart Turn Detection (`LocalSmartTurnAnalyzerV3`) may help but needs transport compatibility check
