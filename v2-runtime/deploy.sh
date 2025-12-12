@@ -129,32 +129,33 @@ echo ">>> Using: $COMPOSE"
 # Compose files for production
 COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
 
-# Project name for network naming
+# Project name - use symlink name, not resolved path
 PROJECT_NAME=$(basename "$REMOTE_PATH")
+COMPOSE_CMD="$COMPOSE -p $PROJECT_NAME"
 
 # Pull latest dependency images
 echo ">>> Pulling dependency images..."
-$COMPOSE -f docker-compose.yml pull
+$COMPOSE_CMD -f docker-compose.yml pull
 
 # Build application images (while old containers still running)
 echo ">>> Building application images..."
-$COMPOSE $COMPOSE_FILES build
+$COMPOSE_CMD $COMPOSE_FILES build
 
 # =============================================================================
 # Clean environment flip - stop everything, then bring up fresh
 # =============================================================================
 
 echo ">>> Stopping all services..."
-$COMPOSE $COMPOSE_FILES down --remove-orphans 2>/dev/null || true
+$COMPOSE_CMD $COMPOSE_FILES down --remove-orphans 2>/dev/null || true
 
 # Start just postgres and redis first (need postgres for migrations)
 echo ">>> Starting databases..."
-$COMPOSE $COMPOSE_FILES up -d postgres redis
+$COMPOSE_CMD $COMPOSE_FILES up -d postgres redis
 
 # Wait for postgres to be healthy
 echo ">>> Waiting for postgres to be healthy..."
 for i in {1..30}; do
-    if $COMPOSE $COMPOSE_FILES exec -T postgres pg_isready -U kairix &> /dev/null; then
+    if $COMPOSE_CMD $COMPOSE_FILES exec -T postgres pg_isready -U kairix &> /dev/null; then
         echo "    Postgres is ready!"
         break
     fi
@@ -176,7 +177,7 @@ if command -v podman &> /dev/null; then
         kairix-server:latest python -m alembic upgrade head
 else
     # Docker compose run works fine
-    $COMPOSE $COMPOSE_FILES run --rm --no-deps \
+    $COMPOSE_CMD $COMPOSE_FILES run --rm --no-deps \
         -e DATABASE_URL="postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix" \
         kairix-server python -m alembic upgrade head
 fi
@@ -188,7 +189,7 @@ echo ">>> Migrations completed successfully"
 
 # Bring up all services fresh
 echo ">>> Starting all services..."
-$COMPOSE $COMPOSE_FILES up -d
+$COMPOSE_CMD $COMPOSE_FILES up -d
 
 # Wait a moment for services to initialize
 sleep 5
@@ -198,7 +199,7 @@ echo ">>> Container status:"
 if command -v podman &> /dev/null; then
     podman ps --format "table {{.Names}}\t{{.Status}}" | grep -E "kairix|letta|redis|postgres|dozzle|metamcp" || true
 else
-    $COMPOSE $COMPOSE_FILES ps
+    $COMPOSE_CMD $COMPOSE_FILES ps
 fi
 
 echo
