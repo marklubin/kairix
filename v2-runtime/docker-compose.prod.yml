@@ -1,0 +1,120 @@
+# =============================================================================
+# Production Services - Hardened for Server Deployment
+# =============================================================================
+# Usage:
+#   Build:   docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+#   Migrate: COMPOSE_PROFILES=migrate docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm migrate
+#   Start:   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Features:
+# - No volume mounts (uses built image only)
+# - Multiple uvicorn workers
+# - Info-level logging
+# - Health checks
+# - Resource limits
+# - Restart: always
+
+services:
+  kairix-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-server:latest
+    container_name: kairix-server
+    command: >
+      python -m uvicorn kairix_agent.server.main:app
+      --host 0.0.0.0
+      --port 8000
+      --workers 2
+      --log-level info
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://kairix-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_BASE_URL=http://letta:8283
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      letta:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/hello"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    restart: always
+    networks:
+      - kairix-net
+
+  kairix-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-worker:latest
+    container_name: kairix-worker
+    command: python -m saq kairix_agent.worker.settings --verbose
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://kairix-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_BASE_URL=http://letta:8283
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      letta:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'saq' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: always
+    networks:
+      - kairix-net
+
+  # ===========================================================================
+  # Migration Runner - runs once then exits
+  # ===========================================================================
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-server:latest
+    container_name: kairix-migrate
+    command: python -m alembic upgrade head
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - migrate
+    networks:
+      - kairix-net
+

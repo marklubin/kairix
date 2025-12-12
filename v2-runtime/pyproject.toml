@@ -1,0 +1,162 @@
+[project]
+name = "agent-server"
+version = "0.1.0"
+description = "Voice AI agent server with Letta and Pipecat"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.40.0",
+    "asyncpg>=0.30.0",
+    "dotenv>=0.9.9",
+    "fastapi>=0.115.6,<0.122.0",
+    "letta-client>=1.3.1",
+    "pipecat-ai-tail>=0.0.2",
+    "pipecat-ai-whisker>=0.0.10",
+    "pipecat-ai[deepgram,silero,websocket]>=0.0.96",
+    "piper-tts[http]>=1.3.0",
+    "rich>=14.2.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "uvicorn[standard]>=0.38.0",
+    "saq[redis,web]>=0.22.0",
+    "alembic>=1.14.0",
+]
+
+[project.scripts]
+kairix-server = "kairix_agent.server.main:main"
+kairix-worker = "kairix_agent.worker.cli:main"
+provision-agent = "kairix_agent.provisioning.cli:cli"
+test-insights = "kairix_agent.scripts.test_jobs:run_insights"
+test-summarize = "kairix_agent.scripts.test_jobs:run_summarize"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "kairix_agent"
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.0",
+    "pyright>=1.1",
+    "pytest>=9.0.1",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.8",
+    "watchfiles>=1.0.0",
+]
+
+# =============================================================================
+# RUFF - Linting & Formatting
+# =============================================================================
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable maximum strictness
+select = [
+    "F",      # Pyflakes - core Python errors
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "I",      # isort - import sorting
+    "N",      # pep8-naming
+    "UP",     # pyupgrade - modern Python syntax
+    "ANN",    # flake8-annotations - TYPE ANNOTATIONS REQUIRED
+    "ASYNC",  # flake8-async
+    "S",      # flake8-bandit - security
+    "BLE",    # flake8-blind-except
+    "FBT",    # flake8-boolean-trap
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "COM",    # flake8-commas
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez - timezone awareness
+    "T10",    # flake8-debugger
+    "EM",     # flake8-errmsg
+    "FA",     # flake8-future-annotations
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "LOG",    # flake8-logging
+    "G",      # flake8-logging-format
+    "INP",    # flake8-no-pep420 - require __init__.py
+    "PIE",    # flake8-pie
+    "T20",    # flake8-print - no print statements
+    "PYI",    # flake8-pyi - type stub style
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "TID",    # flake8-tidy-imports
+    "TCH",    # flake8-type-checking
+    "INT",    # flake8-gettext
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate - commented out code
+    "PD",     # pandas-vet
+    "PGH",    # pygrep-hooks
+    "PL",     # Pylint
+    "TRY",    # tryceratops
+    "FLY",    # flynt
+    "PERF",   # Perflint
+    "FURB",   # refurb
+    "RUF",    # Ruff-specific rules
+]
+
+ignore = [
+    "COM812",   # Conflicts with formatter
+    "ISC001",   # Conflicts with formatter
+    "E501",     # Line too long - let formatter handle it
+]
+
+[tool.ruff.lint.flake8-annotations]
+# STRICT: Require type annotations everywhere
+allow-star-arg-any = false
+suppress-dummy-args = false
+suppress-none-returning = false
+mypy-init-return = true  # Allow omitting -> None on __init__ if args typed
+
+[tool.ruff.lint.flake8-type-checking]
+# Handle Pydantic's runtime type needs
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic.BaseSettings",
+]
+
+[tool.ruff.lint.pylint]
+max-args = 8
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",    # Allow assert in tests
+    "ARG",     # Allow unused arguments (fixtures)
+    "FBT",     # Allow boolean args in tests
+]
+"**/provisioning/blocks.py" = [
+    "E501",    # Long lines in prose content (persona, writ)
+]
+"**/provisioning/agents.py" = [
+    "E501",    # Long lines in system prompts
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+# =============================================================================
+# PYRIGHT - Type Checking
+# =============================================================================
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+
+# Disable the annoying stuff
+reportMissingTypeStubs = false          # Don't complain about untyped libraries
+reportUnknownMemberType = false         # Too noisy with third-party libs
+reportUnknownArgumentType = false       # Same
+reportUnknownVariableType = false       # Same
+reportUnusedImport = false              # Ruff handles this
+reportUnusedVariable = false            # Ruff handles this
+reportPrivateUsage = "warning"          # Accessing _private is sometimes fine

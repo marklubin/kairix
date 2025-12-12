@@ -1,0 +1,78 @@
+# =============================================================================
+# Development Services - Hot Reload, Debug Ports
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Features:
+# - Volume mounts for hot reload (./src mounted into container)
+# - Uvicorn --reload for auto-restart on file changes
+# - Worker wrapped with watchfiles for auto-restart
+# - Debug logging (LOG_LEVEL=DEBUG)
+# - Debugpy port 5678 exposed for IDE attachment
+
+services:
+  kairix-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: kairix-server-dev
+    command: >
+      uv run uvicorn kairix_agent.server.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app/src
+      --log-level debug
+    volumes:
+      - ./src:/app/src:cached
+      - ./alembic:/app/alembic:cached
+    ports:
+      - "8000:8000"
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://kairix-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_BASE_URL=http://letta:8283
+      - LOG_LEVEL=DEBUG
+      - PYTHONDONTWRITEBYTECODE=1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      letta:
+        condition: service_started
+    networks:
+      - kairix-net
+
+  kairix-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: kairix-worker-dev
+    command: >
+      uv run watchfiles
+      --filter python
+      "uv run saq kairix_agent.worker.settings --verbose"
+      /app/src
+    volumes:
+      - ./src:/app/src:cached
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://kairix-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_BASE_URL=http://letta:8283
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      letta:
+        condition: service_started
+    networks:
+      - kairix-net
+

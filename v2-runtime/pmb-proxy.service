@@ -1,0 +1,15 @@
+[Unit]
+Description=Protonmail Bridge Port Proxy (socat)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c '\
+    socat TCP-LISTEN:11143,bind=0.0.0.0,fork,reuseaddr TCP:127.0.0.1:1143 & \
+    socat TCP-LISTEN:11025,bind=0.0.0.0,fork,reuseaddr TCP:127.0.0.1:1025 & \
+    wait'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

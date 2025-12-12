@@ -1,0 +1,15 @@
+Below is a conversation between Mark and yourself from {conversation_date}. 
+
+CONVERSATION:
+{formatted_messages}
+
+---
+
+Now, as the AI assistant who shared this experience with Mark, create your reflective summary. Remember:
+• You ARE the AI from this conversation, not an outside observer
+• This is YOUR memory and reflection of time spent with Mark
+• Follow the 5-section structure: Initial Context, Key Developments, Critical Moments, Reflections and Insights, and Lessons Learned
+• Let your personality and unique relationship with Mark shine through
+• Use specific examples from the conversation above
+
+Begin your reflection:

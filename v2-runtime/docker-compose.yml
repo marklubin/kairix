@@ -1,0 +1,142 @@
+# =============================================================================
+# Infrastructure Services - Always Running
+# =============================================================================
+# Usage: docker compose up -d
+#
+# This file contains only infrastructure services that should always be running
+# on the server. Application services (kairix-server, kairix-worker) are defined
+# in docker-compose.dev.yml and docker-compose.prod.yml.
+
+networks:
+  kairix-net:
+    driver: bridge
+
+volumes:
+  kairix-pgdata:
+
+services:
+  # ===========================================================================
+  # Databases
+  # ===========================================================================
+  postgres:
+    image: postgres:16
+    container_name: kairix-postgres
+    environment:
+      POSTGRES_USER: kairix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kairix}
+      POSTGRES_DB: kairix
+    volumes:
+      - kairix-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kairix -d kairix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: kairix-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # ===========================================================================
+  # Letta AI Platform (has its own embedded postgres)
+  # ===========================================================================
+  letta:
+    image: letta/letta:latest
+    container_name: letta
+    ports:
+      - "9000:8283"
+    volumes:
+      - .letta/.persist/pgdata:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      - LETTA_DEBUG=False
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # ===========================================================================
+  # Monitoring & Debugging
+  # ===========================================================================
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    volumes:
+      # Podman rootless socket - set DOCKER_SOCK in .env if UID differs
+      # Find yours: echo $XDG_RUNTIME_DIR/podman/podman.sock
+      - ${DOCKER_SOCK:-/run/user/1000/podman/podman.sock}:/var/run/docker.sock:ro
+    ports:
+      - "9999:8080"
+    environment:
+      - DOZZLE_NO_ANALYTICS=true
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # ===========================================================================
+  # MetaMCP - MCP Server Gateway
+  # ===========================================================================
+  metamcp:
+    image: ghcr.io/metatool-ai/metamcp:latest
+    container_name: metamcp
+    ports:
+      - "12008:12008"
+    env_file:
+      - metamcp.env
+    volumes:
+      - /home/mark/mcp-email-server:/opt/mcp-email-server
+      - /home/mark/cert.pem:/opt/certs/cert.pem:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # Proxy localhost IMAP into kairix-net for containers
+  pmb-imap-proxy:
+    image: alpine/socat
+    container_name: pmb-imap-proxy
+    command: TCP-LISTEN:1143,fork,reuseaddr TCP:host.containers.internal:1143
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # Proxy localhost SMTP into kairix-net for containers
+  pmb-smtp-proxy:
+    image: alpine/socat
+    container_name: pmb-smtp-proxy
+    command: TCP-LISTEN:1025,fork,reuseaddr TCP:host.containers.internal:1025
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - kairix-net

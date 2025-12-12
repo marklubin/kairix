@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+
+[project]
+name = "apiana-ai"
+dynamic = ["version"]
+description = "Apiana AI: Self reflective AI companion."
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "atomics>=1.0.3",
+    "chatformat>=1.2",
+    "einops>=0.8.1",
+    "gradio>=5.32.1",
+    "injector>=0.22.0",
+    "neo4j>=5.28.1",
+    "neo4j-graphrag>=1.7.0",
+    "neomodel>=5.4.5",
+    "numpy>=2.2.6",
+    "openai>=1.82.1",
+    "playwright>=1.52.0",
+    "pydantic>=2.11.5",
+    "pytest-playwright>=0.7.0",
+    "requests>=2.32.3",
+    "sentence-transformers>=4.1.0",
+    "textual>=3.2.0",
+    "torch>=2.7.0",
+    "transformers>=4.52.4",
+]
+
+[project.scripts]
+chatgpt-export-v2 = "apiana.applications.chatgpt_export.cli_v2:main"
+chatgpt-export-tui = "apiana.applications.chatgpt_export.tui:main"
+
+[tool.uv.sources]
+apiana = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["apiana"]
+
+[tool.hatch.build]
+packages = ["apiana"]
+include = [
+
+    "LICENSE",
+    "README.md"
+]
+[tool.ruff.lint]
+exclude = [
+    "scripts/*", # Exclude any directory named .mypy_cache
+    "tests/*",    # Exclude all files and directories inside the tests folders
+]
+[dependency-groups]
+dev = [
+    "ruff>=0.11.7",
+    "hatch>=1.14.1",
+    "textual-dev>=1.7.0",
+    "debugpy>=1.8.14",
+    "pytest>=8.3.5",
+    "pytest-env>=1.1.5",
+    "testcontainers[neo4j]>=4.10.0",
+]
+
+[tool.pytest.ini_options]
+# Always run tests with unit-test environment
+env = [
+    "APIANA_ENV_STAGE=unit-test"
+]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-k \"not integration\"')",
+    "ui_automation: marks tests as UI automation tests using Playwright (deselect with '-k \"not ui_automation\"')"
+]
+testpaths = ["tests"]
+# Default behavior: run only unit tests (exclude integration and ui_automation)
+addopts = "-v -k 'not integration and not ui_automation' --ignore=scripts/"
