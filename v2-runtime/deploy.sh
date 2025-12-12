@@ -10,9 +10,10 @@
 #   ./deploy.sh user@host.example    # deploy to specific user@host
 #
 # Environment variables:
-#   DEPLOY_TARGET   - Default SSH target (e.g., "salinas" or "user@host")
-#   DEPLOY_PATH     - Remote path (default: ~/agent-server)
-#   GITHUB_REPO     - Repository URL (default: from local git remote)
+#   DEPLOY_TARGET     - Default SSH target (e.g., "salinas" or "user@host")
+#   DEPLOY_PATH       - Remote path for symlink (default: ~/agent-server)
+#   KAIRIX_REPO_PATH  - Where to clone monorepo (default: ~/kairix)
+#   GITHUB_REPO       - Repository URL (default: from local git remote)
 
 set -e
 
@@ -29,8 +30,14 @@ if [ -z "$TARGET" ]; then
     exit 1
 fi
 
-# Remote path
+# Remote path (symlink target)
 REMOTE_PATH="${DEPLOY_PATH:-~/agent-server}"
+
+# Monorepo path on remote
+KAIRIX_REPO_PATH="${KAIRIX_REPO_PATH:-~/kairix}"
+
+# Subdirectory within monorepo containing v2-runtime
+RUNTIME_SUBDIR="v2-runtime"
 
 # GitHub repo: env var > detect from local git
 if [ -z "$GITHUB_REPO" ]; then
@@ -48,7 +55,8 @@ fi
 
 echo "=== Deploying to ${TARGET} ==="
 echo "Repository: ${GITHUB_REPO}"
-echo "Remote path: ${REMOTE_PATH}"
+echo "Monorepo path: ${KAIRIX_REPO_PATH}"
+echo "Runtime symlink: ${REMOTE_PATH} → ${KAIRIX_REPO_PATH}/${RUNTIME_SUBDIR}"
 echo
 
 # Build the remote commands
@@ -56,22 +64,52 @@ read -r -d '' REMOTE_SCRIPT << 'EOF' || true
 set -e
 
 REMOTE_PATH="__REMOTE_PATH__"
+KAIRIX_REPO_PATH="__KAIRIX_REPO_PATH__"
+RUNTIME_SUBDIR="__RUNTIME_SUBDIR__"
 GITHUB_REPO="__GITHUB_REPO__"
 
 # Expand ~ to $HOME (tilde doesn't expand inside quotes)
 REMOTE_PATH="${REMOTE_PATH/#\~/$HOME}"
+KAIRIX_REPO_PATH="${KAIRIX_REPO_PATH/#\~/$HOME}"
 
-# Clone if not present
-if [ ! -d "$REMOTE_PATH" ]; then
-    echo ">>> Cloning repository..."
-    git clone "$GITHUB_REPO" "$REMOTE_PATH"
-    cd "$REMOTE_PATH"
+# Clone or pull the monorepo
+if [ ! -d "$KAIRIX_REPO_PATH" ]; then
+    echo ">>> Cloning monorepo to $KAIRIX_REPO_PATH..."
+    git clone "$GITHUB_REPO" "$KAIRIX_REPO_PATH"
 else
-    echo ">>> Pulling latest changes..."
-    cd "$REMOTE_PATH"
+    echo ">>> Pulling latest changes in $KAIRIX_REPO_PATH..."
+    cd "$KAIRIX_REPO_PATH"
     git fetch origin
-    git reset --hard origin/main  # or origin/master if that's your branch
+    git reset --hard origin/main
 fi
+
+# Source directory for runtime
+SOURCE_DIR="$KAIRIX_REPO_PATH/$RUNTIME_SUBDIR"
+
+# Ensure symlink exists: SOURCE_DIR → REMOTE_PATH
+if [ -L "$REMOTE_PATH" ]; then
+    # Is a symlink - verify it points to correct location
+    CURRENT_TARGET=$(readlink "$REMOTE_PATH")
+    if [ "$CURRENT_TARGET" != "$SOURCE_DIR" ]; then
+        echo ">>> Updating symlink to point to $SOURCE_DIR"
+        ln -sfn "$SOURCE_DIR" "$REMOTE_PATH"
+    else
+        echo ">>> Symlink $REMOTE_PATH already points to $SOURCE_DIR"
+    fi
+elif [ -e "$REMOTE_PATH" ]; then
+    # Exists but is not a symlink (old deployment)
+    echo "Error: $REMOTE_PATH exists but is not a symlink."
+    echo "       This appears to be an old deployment."
+    echo "       Please backup and remove it, then re-run deploy."
+    exit 1
+else
+    # Does not exist - create symlink
+    echo ">>> Creating symlink: $REMOTE_PATH → $SOURCE_DIR"
+    ln -s "$SOURCE_DIR" "$REMOTE_PATH"
+fi
+
+# Change to runtime directory
+cd "$REMOTE_PATH"
 
 # Show current commit
 echo ">>> Current commit:"
@@ -169,6 +207,8 @@ EOF
 
 # Substitute variables into the script
 REMOTE_SCRIPT="${REMOTE_SCRIPT//__REMOTE_PATH__/$REMOTE_PATH}"
+REMOTE_SCRIPT="${REMOTE_SCRIPT//__KAIRIX_REPO_PATH__/$KAIRIX_REPO_PATH}"
+REMOTE_SCRIPT="${REMOTE_SCRIPT//__RUNTIME_SUBDIR__/$RUNTIME_SUBDIR}"
 REMOTE_SCRIPT="${REMOTE_SCRIPT//__GITHUB_REPO__/$GITHUB_REPO}"
 
 # Execute on remote
@@ -176,4 +216,6 @@ echo ">>> Connecting to ${TARGET}..."
 ssh "$TARGET" "$REMOTE_SCRIPT"
 
 echo
-echo "Done! Deployed to ${TARGET}:${REMOTE_PATH}"
+echo "Done! Deployed to ${TARGET}"
+echo "  Repo: ${KAIRIX_REPO_PATH}"
+echo "  Runtime: ${REMOTE_PATH}"
