@@ -160,8 +160,8 @@ async def _remediate_existing_agent(
     await client.agents.update(agent_id=agent_id, system=spec.system_prompt)
     logger.info("  System prompt updated")
 
-    # Check blocks - both missing AND incorrect (wrong ID for universal blocks)
-    universal_labels = {b.label for b in spec.universal_blocks}
+    # Check blocks - both missing AND incorrect (wrong ID)
+    # Both universal and subagent blocks should use IDs from convo agent if available
     blocks_need_fixing = False
 
     for block_def in [*spec.universal_blocks, *spec.subagent_blocks]:
@@ -169,12 +169,13 @@ async def _remediate_existing_agent(
         current_block_id = existing_agent_blocks.get(label)
 
         # Determine the correct block ID for this label
+        # Priority: convo agent's block > current block > system block > create new
         correct_block_id: str | None = None
-        if label in universal_labels and universal_block_ids and label in universal_block_ids:
-            # Universal block - must use the exact ID from conversational agent
+        if universal_block_ids and label in universal_block_ids:
+            # Use the exact ID from conversational agent (for both universal and subagent blocks)
             correct_block_id = universal_block_ids[label]
         elif current_block_id:
-            # Block exists and it's not a universal block requiring specific ID - keep it
+            # Block exists and no convo agent ID to match - keep it
             continue
         elif label in existing_blocks:
             # Use existing block from system
@@ -274,18 +275,18 @@ async def _create_new_agent(
             block_id = await find_or_create_block(client, block_def, existing_blocks)
         block_ids.append(block_id)
 
-    # Subagent blocks - always create fresh
+    # Subagent blocks - reuse from convo agent if exists, otherwise create
+    # (subagent blocks are attached to declaring subagent + convo agent)
     logger.info("Setting up subagent blocks...")
     for block_def in spec.subagent_blocks:
-        block = await client.blocks.create(
-            label=block_def.label,
-            value=block_def.initial_value,
-            description=block_def.description,
-            limit=block_def.limit,
-            read_only=block_def.read_only,
-        )
-        logger.info("  Created subagent block: %s (%s)", block_def.label, block.id)
-        block_ids.append(block.id)
+        if universal_block_ids and block_def.label in universal_block_ids:
+            # Reuse existing block from conversational agent
+            block_id = universal_block_ids[block_def.label]
+            logger.info("  Using existing subagent block: %s (%s)", block_def.label, block_id)
+        else:
+            # Check system-wide existing blocks, or create new
+            block_id = await find_or_create_block(client, block_def, existing_blocks)
+        block_ids.append(block_id)
 
     # Create the agent
     logger.info("Creating agent with %d blocks (include_base_tools=%s)...", len(block_ids), spec.include_base_tools)
