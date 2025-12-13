@@ -25,7 +25,7 @@ from kairix_agent.provisioning.agents import (
     create_reflector_agent,
 )
 from kairix_agent.provisioning.blocks import BlockDefinition  # noqa: TC001
-from kairix_agent.provisioning.prompts import get_system_prompt
+from kairix_agent.provisioning.prompts import get_agent_definition
 
 if TYPE_CHECKING:
     from letta_client.types import BlockResponse
@@ -91,7 +91,7 @@ async def provision_agent(
     spec: AgentSpec,
     existing_blocks: dict[str, BlockResponse],
     archive_id: str | None = None,
-    shared_block_ids: dict[str, str] | None = None,
+    universal_block_ids: dict[str, str] | None = None,
 ) -> str:
     """Provision an agent based on its spec. Returns agent ID.
 
@@ -103,8 +103,8 @@ async def provision_agent(
         spec: Agent specification.
         existing_blocks: Dict of label -> BlockResponse for all existing blocks.
         archive_id: Optional archive ID to attach.
-        shared_block_ids: Optional dict of label -> block_id for shared blocks.
-            Used by reflector agents to attach the same blocks as the conversational agent.
+        universal_block_ids: Optional dict of label -> block_id for universal blocks.
+            Used by subagents to attach the same blocks as the conversational agent.
     """
     # Check if agent already exists
     existing = await find_agent_by_name(client, spec.name)
@@ -120,11 +120,11 @@ async def provision_agent(
             existing_agent_blocks,
             existing_archive_ids,
             archive_id,
-            shared_block_ids,
+            universal_block_ids,
         )
 
     # Agent doesn't exist - create new
-    return await _create_new_agent(client, spec, existing_blocks, archive_id, shared_block_ids)
+    return await _create_new_agent(client, spec, existing_blocks, archive_id, universal_block_ids)
 
 
 async def _remediate_existing_agent(
@@ -135,7 +135,7 @@ async def _remediate_existing_agent(
     existing_agent_blocks: dict[str, str],
     existing_archive_ids: set[str],
     archive_id: str | None,
-    shared_block_ids: dict[str, str] | None = None,
+    universal_block_ids: dict[str, str] | None = None,
 ) -> str:
     """Remediate an existing agent's configuration.
 
@@ -150,7 +150,7 @@ async def _remediate_existing_agent(
         existing_agent_blocks: Dict of label -> block_id for blocks attached to this agent.
         existing_archive_ids: Set of archive IDs attached to this agent.
         archive_id: Optional archive ID that should be attached.
-        shared_block_ids: Optional dict of label -> block_id for shared blocks.
+        universal_block_ids: Optional dict of label -> block_id for universal blocks.
     """
     # Use no-retry client for archive/tool attach operations (409 Conflict is expected, not retryable)
     no_retry_client = client.with_options(max_retries=0)
@@ -160,21 +160,21 @@ async def _remediate_existing_agent(
     await client.agents.update(agent_id=agent_id, system=spec.system_prompt)
     logger.info("  System prompt updated")
 
-    # Check blocks - both missing AND incorrect (wrong ID for shared blocks)
-    shared_labels = {b.label for b in spec.shared_blocks}
+    # Check blocks - both missing AND incorrect (wrong ID for universal blocks)
+    universal_labels = {b.label for b in spec.universal_blocks}
     blocks_need_fixing = False
 
-    for block_def in [*spec.shared_blocks, *spec.unique_blocks]:
+    for block_def in [*spec.universal_blocks, *spec.subagent_blocks]:
         label = block_def.label
         current_block_id = existing_agent_blocks.get(label)
 
         # Determine the correct block ID for this label
         correct_block_id: str | None = None
-        if label in shared_labels and shared_block_ids and label in shared_block_ids:
-            # Shared block - must use the exact ID from conversational agent
-            correct_block_id = shared_block_ids[label]
+        if label in universal_labels and universal_block_ids and label in universal_block_ids:
+            # Universal block - must use the exact ID from conversational agent
+            correct_block_id = universal_block_ids[label]
         elif current_block_id:
-            # Block exists and it's not a shared block requiring specific ID - keep it
+            # Block exists and it's not a universal block requiring specific ID - keep it
             continue
         elif label in existing_blocks:
             # Use existing block from system
@@ -255,7 +255,7 @@ async def _create_new_agent(
     spec: AgentSpec,
     existing_blocks: dict[str, BlockResponse],
     archive_id: str | None,
-    shared_block_ids: dict[str, str] | None = None,
+    universal_block_ids: dict[str, str] | None = None,
 ) -> str:
     """Create a new agent from scratch."""
     logger.info("Provisioning new agent: %s", spec.name)
@@ -263,20 +263,20 @@ async def _create_new_agent(
     # Collect block IDs
     block_ids: list[str] = []
 
-    # Shared blocks - use explicit IDs if provided, otherwise reuse existing or create
-    logger.info("Setting up shared blocks...")
-    for block_def in spec.shared_blocks:
-        if shared_block_ids and block_def.label in shared_block_ids:
+    # Universal blocks - use explicit IDs if provided, otherwise reuse existing or create
+    logger.info("Setting up universal blocks...")
+    for block_def in spec.universal_blocks:
+        if universal_block_ids and block_def.label in universal_block_ids:
             # Use the exact block ID from the conversational agent
-            block_id = shared_block_ids[block_def.label]
-            logger.info("  Using shared block: %s (%s)", block_def.label, block_id)
+            block_id = universal_block_ids[block_def.label]
+            logger.info("  Using universal block: %s (%s)", block_def.label, block_id)
         else:
             block_id = await find_or_create_block(client, block_def, existing_blocks)
         block_ids.append(block_id)
 
-    # Unique blocks - always create fresh
-    logger.info("Setting up unique blocks...")
-    for block_def in spec.unique_blocks:
+    # Subagent blocks - always create fresh
+    logger.info("Setting up subagent blocks...")
+    for block_def in spec.subagent_blocks:
         block = await client.blocks.create(
             label=block_def.label,
             value=block_def.initial_value,
@@ -284,7 +284,7 @@ async def _create_new_agent(
             limit=block_def.limit,
             read_only=block_def.read_only,
         )
-        logger.info("  Created unique block: %s (%s)", block_def.label, block.id)
+        logger.info("  Created subagent block: %s (%s)", block_def.label, block.id)
         block_ids.append(block.id)
 
     # Create the agent
@@ -399,37 +399,37 @@ async def find_conversational_agent_archive(
     return None
 
 
-async def get_conversational_agent_shared_blocks(
+async def get_conversational_agent_blocks(
     client: AsyncLetta,
     base_name: str,
-    shared_block_labels: set[str],
+    block_labels: set[str],
 ) -> dict[str, str]:
-    """Get the block IDs for shared blocks from the conversational agent.
+    """Get block IDs from the conversational agent.
 
-    For reflector agents, we need to attach the SAME blocks (by ID) that the
+    For subagents, we need to attach the SAME blocks (by ID) that the
     conversational agent uses, not just blocks with the same label.
 
     Args:
         client: Letta client.
         base_name: The base agent name (e.g., "Corindel").
-        shared_block_labels: Set of labels to look for (e.g., {"persona", "human"}).
+        block_labels: Set of labels to look for (e.g., {"persona", "human"}).
 
     Returns:
-        Dict mapping label -> block_id for the shared blocks.
+        Dict mapping label -> block_id for the requested blocks.
     """
     # Find the conversational agent by name
     async for agent in client.agents.list(name=base_name):
         if agent.name == base_name:
-            shared_blocks: dict[str, str] = {}
+            found_blocks: dict[str, str] = {}
             async for block in client.agents.blocks.list(agent_id=agent.id):
-                if block.label in shared_block_labels:
-                    shared_blocks[block.label] = block.id
+                if block.label in block_labels:
+                    found_blocks[block.label] = block.id
                     logger.info(
-                        "  Found shared block %s (%s) from conversational agent",
+                        "  Found block %s (%s) from conversational agent",
                         block.label,
                         block.id,
                     )
-            return shared_blocks
+            return found_blocks
     return {}
 
 
@@ -448,13 +448,18 @@ async def _run_provisioning(
     Returns:
         Exit code (0 for success, 1 for failure).
     """
-    # Load system prompt from database
-    logger.info("Loading system prompt for %s from database...", agent_type)
+    # Load agent definition from database
+    logger.info("Loading agent definition for %s from database...", agent_type)
     try:
-        system_prompt = await get_system_prompt(agent_type)
-        logger.info("  Loaded prompt (%d chars)", len(system_prompt))
+        definition = await get_agent_definition(agent_type)
+        logger.info(
+            "  Loaded definition (prompt: %d chars, universal: %s, subagent: %s)",
+            len(definition.system_prompt),
+            definition.universal_block_labels,
+            definition.subagent_block_labels,
+        )
     except ValueError as e:
-        logger.error("Failed to load system prompt: %s", e)
+        logger.error("Failed to load agent definition: %s", e)
         return 1
 
     # Get all existing blocks for reuse
@@ -469,24 +474,39 @@ async def _run_provisioning(
         if archive.name:
             existing_archives[archive.name] = archive
 
-    # Create spec using factory methods with DB-loaded prompt
+    # Create spec using factory methods with DB-loaded config
     if agent_type == "conversational":
-        spec = create_conversational_agent(base_name, system_prompt)
+        spec = create_conversational_agent(
+            base_name,
+            definition.system_prompt,
+            definition.universal_block_labels,
+            definition.subagent_block_labels,
+        )
     elif agent_type == "insights":
-        spec = create_background_insights_agent(base_name, system_prompt)
+        spec = create_background_insights_agent(
+            base_name,
+            definition.system_prompt,
+            definition.universal_block_labels,
+            definition.subagent_block_labels,
+        )
     else:
-        spec = create_reflector_agent(base_name, system_prompt)
+        spec = create_reflector_agent(
+            base_name,
+            definition.system_prompt,
+            definition.universal_block_labels,
+            definition.subagent_block_labels,
+        )
 
-    # Handle archive and shared blocks based on agent type
+    # Handle archive and block IDs based on agent type
     archive_id: str | None = None
-    shared_block_ids: dict[str, str] | None = None
+    universal_block_ids: dict[str, str] | None = None
 
     if agent_type == "conversational":
         # For conversational agent: create a new archive with the agent's name
-        logger.info("Setting up shared archive...")
+        logger.info("Setting up archive...")
         archive_id = await find_or_create_archive(client, base_name, existing_archives)
     else:
-        # For subsidiary agents: find and attach the conversational agent's archive and blocks
+        # For subagents: find and attach the conversational agent's archive and blocks
         logger.info("Looking for conversational agent's archive...")
         archive_id = await find_conversational_agent_archive(client, base_name)
         if not archive_id:
@@ -498,30 +518,32 @@ async def _run_provisioning(
             )
             return 1
 
-        # Get the shared block IDs from the conversational agent
-        logger.info("Looking for conversational agent's shared blocks...")
-        shared_labels = {b.label for b in spec.shared_blocks}
-        shared_block_ids = await get_conversational_agent_shared_blocks(
-            client, base_name, shared_labels
+        # Get the universal block IDs from the conversational agent
+        # Also get any subagent blocks that should already be on the convo agent
+        logger.info("Looking for conversational agent's blocks...")
+        all_labels = set(definition.universal_block_labels) | set(definition.subagent_block_labels)
+        universal_block_ids = await get_conversational_agent_blocks(
+            client, base_name, all_labels
         )
-        if not shared_block_ids:
+        if not universal_block_ids:
             logger.error(
-                "Cannot provision %s agent: conversational agent '%s' has no shared blocks.",
+                "Cannot provision %s agent: conversational agent '%s' has no blocks.",
                 agent_type,
                 base_name,
             )
             return 1
 
     agent_id = await provision_agent(
-        client, spec, existing_blocks, archive_id, shared_block_ids
+        client, spec, existing_blocks, archive_id, universal_block_ids
     )
 
-    # For insights agent: attach its background_insights block to the conversational agent
-    if agent_type == "insights":
-        logger.info("Attaching background_insights block to conversational agent...")
-        await _attach_block_to_conversational_agent(
-            client, base_name, agent_id, "background_insights"
-        )
+    # For subagents: attach their subagent_blocks to the conversational agent
+    if agent_type != "conversational" and spec.subagent_blocks:
+        logger.info("Attaching subagent blocks to conversational agent...")
+        for block_def in spec.subagent_blocks:
+            await _attach_block_to_conversational_agent(
+                client, base_name, agent_id, block_def.label
+            )
 
     logger.info("Done! Agent ID: %s", agent_id)
 

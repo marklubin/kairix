@@ -7,9 +7,8 @@ an agent via the Letta API, including which blocks are shared vs unique.
 from dataclasses import dataclass, field
 
 from kairix_agent.provisioning.blocks import (
-    AgentSpecificBlocks,
     BlockDefinition,
-    SharedBlocks,
+    get_block_by_label,
 )
 
 
@@ -31,11 +30,11 @@ class AgentSpec:
     max_tokens: int = 4096
     max_reasoning_tokens: int = 1024
 
-    # Blocks shared with other agents (will use existing block IDs)
-    shared_blocks: list[BlockDefinition] = field(default_factory=list)
+    # Blocks attached to conversational agent + ALL subagents (use existing block IDs)
+    universal_blocks: list[BlockDefinition] = field(default_factory=list)
 
-    # Blocks unique to this agent (will be created fresh)
-    unique_blocks: list[BlockDefinition] = field(default_factory=list)
+    # Blocks attached to declaring subagent + conversational agent only
+    subagent_blocks: list[BlockDefinition] = field(default_factory=list)
 
     # Tool names to attach
     tools: list[str] = field(default_factory=list)
@@ -80,12 +79,19 @@ Your summaries become part of the entity's long-term memory and help maintain co
 </base_instructions>"""
 
 
-def create_conversational_agent(name: str, system_prompt: str) -> AgentSpec:
+def create_conversational_agent(
+    name: str,
+    system_prompt: str,
+    universal_block_labels: list[str],
+    subagent_block_labels: list[str],
+) -> AgentSpec:
     """Create a conversational agent specification.
 
     Args:
         name: The agent's name (e.g., "Corindel").
         system_prompt: The system prompt loaded from database.
+        universal_block_labels: Labels for blocks attached to all agents.
+        subagent_block_labels: Labels for blocks owned by conversational agent.
 
     Returns:
         AgentSpec configured for conversational use.
@@ -94,11 +100,8 @@ def create_conversational_agent(name: str, system_prompt: str) -> AgentSpec:
         name=name,
         description="Primary conversational agent for user interaction",
         system_prompt=system_prompt,
-        shared_blocks=SharedBlocks.ALL,  # TODO move all blocks to explicit declaration
-        unique_blocks=[
-            AgentSpecificBlocks.FOCUS,
-            AgentSpecificBlocks.LAST_SESSION_SUMMARY,
-        ],
+        universal_blocks=[get_block_by_label(label) for label in universal_block_labels],
+        subagent_blocks=[get_block_by_label(label) for label in subagent_block_labels],
         tools=[
             "core_memory_append",
             "core_memory_replace",
@@ -159,18 +162,25 @@ If the current background_insights are already relevant an`d useful for the conv
 </base_instructions>"""
 
 
-def create_background_insights_agent(name: str, system_prompt: str) -> AgentSpec:
+def create_background_insights_agent(
+    name: str,
+    system_prompt: str,
+    universal_block_labels: list[str],
+    subagent_block_labels: list[str],
+) -> AgentSpec:
     """Create a background insights agent specification.
 
     The background insights agent monitors conversation context and updates the
     background_insights block. This agent OWNS the background_insights block and
-    shares it with the conversational agent during provisioning.
+    it gets attached to the conversational agent during provisioning.
 
     Has access to archival search and web search to gather relevant context.
 
     Args:
         name: The base agent name. Will be suffixed with "-BackgroundInsights".
         system_prompt: The system prompt loaded from database.
+        universal_block_labels: Labels for blocks attached to all agents.
+        subagent_block_labels: Labels for blocks owned by this subagent (also attached to convo).
 
     Returns:
         AgentSpec configured for context monitoring.
@@ -179,10 +189,8 @@ def create_background_insights_agent(name: str, system_prompt: str) -> AgentSpec
         name=f"{name}-BackgroundInsights",
         description="Background insights subprocess for monitoring conversation context and updating background insights",
         system_prompt=system_prompt,
-        shared_blocks=SharedBlocks.ALL,
-        unique_blocks=[
-            AgentSpecificBlocks.BACKGROUND_INSIGHTS,  # This agent owns and manages this block
-        ],
+        universal_blocks=[get_block_by_label(label) for label in universal_block_labels],
+        subagent_blocks=[get_block_by_label(label) for label in subagent_block_labels],
         tools=[
             "archival_memory_search",
             "web_search",
@@ -192,7 +200,12 @@ def create_background_insights_agent(name: str, system_prompt: str) -> AgentSpec
     )
 
 
-def create_reflector_agent(name: str, system_prompt: str) -> AgentSpec:
+def create_reflector_agent(
+    name: str,
+    system_prompt: str,
+    universal_block_labels: list[str],
+    subagent_block_labels: list[str],
+) -> AgentSpec:
     """Create a reflector agent specification.
 
     The reflector shares identity blocks with the conversational agent but has a
@@ -202,6 +215,8 @@ def create_reflector_agent(name: str, system_prompt: str) -> AgentSpec:
     Args:
         name: The base agent name. Will be suffixed with "-Reflector".
         system_prompt: The system prompt loaded from database.
+        universal_block_labels: Labels for blocks attached to all agents.
+        subagent_block_labels: Labels for blocks owned by this subagent (also attached to convo).
 
     Returns:
         AgentSpec configured for reflection/summarization.
@@ -210,8 +225,8 @@ def create_reflector_agent(name: str, system_prompt: str) -> AgentSpec:
         name=f"{name}-Reflector",
         description="Reflector subprocess for session summarization and memory consolidation",
         system_prompt=system_prompt,
-        shared_blocks=SharedBlocks.ALL,
-        unique_blocks=[],  # No agent-specific blocks needed
+        universal_blocks=[get_block_by_label(label) for label in universal_block_labels],
+        subagent_blocks=[get_block_by_label(label) for label in subagent_block_labels],
         tools=[
             "archival_memory_search",  # Read-only: search for related past sessions
         ],

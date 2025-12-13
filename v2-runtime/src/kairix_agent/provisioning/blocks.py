@@ -74,3 +74,27 @@ class AgentSpecificBlocks:
         initial_value="No background insights loaded yet.",
         limit=5000,
     )
+
+    ALL: ClassVar[list[BlockDefinition]] = [FOCUS, LAST_SESSION_SUMMARY, BACKGROUND_INSIGHTS]
+
+
+def get_block_by_label(label: str) -> BlockDefinition:
+    """Look up a BlockDefinition by its label.
+
+    Currently looks up from code-defined blocks. Future: load from DB.
+
+    Args:
+        label: The block label (e.g., "persona", "focus").
+
+    Returns:
+        The BlockDefinition.
+
+    Raises:
+        KeyError: If no block with that label exists.
+    """
+    # TODO: Future - load block definitions from DB instead of code
+    for block in SharedBlocks.ALL + AgentSpecificBlocks.ALL:
+        if block.label == label:
+            return block
+    msg = f"Unknown block label: {label}"
+    raise KeyError(msg)

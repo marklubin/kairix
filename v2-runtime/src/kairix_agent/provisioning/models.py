@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import DateTime, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from kairix_agent.events.models import Base
@@ -29,6 +29,14 @@ class AgentDefinition(Base):
     )
     agent_type: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    # Blocks attached to conversational agent + ALL subagents
+    universal_block_labels: Mapped[list[str]] = mapped_column(
+        ARRAY(String(64)), server_default="{}", default=list
+    )
+    # Blocks attached to declaring subagent + conversational agent only
+    subagent_block_labels: Mapped[list[str]] = mapped_column(
+        ARRAY(String(64)), server_default="{}", default=list
+    )
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         onupdate=datetime.utcnow,
