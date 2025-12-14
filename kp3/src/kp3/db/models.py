@@ -5,7 +5,16 @@ from typing import Any, ClassVar
 from uuid import UUID
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Computed,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -32,7 +41,8 @@ class Passage(Base):
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     content_tsv: Mapped[Any] = mapped_column(
         TSVECTOR,
-        nullable=True,  # Generated column, but SQLAlchemy needs nullable for mapping
+        Computed("to_tsvector('english', content)", persisted=True),
+        nullable=True,
     )
 
     passage_type: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -46,7 +56,7 @@ class Passage(Base):
     source_system: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source_external_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
-    # Embeddings (1024-dim for qwen3-embedding:4b)
+    # Embeddings (1024-dim, truncated from qwen3-embedding:4b)
     embedding_qwen3: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(

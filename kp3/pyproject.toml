@@ -10,17 +10,15 @@ dependencies = [
     "asyncpg>=0.29",
     "alembic>=1.13",
     "pgvector>=0.3",
-
     # Config & validation
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
-
     # LLM & embeddings
     "anthropic>=0.40",
     "ollama>=0.4",
-
     # CLI
     "click>=8.1",
+    "python-dotenv>=1.2.1",
 ]
 
 [project.optional-dependencies]

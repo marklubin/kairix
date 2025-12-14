@@ -1,11 +1,14 @@
 """Processing run execution service."""
 
+import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from kp3.db.models import Passage, ProcessingRun
 from kp3.processors.base import ProcessorGroup, ProcessorResult
@@ -65,29 +68,54 @@ async def execute_run(
     3. Handle result (create, update, or pass)
     4. Track progress and update run status
     """
+    logger.info("Starting run %s with processor %s", run.id, run.processor_type)
+    logger.debug("Input SQL: %s", run.input_sql)
+    logger.debug("Processor config: %s", run.processor_config)
+
     run.status = "running"
     run.started_at = datetime.now(timezone.utc)
     await session.flush()
 
     try:
         # Execute input SQL to get groups
+        logger.info("Fetching groups from input SQL...")
         groups = await _fetch_groups(session, run.input_sql)
         run.total_groups = len(groups)
+        logger.info("Found %d groups to process", len(groups))
         await session.flush()
 
         output_count = 0
-        for group in groups:
+        for i, group in enumerate(groups, 1):
+            logger.info(
+                "Processing group %d/%d: key=%s, passage_ids=%d",
+                i,
+                len(groups),
+                group.group_key,
+                len(group.passage_ids),
+            )
+
             # Fetch actual passage objects
             group.passages = await _fetch_passages(session, group.passage_ids)
+            logger.debug("Fetched %d passages for group %s", len(group.passages), group.group_key)
 
             # Process the group
-            result = await processor.process(group, run.processor_config)
+            logger.info("Calling processor for group %s...", group.group_key)
+            typed_config = processor.parse_config(run.processor_config)
+            result = await processor.process(group, typed_config)
+            logger.info("Processor returned action=%s for group %s", result.action, group.group_key)
 
             # Handle result
             if result.action == "create":
-                output_count += await _handle_create(session, run, group, result)
+                logger.debug("Creating new passage from result...")
+                created = await _handle_create(session, run, group, result)
+                output_count += created
+                logger.info("Created %d passage(s) for group %s", created, group.group_key)
             elif result.action == "update":
+                logger.debug("Updating passage %s...", result.passage_id)
                 await _handle_update(session, run, result)
+                logger.info("Updated passage %s", result.passage_id)
+            else:
+                logger.debug("Skipping group %s (action=pass)", group.group_key)
 
             run.processed_groups = (run.processed_groups or 0) + 1
             run.output_count = output_count
@@ -95,11 +123,18 @@ async def execute_run(
 
         run.status = "completed"
         run.completed_at = datetime.now(timezone.utc)
+        logger.info(
+            "Run %s completed: %d groups processed, %d outputs created",
+            run.id,
+            run.processed_groups,
+            run.output_count,
+        )
 
     except Exception as e:
         run.status = "failed"
         run.error_message = str(e)
         run.completed_at = datetime.now(timezone.utc)
+        logger.exception("Run %s failed: %s", run.id, e)
         raise
 
     finally:
@@ -161,13 +196,16 @@ async def _handle_create(
     result: ProcessorResult,
 ) -> int:
     """Handle create action - create new passage and derivations."""
-    if not result.content or not result.passage_type:
+    if not result.content:
         return 0
+
+    # output_passage_type comes from run config, not processor result
+    output_passage_type = run.processor_config.get("output_passage_type", "processed")
 
     new_passage = await create_passage(
         session,
         content=result.content,
-        passage_type=result.passage_type,
+        passage_type=output_passage_type,
         metadata=result.metadata,
         period_start=result.period_start,
         period_end=result.period_end,

@@ -134,7 +134,7 @@ async def update_passage(
 
     for key, value in updates.items():
         if key == "metadata":
-            setattr(passage, "metadata_", value)
+            passage.metadata_ = value
         elif hasattr(passage, key):
             setattr(passage, key, value)
 

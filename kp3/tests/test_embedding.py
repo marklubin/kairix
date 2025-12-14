@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kp3.processors.base import ProcessorGroup
-from kp3.processors.embedding import EmbeddingProcessor
+from kp3.processors.embedding import EmbeddingConfig, EmbeddingProcessor
 from kp3.services.passages import create_passage
 
 
@@ -41,7 +41,8 @@ async def test_embedding_processor_generates_embedding(
         group_key=str(passage.id),
     )
 
-    result = await processor.process(group, {})
+    config = EmbeddingConfig()
+    result = await processor.process(group, config)
 
     assert result.action == "update"
     assert result.passage_id == passage.id
@@ -76,7 +77,8 @@ async def test_embedding_processor_skips_existing(
         group_key=str(passage.id),
     )
 
-    result = await processor.process(group, {})
+    config = EmbeddingConfig()
+    result = await processor.process(group, config)
 
     assert result.action == "pass"
     mock_ollama_client.embed.assert_not_called()
@@ -103,7 +105,8 @@ async def test_embedding_processor_force_regenerate(
         group_key=str(passage.id),
     )
 
-    result = await processor.process(group, {"force": True})
+    config = EmbeddingConfig(force=True)
+    result = await processor.process(group, config)
 
     assert result.action == "update"
     mock_ollama_client.embed.assert_called_once()
@@ -121,7 +124,8 @@ async def test_embedding_processor_empty_group(
         group_key="empty",
     )
 
-    result = await processor.process(group, {})
+    config = EmbeddingConfig()
+    result = await processor.process(group, config)
 
     assert result.action == "pass"
     mock_ollama_client.embed.assert_not_called()
@@ -147,7 +151,8 @@ async def test_embedding_processor_custom_model(
         group_key=str(passage.id),
     )
 
-    await processor.process(group, {"model": "custom-model:latest"})
+    config = EmbeddingConfig(model="custom-model:latest")
+    await processor.process(group, config)
 
     call_args = mock_ollama_client.embed.call_args
     assert call_args.kwargs["model"] == "custom-model:latest"

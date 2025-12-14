@@ -7,7 +7,9 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from kp3.config import settings
+from kp3.config import get_settings
+
+settings = get_settings()
 from kp3.db.models import Base
 
 # this is the Alembic Config object, which provides

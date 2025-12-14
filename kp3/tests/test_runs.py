@@ -2,33 +2,42 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from kp3.db.models import ProcessingRun
 from kp3.processors.base import Processor, ProcessorGroup, ProcessorResult
 from kp3.services.derivations import get_sources
 from kp3.services.passages import create_passage, get_passage
 from kp3.services.runs import create_run, execute_run, get_run, list_runs
 
 
-class MockProcessor(Processor):
+class MockConfig:
+    """Mock config for testing."""
+
+    pass
+
+
+class MockProcessor(Processor[MockConfig]):
     """Mock processor for testing."""
 
     def __init__(self, results: list[ProcessorResult] | None = None):
         self._results = results or []
         self._call_count = 0
 
-    async def process(self, group: ProcessorGroup, config: dict) -> ProcessorResult:
+    async def process(self, group: ProcessorGroup, config: MockConfig) -> ProcessorResult:
         if self._results:
             result = self._results[self._call_count % len(self._results)]
         else:
-            # Default: create a summary
+            # Default: create a summary (passage_type comes from run config)
             result = ProcessorResult(
                 action="create",
                 content=f"Summary of {len(group.passages)} passages",
-                passage_type="summary",
                 metadata={"group_key": group.group_key},
             )
         self._call_count += 1
         return result
+
+    @classmethod
+    def parse_config(cls, raw: dict) -> MockConfig:
+        """Parse config - mock just returns empty config."""
+        return MockConfig()
 
     @property
     def processor_type(self) -> str:
@@ -101,7 +110,7 @@ async def test_execute_run_create(session: AsyncSession):
                 '{{"count": 2}}'::jsonb as group_metadata
         """,
         processor_type="mock",
-        processor_config={},
+        processor_config={"output_passage_type": "summary"},
     )
     await session.commit()
 

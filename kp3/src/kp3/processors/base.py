@@ -3,10 +3,13 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 from uuid import UUID
 
 from kp3.db.models import Passage
+
+# Type variable for processor-specific config
+ConfigT = TypeVar("ConfigT")
 
 
 @dataclass
@@ -21,9 +24,8 @@ class ProcessorResult:
 
     action: Literal["create", "update", "pass"]
 
-    # For "create" action
+    # For "create" action - processor provides content, run config provides passage_type
     content: str | None = None
-    passage_type: str | None = None
     metadata: dict | None = None
     period_start: datetime | None = None
     period_end: datetime | None = None
@@ -43,24 +45,30 @@ class ProcessorGroup:
     group_metadata: dict = field(default_factory=dict)
 
 
-class Processor(ABC):
+class Processor(ABC, Generic[ConfigT]):
     """Abstract base class for passage processors."""
 
     @abstractmethod
     async def process(
         self,
         group: ProcessorGroup,
-        config: dict,
+        config: ConfigT,
     ) -> ProcessorResult:
         """Process a group of passages and return result.
 
         Args:
             group: The group of passages to process
-            config: Processor-specific configuration
+            config: Typed processor-specific configuration
 
         Returns:
             ProcessorResult indicating what action to take
         """
+        ...
+
+    @classmethod
+    @abstractmethod
+    def parse_config(cls, raw: dict) -> ConfigT:
+        """Parse raw config dict into typed config object."""
         ...
 
     @property

@@ -1,6 +1,5 @@
 """Tests for passages service."""
 
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kp3.services.passages import (
