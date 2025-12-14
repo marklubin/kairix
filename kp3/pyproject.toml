@@ -1,0 +1,79 @@
+[project]
+name = "kp3"
+version = "0.1.0"
+description = "Kairix Passage Processor Pipeline - text processing with provenance tracking"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Database
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    "alembic>=1.13",
+    "pgvector>=0.3",
+
+    # Config & validation
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+
+    # LLM & embeddings
+    "anthropic>=0.40",
+    "ollama>=0.4",
+
+    # CLI
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+
+    "ruff>=0.8",
+    "pyright>=1.1",
+]
+
+[project.scripts]
+kp3 = "kp3.cli:cli"
+
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "ANN",    # flake8-annotations
+    "ASYNC",  # flake8-async
+    "S",      # flake8-bandit
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "T20",    # flake8-print
+    "RUF",    # ruff-specific
+]
+ignore = [
+    "S101",    # assert used (fine in tests)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "S101"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

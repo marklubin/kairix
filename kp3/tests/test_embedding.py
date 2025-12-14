@@ -1,0 +1,153 @@
+"""Tests for embedding processor."""
+
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from kp3.processors.base import ProcessorGroup
+from kp3.processors.embedding import EmbeddingProcessor
+from kp3.services.passages import create_passage
+
+
+@pytest.fixture
+def mock_ollama_client():
+    """Create mock Ollama client."""
+    client = AsyncMock()
+    # Mock embed response
+    client.embed.return_value = MagicMock(
+        embeddings=[[0.1] * 1024]  # 1024-dim vector
+    )
+    return client
+
+
+async def test_embedding_processor_generates_embedding(
+    session: AsyncSession,
+    mock_ollama_client: AsyncMock,
+):
+    """Processor generates embedding for passage."""
+    passage = await create_passage(
+        session,
+        content="Test content for embedding",
+        passage_type="raw",
+    )
+    await session.commit()
+
+    processor = EmbeddingProcessor(client=mock_ollama_client)
+
+    group = ProcessorGroup(
+        passage_ids=[passage.id],
+        passages=[passage],
+        group_key=str(passage.id),
+    )
+
+    result = await processor.process(group, {})
+
+    assert result.action == "update"
+    assert result.passage_id == passage.id
+    assert "embedding_qwen3" in result.updates
+    assert len(result.updates["embedding_qwen3"]) == 1024
+
+    # Verify Ollama was called
+    mock_ollama_client.embed.assert_called_once()
+    call_args = mock_ollama_client.embed.call_args
+    assert call_args.kwargs["input"] == "Test content for embedding"
+
+
+async def test_embedding_processor_skips_existing(
+    session: AsyncSession,
+    mock_ollama_client: AsyncMock,
+):
+    """Processor skips passages that already have embeddings."""
+    passage = await create_passage(
+        session,
+        content="Already embedded",
+        passage_type="raw",
+    )
+    # Manually set embedding
+    passage.embedding_qwen3 = [0.5] * 1024
+    await session.commit()
+
+    processor = EmbeddingProcessor(client=mock_ollama_client)
+
+    group = ProcessorGroup(
+        passage_ids=[passage.id],
+        passages=[passage],
+        group_key=str(passage.id),
+    )
+
+    result = await processor.process(group, {})
+
+    assert result.action == "pass"
+    mock_ollama_client.embed.assert_not_called()
+
+
+async def test_embedding_processor_force_regenerate(
+    session: AsyncSession,
+    mock_ollama_client: AsyncMock,
+):
+    """Processor regenerates embedding when force=True."""
+    passage = await create_passage(
+        session,
+        content="Re-embed me",
+        passage_type="raw",
+    )
+    passage.embedding_qwen3 = [0.5] * 1024
+    await session.commit()
+
+    processor = EmbeddingProcessor(client=mock_ollama_client)
+
+    group = ProcessorGroup(
+        passage_ids=[passage.id],
+        passages=[passage],
+        group_key=str(passage.id),
+    )
+
+    result = await processor.process(group, {"force": True})
+
+    assert result.action == "update"
+    mock_ollama_client.embed.assert_called_once()
+
+
+async def test_embedding_processor_empty_group(
+    mock_ollama_client: AsyncMock,
+):
+    """Processor returns pass for empty groups."""
+    processor = EmbeddingProcessor(client=mock_ollama_client)
+
+    group = ProcessorGroup(
+        passage_ids=[],
+        passages=[],
+        group_key="empty",
+    )
+
+    result = await processor.process(group, {})
+
+    assert result.action == "pass"
+    mock_ollama_client.embed.assert_not_called()
+
+
+async def test_embedding_processor_custom_model(
+    session: AsyncSession,
+    mock_ollama_client: AsyncMock,
+):
+    """Processor uses model from config."""
+    passage = await create_passage(
+        session,
+        content="Custom model test",
+        passage_type="raw",
+    )
+    await session.commit()
+
+    processor = EmbeddingProcessor(client=mock_ollama_client)
+
+    group = ProcessorGroup(
+        passage_ids=[passage.id],
+        passages=[passage],
+        group_key=str(passage.id),
+    )
+
+    await processor.process(group, {"model": "custom-model:latest"})
+
+    call_args = mock_ollama_client.embed.call_args
+    assert call_args.kwargs["model"] == "custom-model:latest"

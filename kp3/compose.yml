@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: kp3
+      POSTGRES_USER: kp3
+      POSTGRES_PASSWORD: kp3
+    volumes:
+      - kp3-data:/var/lib/postgresql/data
+
+volumes:
+  kp3-data:
