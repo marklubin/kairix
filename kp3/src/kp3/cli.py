@@ -223,12 +223,16 @@ def passage_search(query: str, mode: str, limit: int) -> None:
                 # Semantic search only
                 query_embedding = await generate_embedding(query)
                 sql = text("""
-                    SELECT id, content, passage_type,
-                           1 - (embedding_qwen3 <=> cast(:embedding as vector)) as score
-                    FROM passages
-                    WHERE embedding_qwen3 IS NOT NULL
-                    ORDER BY embedding_qwen3 <=> cast(:embedding as vector)
-                    LIMIT :limit
+                    WITH query_vec AS (
+                        SELECT cast(:embedding as vector) as vec
+                    ),
+                    scored AS (
+                        SELECT p.id, p.content, p.passage_type,
+                               1 - (p.embedding_qwen3 <=> q.vec) as score
+                        FROM passages p, query_vec q
+                        WHERE p.embedding_qwen3 IS NOT NULL
+                    )
+                    SELECT * FROM scored ORDER BY score DESC LIMIT :limit
                 """)
                 result = await session.execute(
                     sql, {"embedding": str(query_embedding), "limit": limit}
@@ -238,15 +242,18 @@ def passage_search(query: str, mode: str, limit: int) -> None:
                 # Combine FTS and semantic with RRF
                 query_embedding = await generate_embedding(query)
                 sql = text("""
-                    WITH fts AS (
+                    WITH query_vec AS (
+                        SELECT cast(:embedding as vector) as vec
+                    ),
+                    fts AS (
                         SELECT id, row_number() OVER (ORDER BY ts_rank(content_tsv, websearch_to_tsquery('english', :query)) DESC) as rank
                         FROM passages
                         WHERE content_tsv @@ websearch_to_tsquery('english', :query)
                     ),
                     semantic AS (
-                        SELECT id, row_number() OVER (ORDER BY embedding_qwen3 <=> cast(:embedding as vector)) as rank
-                        FROM passages
-                        WHERE embedding_qwen3 IS NOT NULL
+                        SELECT p.id, row_number() OVER (ORDER BY p.embedding_qwen3 <=> q.vec) as rank
+                        FROM passages p, query_vec q
+                        WHERE p.embedding_qwen3 IS NOT NULL
                     )
                     SELECT p.id, p.content, p.passage_type,
                            COALESCE(1.0 / (60 + fts.rank), 0) + COALESCE(1.0 / (60 + semantic.rank), 0) as score
@@ -266,14 +273,28 @@ def passage_search(query: str, mode: str, limit: int) -> None:
                 click.echo("No results found.")
                 return
 
-            click.echo(f"\n{mode.upper()} search for: {query}\n")
-            for row in rows:
-                content_preview = row.content[:80].replace("\n", " ")
-                if len(row.content) > 80:
-                    content_preview += "..."
-                click.echo(f"[{row.score:.4f}] {row.passage_type}")
-                click.echo(f"  {content_preview}")
-                click.echo()
+            from rich.console import Console
+            from rich.panel import Panel
+
+            console = Console()
+            console.print(f"\n[bold]{mode.upper()}[/bold] search for: [cyan]{query}[/cyan]\n")
+
+            for i, row in enumerate(rows, 1):
+                title = f"#{i} [bold green][{row.score:.4f}][/] [bold blue]{row.passage_type}[/]"
+                subtitle = f"[dim]{row.id}[/]"
+
+                console.print(
+                    Panel(
+                        row.content,
+                        title=title,
+                        subtitle=subtitle,
+                        title_align="left",
+                        subtitle_align="left",
+                        border_style="blue",
+                        padding=(1, 2),
+                    )
+                )
+                console.print()
 
     asyncio.run(_search())
 
