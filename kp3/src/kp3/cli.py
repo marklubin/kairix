@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 import click
@@ -275,6 +276,35 @@ def passage_search(query: str, mode: str, limit: int) -> None:
                 click.echo()
 
     asyncio.run(_search())
+
+
+@cli.group()
+def importer() -> None:
+    """Import data from external sources."""
+    pass
+
+
+@importer.command("kairix")
+@click.argument("db_path", type=click.Path(exists=True, path_type=Path))
+def import_kairix(db_path: Path) -> None:
+    """Import memory shards from a Kairix SQLite backup.
+
+    DB_PATH is the path to the SQLite database file (e.g., mark.db).
+    """
+    from kp3.importers.kairix_sqlite import import_memory_shards
+
+    async def _import() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                stats = await import_memory_shards(session, db_path)
+
+                click.echo("Import complete:")
+                click.echo(f"  Total shards: {stats.total_shards}")
+                click.echo(f"  Imported:     {stats.imported}")
+                click.echo(f"  Duplicates:   {stats.skipped_duplicate}")
+                click.echo(f"  Empty:        {stats.skipped_empty}")
+
+    asyncio.run(_import())
 
 
 if __name__ == "__main__":
