@@ -11,8 +11,8 @@ kairix/
 ├── v0-apiana/          # Early iteration
 ├── v1-cognitive/       # Custom cognitive engine (~22K lines)
 ├── v2-runtime/         # Current: Pipecat + Letta
-├── kp3/                # Processing pipeline (in progress)
-├── apps/ios/           # KMP mobile companion
+├── kp3/                # Passage processing pipeline
+├── kairix-app/         # KMP mobile companion
 ├── experiments/        # Side explorations
 ├── docs/               # Architecture documentation
 └── ops/                # Deployment tooling
@@ -71,9 +71,9 @@ Rebuilt on established infrastructure as those platforms matured:
 - Layered memory (session → daily → topic summaries)
 - Core memory blocks for persona, relationship model, background context
 
-### Apps (`/apps/ios`)
+### Kairix App (`/kairix-app`)
 
-Kotlin Multiplatform mobile app. Voice interface for phone conversations. Live streams the agent's background and offline thinking — you can watch reflection happen in real-time.
+Kotlin Multiplatform mobile app (iOS target). Voice interface for phone conversations. Live streams the agent's background and offline thinking — you can watch reflection happen in real-time.
 
 ### Experiments (`/experiments`)
 
@@ -94,14 +94,23 @@ Side explorations that informed the main work:
 - **Topic clustering** — Identify conversation themes, generate cross-conversation summaries
 - **V1 reflection backfill** — Import experiential foundation from v1 archives
 
-### Processing Pipeline (`/kp3`) — In Progress
-General-purpose abstraction for tracking text passages through multi-step processing pipelines with full provenance.
+### Processing Pipeline (`/kp3`)
+General-purpose infrastructure for tracking text passages through multi-step processing pipelines with full provenance.
 
+**Core concepts:**
 - **Passages** — Immutable text content at any granularity (conversation, day summary, week summary, etc.)
 - **Derivation chains** — Track how passages derive from other passages (many-to-one consolidation)
 - **Processing runs** — Configure and execute jobs that query subsets and produce new passages
 - **Tagging** — Flexible tagging system for filtering and organization
 - **Full provenance** — Always trace back to source material
+
+**Implementation:**
+- SQLAlchemy models with PostgreSQL + pgvector
+- Alembic migrations for schema management
+- Service layer for passages, derivations, and processing runs
+- Processors for LLM-based transformations and embedding generation
+- Importer for v1 Kairix memory shards (SQLite → kp3)
+- CLI for running imports and embedding jobs
 
 This powers the hierarchical summarization system but is designed as reusable infrastructure.
 

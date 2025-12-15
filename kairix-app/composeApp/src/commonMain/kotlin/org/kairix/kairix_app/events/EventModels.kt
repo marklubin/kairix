@@ -1,0 +1,243 @@
+package org.kairix.kairix_app.events
+
+import androidx.compose.ui.graphics.Color
+import kotlin.math.roundToInt
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+
+/**
+ * Raw event from the /events/{agent_id} WebSocket.
+ */
+@Serializable
+data class AgentEvent(
+    val id: String,
+    @SerialName("agent_id") val agentId: String,
+    @SerialName("event_type") val eventType: String,
+    val payload: JsonObject,
+    @SerialName("created_at") val createdAt: String
+)
+
+/**
+ * Sealed interface for displayable events.
+ * Each implementation encapsulates its own parsing and display configuration.
+ */
+sealed interface DisplayableEvent {
+    /** Unique ID from the original event */
+    val id: String
+
+    /** ISO timestamp from the original event */
+    val createdAt: String
+
+    /** Display title for the card header */
+    val title: String
+
+    /** Title color for this event type */
+    val titleColor: Color
+
+    /** Primary content lines to display */
+    val contentLines: List<String>
+
+    /** Optional expandable text (null if not applicable) */
+    val expandableText: String?
+
+    companion object {
+        private val json = Json { ignoreUnknownKeys = true }
+
+        /**
+         * Parse an AgentEvent into a DisplayableEvent.
+         * Never returns null - unknown types become UnknownEvent, parse errors become ParseErrorEvent.
+         */
+        fun fromAgentEvent(event: AgentEvent): DisplayableEvent {
+            return when (event.eventType) {
+                "session_boundary" -> SessionBoundaryEvent.parse(event, json)
+                    ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
+                "summary_complete" -> SummaryCompleteEvent.parse(event, json)
+                    ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
+                "insights_complete" -> InsightsCompleteEvent.parse(event, json)
+                    ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
+                else -> UnknownEvent(event.id, event.createdAt, event.eventType)
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Event Implementations
+// =============================================================================
+
+/**
+ * Session boundary - conversation gap identified.
+ */
+data class SessionBoundaryEvent(
+    override val id: String,
+    override val createdAt: String,
+    val boundaryDetected: Boolean,
+    val gapMinutes: Double,
+    val messageCount: Int
+) : DisplayableEvent {
+
+    override val title: String = "Session Boundary"
+    override val titleColor: Color = Color(0xFF7C4DFF) // Purple
+
+    override val contentLines: List<String> = listOf(
+        "Detected: ${if (boundaryDetected) "Yes" else "No"}",
+        "Gap: ${((gapMinutes * 10).roundToInt() / 10.0)} minutes",
+        "Messages: $messageCount"
+    )
+
+    override val expandableText: String? = null
+
+    companion object {
+        fun parse(event: AgentEvent, json: Json): SessionBoundaryEvent? {
+            return try {
+                val payload = json.decodeFromJsonElement<SessionBoundaryPayload>(event.payload)
+                SessionBoundaryEvent(
+                    id = event.id,
+                    createdAt = event.createdAt,
+                    boundaryDetected = payload.boundaryDetected,
+                    gapMinutes = payload.gapMinutes,
+                    messageCount = payload.messageCount
+                )
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse SessionBoundaryEvent payload: ${e.message}")
+                println("  Event ID: ${event.id}")
+                println("  Payload: ${event.payload}")
+                null
+            }
+        }
+    }
+}
+
+@Serializable
+private data class SessionBoundaryPayload(
+    @SerialName("boundary_detected") val boundaryDetected: Boolean,
+    @SerialName("gap_minutes") val gapMinutes: Double,
+    @SerialName("message_count") val messageCount: Int
+)
+
+/**
+ * Summary complete - session has been summarized.
+ */
+data class SummaryCompleteEvent(
+    override val id: String,
+    override val createdAt: String,
+    val messageCount: Int,
+    val summary: String
+) : DisplayableEvent {
+
+    override val title: String = "Summary Complete"
+    override val titleColor: Color = Color(0xFF4CAF50) // Green
+
+    override val contentLines: List<String> = listOf(
+        "$messageCount messages summarized"
+    )
+
+    override val expandableText: String = summary
+
+    companion object {
+        fun parse(event: AgentEvent, json: Json): SummaryCompleteEvent? {
+            return try {
+                val payload = json.decodeFromJsonElement<SummaryCompletePayload>(event.payload)
+                SummaryCompleteEvent(
+                    id = event.id,
+                    createdAt = event.createdAt,
+                    messageCount = payload.messageCount,
+                    summary = payload.summary
+                )
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse SummaryCompleteEvent payload: ${e.message}")
+                println("  Event ID: ${event.id}")
+                println("  Payload: ${event.payload}")
+                null
+            }
+        }
+    }
+}
+
+@Serializable
+private data class SummaryCompletePayload(
+    @SerialName("message_count") val messageCount: Int,
+    val summary: String
+)
+
+/**
+ * Insights complete - background insights evaluation finished.
+ */
+data class InsightsCompleteEvent(
+    override val id: String,
+    override val createdAt: String,
+    val triggered: Boolean,
+    val response: String?
+) : DisplayableEvent {
+
+    override val title: String = "Insights Complete"
+    override val titleColor: Color = Color(0xFF2196F3) // Blue
+
+    override val contentLines: List<String> = listOf(
+        "Triggered: ${if (triggered) "Yes" else "No"}"
+    )
+
+    override val expandableText: String? = response?.takeIf { it.isNotBlank() }
+
+    companion object {
+        fun parse(event: AgentEvent, json: Json): InsightsCompleteEvent? {
+            return try {
+                val payload = json.decodeFromJsonElement<InsightsCompletePayload>(event.payload)
+                InsightsCompleteEvent(
+                    id = event.id,
+                    createdAt = event.createdAt,
+                    triggered = payload.triggered,
+                    response = payload.response
+                )
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse InsightsCompleteEvent payload: ${e.message}")
+                println("  Event ID: ${event.id}")
+                println("  Payload: ${event.payload}")
+                null
+            }
+        }
+    }
+}
+
+@Serializable
+private data class InsightsCompletePayload(
+    val triggered: Boolean,
+    val response: String? = null
+)
+
+/**
+ * Unknown event type - fallback for unrecognized events.
+ */
+data class UnknownEvent(
+    override val id: String,
+    override val createdAt: String,
+    val eventType: String
+) : DisplayableEvent {
+
+    override val title: String = eventType.uppercase()
+    override val titleColor: Color = Color(0xFF9E9E9E) // Gray
+    override val contentLines: List<String> = listOf("Unknown event type")
+    override val expandableText: String? = null
+}
+
+/**
+ * Parse error event - when a known event type fails to parse.
+ */
+data class ParseErrorEvent(
+    override val id: String,
+    override val createdAt: String,
+    val eventType: String,
+    val errorMessage: String
+) : DisplayableEvent {
+
+    override val title: String = "Parse Error"
+    override val titleColor: Color = Color(0xFFE53935) // Red
+    override val contentLines: List<String> = listOf(
+        "Event type: $eventType",
+        "Error: $errorMessage"
+    )
+    override val expandableText: String? = null
+}

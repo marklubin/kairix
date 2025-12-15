@@ -1,0 +1,5 @@
+// SQLDelight requires linking against system SQLite
+OTHER_LDFLAGS = $(inherited) -lsqlite3
+
+// Preserve default product name from project
+PRODUCT_NAME = $(TARGET_NAME)
