@@ -13,7 +13,8 @@ from uuid import uuid4
 
 from letta_client import AsyncLetta
 
-from kairix_agent.events import EventType, publish_event
+from kairix_agent.events.models import EventType
+from kairix_agent.events.publisher import publish_event
 from kairix_agent.server.events.connection_manager import connection_manager
 
 logger = logging.getLogger(__name__)

@@ -1,5 +1,6 @@
 # Kairix
 
+![kairix](kairix.png)
 A voice-first AI agent with persistent memory across conversations.
 
 Kairix explores what it takes for an AI to develop genuine understanding over time — reflecting on past interactions, building a model of who you are, inferring goals from behavior, and evolving through feedback.
@@ -29,24 +30,28 @@ Initial exploration with Gradio interfaces and conversation persistence experime
 Built a complete agent infrastructure from scratch to understand the problem space deeply.
 
 **kairix-core** — The cognitive foundation:
+
 - Hierarchical memory with semantic graph storage
-- Perceptor system for incremental reflection and insight generation  
+- Perceptor system for incremental reflection and insight generation
 - Persona management (conversational and notebook modes)
 - Embedding pipeline (Nomic)
 - Environment tracking and context awareness
 
 **kairix-offline** — Background processing:
+
 - ChatGPT conversation importer (load years of history)
 - Multi-agent fact extraction (world facts, user profile, assistant cognition)
 - Semantic graph construction from extracted facts
 - Summary synthesis pipeline
 
 **kairix-apps** — Application layer:
+
 - FastAPI server with MCP integration
 - Model and prompt management
 - Telemetry
 
 **kairix-website** — Web client:
+
 - TypeScript/React/Vite
 - Voice UI with push-to-talk and continuous modes
 - Real-time conversation display
@@ -65,6 +70,7 @@ Rebuilt on established infrastructure as those platforms matured:
 - **SAQ workers** — Background jobs for session summarization, insights generation
 
 **Current capabilities**:
+
 - Real-time voice conversations with natural turn-taking
 - Session boundary detection (silence timeout, disconnect)
 - Background summarization via dedicated Reflector agent
@@ -78,6 +84,7 @@ Kotlin Multiplatform mobile app (iOS target). Voice interface for phone conversa
 ### Experiments (`/experiments`)
 
 Side explorations that informed the main work:
+
 - **claudetopia** — Decision simulation, Claude utility experiments
 - **perceptor-inspector** — Tooling for inspecting agent cognitive state
 - **self_bootstrapping_agent** — Agent self-modification experiments
@@ -85,19 +92,23 @@ Side explorations that informed the main work:
 ## Roadmap
 
 ### Rebuild from v1
+
 - **Conversation import** — ChatGPT importer to bootstrap memory from years of history
 - **Semantic graph** — Knowledge graph as auxiliary data store for richer entity relationships
 - **Entity extraction pipeline** — Multi-agent fact extraction (world facts, user profile, assistant cognition)
 
 ### Memory & Reflection
+
 - **Hierarchical summarization** — Time-based rollups (session → daily → weekly → topic)
 - **Topic clustering** — Identify conversation themes, generate cross-conversation summaries
 - **V1 reflection backfill** — Import experiential foundation from v1 archives
 
 ### Processing Pipeline (`/kp3`)
+
 General-purpose infrastructure for tracking text passages through multi-step processing pipelines with full provenance.
 
 **Core concepts:**
+
 - **Passages** — Immutable text content at any granularity (conversation, day summary, week summary, etc.)
 - **Derivation chains** — Track how passages derive from other passages (many-to-one consolidation)
 - **Processing runs** — Configure and execute jobs that query subsets and produce new passages
@@ -105,6 +116,7 @@ General-purpose infrastructure for tracking text passages through multi-step pro
 - **Full provenance** — Always trace back to source material
 
 **Implementation:**
+
 - SQLAlchemy models with PostgreSQL + pgvector
 - Alembic migrations for schema management
 - Service layer for passages, derivations, and processing runs
@@ -115,11 +127,13 @@ General-purpose infrastructure for tracking text passages through multi-step pro
 This powers the hierarchical summarization system but is designed as reusable infrastructure.
 
 ### Environmental Context
+
 - **Location intelligence** — Semantic context from GPS ("at coffee shop for 20 min", "commuting on BART")
 - **Environmental awareness** — Weather, time, mood tracking over time
 - **Passive signal awareness** — Interruptions, engagement patterns, backchannels as implicit feedback
 
 ### Contextual Personalization Engine (CPE)
+
 Real-time learning system using contextual bandits (Vowpal Wabbit) to personalize responses based on user state.
 
 The insight: user state vector serves dual purpose — INPUT (what's user's state now?) and FEEDBACK (how did state change after response? Δstate = learning signal).
@@ -129,10 +143,12 @@ Voice provides richer implicit signals than text: hesitation, interruption, pace
 Phases: state vector definition → response feature schema → instrumentation → reward function → VW integration → steering injection → confidence-weighted application → observability dashboard
 
 ### Latency & Response
+
 - **Tiered LLM responses** — Preemptive lightweight response for perceived speed, then full model response
 - **Active feedback tracking** — Traditional thumbs up/down alongside passive signals
 
 ### Longer-term: Agent Desktop
+
 The single-agent architecture is scaffolding for something bigger: an agent desktop environment.
 
 - **LiveKit room as desktop** — Persistent environment where agents live
@@ -141,7 +157,7 @@ The single-agent architecture is scaffolding for something bigger: an agent desk
 - **Multi-agent awareness** — Agents perceive each other, collaborate, hand off
 - **Voice as shell** — Never break out of the interface
 
-*"The room is like an environment. Like the desktop environment equivalent. And then you can call up different individual agents where they have specialization... they're like individual applications."*
+_"The room is like an environment. Like the desktop environment equivalent. And then you can call up different individual agents where they have specialization... they're like individual applications."_
 
 The background processing infrastructure being built now is the foundation. You can't have autonomous specialist agents without agents that can think independently.
 

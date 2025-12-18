@@ -30,7 +30,8 @@ from saq import Queue
 from kairix_agent.config import Config
 from kairix_agent.events import emit_context_state
 from kairix_agent.logging_config import setup_logging
-from kairix_agent.server.events import connection_manager, start_event_listener
+from kairix_agent.server.events import connection_manager
+from kairix_agent.server.events.listener import start_event_listener
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
 from kairix_agent.server.pipecat import LettaLLMService, UserTurnAggregator
 from kairix_agent.server.provider import AnthropicProvider, LettaProvider
