@@ -3,6 +3,10 @@
 import os
 from enum import Enum
 
+import dotenv
+
+dotenv.load_dotenv()
+
 
 class Config(Enum):
     """Application configuration sourced from environment variables.

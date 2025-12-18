@@ -8,7 +8,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import aiohttp
-import dotenv
 import uvicorn
 from deepgram import LiveOptions
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -36,8 +35,6 @@ from kairix_agent.server.events.listener import start_event_listener
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
 from kairix_agent.server.pipecat import LettaLLMService, UserTurnAggregator
 from kairix_agent.server.provider import AnthropicProvider, LettaProvider
-
-dotenv.load_dotenv()
 
 logger = logging.getLogger(__name__)
 

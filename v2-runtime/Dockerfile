@@ -10,10 +10,11 @@ ENV UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Install dependencies first (better layer caching)
+# Copy dependency files first (changes here invalidate cache)
+COPY uv.lock pyproject.toml ./
+
+# Install dependencies (cached unless uv.lock/pyproject.toml change)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
 
 # Copy source and install project
@@ -22,8 +23,6 @@ COPY alembic/ ./alembic/
 COPY alembic.ini ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-dev
 
 # =============================================================================

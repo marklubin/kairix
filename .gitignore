@@ -56,3 +56,4 @@ logs/
 input/*
 output/*
 env/secrets/*
+**/.env
