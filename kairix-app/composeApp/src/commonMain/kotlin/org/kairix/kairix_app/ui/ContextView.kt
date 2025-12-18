@@ -36,10 +36,10 @@ fun ContextView(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(
-                items = blocks,
-                key = { it.label }
-            ) { block ->
-                MemoryBlockCard(block = block)
+                count = blocks.size,
+                key = { index -> "${index}_${blocks[index].label}" }
+            ) { index ->
+                MemoryBlockCard(block = blocks[index])
             }
         }
     }

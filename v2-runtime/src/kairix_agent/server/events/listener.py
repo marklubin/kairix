@@ -105,8 +105,13 @@ async def start_event_listener() -> None:
                         logger.info("[listener] Fetching fresh blocks from Letta for context_state event")
                         client = AsyncLetta(base_url=Config.LETTA_BASE_URL.value)
                         blocks = await fetch_agent_blocks(client, agent_id)
+                        labels = [b["label"] for b in blocks]
+                        logger.info(
+                            "[listener] context_state payload: %d blocks, labels=%s",
+                            len(blocks),
+                            labels,
+                        )
                         event_data["payload"] = {"blocks": blocks}
-                        logger.info("[listener] Fetched %d blocks for agent %s", len(blocks), agent_id)
 
                     # Dispatch to connected WebSocket clients
                     logger.info("[listener] Dispatching to ConnectionManager for agent %s...", agent_id)

@@ -30,8 +30,10 @@ async def fetch_agent_blocks(client: AsyncLetta, agent_id: str) -> list[dict[str
     Returns:
         List of block dictionaries with label, value, and updated_at fields.
     """
+    logger.info("[fetch_blocks] Starting fetch for agent %s", agent_id)
     blocks: list[dict[str, Any]] = []
     async for block in client.agents.blocks.list(agent_id=agent_id):
+        logger.debug("[fetch_blocks] Got block: label=%s", block.label)
         block_data: dict[str, Any] = {
             "label": block.label,
             "value": block.value,
@@ -48,6 +50,8 @@ async def fetch_agent_blocks(client: AsyncLetta, agent_id: str) -> list[dict[str
 
         blocks.append(block_data)
 
+    labels = [b["label"] for b in blocks]
+    logger.info("[fetch_blocks] Completed: %d blocks, labels=%s", len(blocks), labels)
     return blocks
 
 
@@ -93,6 +97,12 @@ async def emit_context_state(
         logger.info("Published CONTEXT_STATE event for agent %s", agent_id)
     else:
         # Direct dispatch without DB storage (for on-connect)
+        labels = [b["label"] for b in blocks]
+        logger.info(
+            "[emit_context] Ephemeral dispatch: %d blocks, labels=%s",
+            len(blocks),
+            labels,
+        )
         event_data = {
             "id": str(uuid4()),
             "agent_id": agent_id,
@@ -101,4 +111,4 @@ async def emit_context_state(
             "created_at": datetime.now(UTC).isoformat(),
         }
         await connection_manager.dispatch(agent_id, event_data)
-        logger.info("Dispatched ephemeral context_state to agent %s clients", agent_id)
+        logger.info("[emit_context] Dispatched ephemeral context_state to agent %s", agent_id)

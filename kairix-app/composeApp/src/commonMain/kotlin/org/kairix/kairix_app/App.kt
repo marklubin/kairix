@@ -56,33 +56,7 @@ fun App() {
         val listState = rememberLazyListState()
 
         // Memory blocks state - extract from latest ContextStateEvent
-        // TODO: Remove mock data once server sends context_state events
-        var currentBlocks by remember {
-            mutableStateOf(
-                listOf(
-                    MemoryBlock(
-                        label = "persona",
-                        value = "You are Corindel, a thoughtful AI companion. You have a calm, reflective personality and enjoy deep conversations about philosophy, technology, and the human experience. You remember past conversations and build on them over time.",
-                        updatedAt = "2025-12-16T10:30:00.000Z"
-                    ),
-                    MemoryBlock(
-                        label = "human",
-                        value = "Mark is a software developer working on AI projects. He's interested in building personal AI assistants and has been exploring Kotlin Multiplatform for mobile development. He prefers direct, technical communication.",
-                        updatedAt = "2025-12-16T09:15:00.000Z"
-                    ),
-                    MemoryBlock(
-                        label = "background_insights",
-                        value = "Recent topics: KMP app development, Letta agent architecture, voice interfaces. Mark seems particularly focused on creating seamless voice interaction experiences. Consider suggesting improvements to audio feedback loops.",
-                        updatedAt = "2025-12-16T11:45:00.000Z"
-                    ),
-                    MemoryBlock(
-                        label = "conversation_summary",
-                        value = "Last session covered deployment to salinas server, agent provisioning with subsidiary agents, and iOS app endpoint configuration. Key decision: using .af files for agent transplants between environments.",
-                        updatedAt = "2025-12-15T22:00:00.000Z"
-                    )
-                )
-            )
-        }
+        var currentBlocks by remember { mutableStateOf(emptyList<MemoryBlock>()) }
 
         // Update blocks when events change
         LaunchedEffect(events) {
