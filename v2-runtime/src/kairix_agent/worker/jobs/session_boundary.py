@@ -12,11 +12,16 @@ from kairix_agent.agent_config import get_agent_config
 from kairix_agent.config import Config
 from kairix_agent.events import EventType, publish_event
 from kairix_agent.memory import LettaMemoryService
+from kairix_agent.sessions import create_session, get_associated_sessions
 
 if TYPE_CHECKING:
     from saq.types import Context
 
 logger = logging.getLogger(__name__)
+
+
+class SessionIntegrityError(Exception):
+    """Raised when session message associations are inconsistent."""
 
 
 async def _check_agent_session(
@@ -103,7 +108,36 @@ async def _check_agent_session(
             "gap_seconds": gap.total_seconds(),
         }
 
-    # We have a completed session! Enqueue summarization
+    # Extract message IDs for the session
+    message_ids = [m.id for m in messages]
+    first_message = messages[0]
+
+    # Check if these messages are already associated with a session
+    associated_sessions = await get_associated_sessions(message_ids)
+
+    if len(associated_sessions) == 1:
+        # Already processed - skip silently
+        logger.debug(
+            "Session for agent %s already tracked (session_id=%s), skipping",
+            agent_config.agent_id,
+            associated_sessions[0],
+        )
+        return {
+            "status": "ok",
+            "messages_found": len(messages),
+            "already_tracked": True,
+            "existing_session_id": associated_sessions[0],
+        }
+
+    if len(associated_sessions) > 1:
+        # Inconsistent state - messages span multiple sessions
+        msg = (
+            f"Messages for agent {agent_config.agent_id} span "
+            f"{len(associated_sessions)} sessions: {associated_sessions}"
+        )
+        raise SessionIntegrityError(msg)
+
+    # All messages are new - create session and proceed
     logger.info(
         "Detected session boundary for agent %s: %d messages, gap %s",
         agent_config.agent_id,
@@ -111,9 +145,19 @@ async def _check_agent_session(
         gap,
     )
 
-    # Extract message IDs for the session
-    message_ids = [m.id for m in messages]
-    first_message = messages[0]
+    # Create session record in our database
+    new_session = await create_session(
+        agent_id=agent_config.agent_id,
+        message_ids=message_ids,
+        period_start=first_message.date,
+        period_end=last_message.date,
+    )
+    logger.info(
+        "Created session %s for agent %s with %d messages",
+        new_session.id,
+        agent_config.agent_id,
+        len(message_ids),
+    )
 
     # Publish session boundary event
     await publish_event(
@@ -123,20 +167,19 @@ async def _check_agent_session(
             "boundary_detected": True,
             "gap_minutes": gap.total_seconds() / 60,
             "message_count": len(messages),
+            "session_id": new_session.id,
         },
     )
     logger.info("Published SESSION_BOUNDARY event for agent %s", agent_config.agent_id)
 
-    # Enqueue summarization job with extended timeout (LLM calls can take a while)
+    # Enqueue summarization job with session_id instead of message_ids
     await queue.enqueue(
         "summarize_session",
+        session_id=new_session.id,
         agent_id=agent_config.agent_id,
         letta_url=letta_url,
         archive_id=agent_config.archive_id,
         reflector_agent_id=agent_config.reflector_agent_id,
-        message_ids=message_ids,
-        period_start=first_message.date.isoformat(),
-        period_end=last_message.date.isoformat(),
         timeout=300,  # 5 minutes for summarization
     )
 
@@ -145,6 +188,7 @@ async def _check_agent_session(
         "messages_found": len(messages),
         "session_complete": True,
         "summarization_enqueued": True,
+        "session_id": new_session.id,
     }
 
 

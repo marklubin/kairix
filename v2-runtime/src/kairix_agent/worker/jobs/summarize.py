@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from letta_client import AsyncLetta
 from letta_client.types.agents import AssistantMessage
 
 from kairix_agent.events import EventType, emit_context_state, publish_event
+from kairix_agent.sessions import (
+    SessionStatus,
+    get_session,
+    get_session_message_ids,
+    update_session_status,
+)
 from kairix_agent.worker.jobs.transcript import format_transcript
 
 if TYPE_CHECKING:
@@ -68,38 +75,51 @@ that might provide context."""
 async def summarize_session(
     _ctx: Context,
     *,
+    session_id: str,
     agent_id: str,
     letta_url: str,
     archive_id: str,
     reflector_agent_id: str | None,
-    message_ids: list[str],
-    period_start: str,
-    period_end: str,
 ) -> dict[str, object]:
     """Summarize a completed session and store in archival memory.
 
     This job:
-    1. Sends session transcript to reflector for summarization
-    2. Resets the reflector agent's message history
-    3. Stores the summary in the conversational agent's archival memory
-    4. Updates the last_session_summary block
-    5. Resets the conversational agent's message history
+    1. Loads session info from our database
+    2. Sends session transcript to reflector for summarization
+    3. Resets the reflector agent's message history
+    4. Stores the summary in the conversational agent's archival memory
+    5. Updates the last_session_summary block
+    6. Resets the conversational agent's message history
+    7. Updates session status in our database
 
     Args:
         _ctx: SAQ job context.
+        session_id: Our session tracking ID.
         agent_id: The conversational Letta agent ID.
         letta_url: The Letta server URL.
         archive_id: The archive ID to store summaries in.
         reflector_agent_id: The reflector agent ID (or None if not provisioned).
-        message_ids: List of message IDs in the session.
-        period_start: ISO timestamp of first message.
-        period_end: ISO timestamp of last message.
 
     Returns:
         Status dict with summarization results.
     """
+    # Load session from our database
+    session = await get_session(session_id)
+    if session is None:
+        logger.error("Session %s not found in database", session_id)
+        return {
+            "status": "error",
+            "error": "session_not_found",
+            "session_id": session_id,
+        }
+
+    message_ids = await get_session_message_ids(session_id)
+    period_start = session.period_start.isoformat()
+    period_end = session.period_end.isoformat()
+
     logger.info(
-        "Summarizing session for agent %s: %d messages from %s to %s",
+        "Summarizing session %s for agent %s: %d messages from %s to %s",
+        session_id,
         agent_id,
         len(message_ids),
         period_start,
@@ -108,10 +128,16 @@ async def summarize_session(
 
     if not reflector_agent_id:
         logger.error("Cannot summarize: no reflector agent configured for %s", agent_id)
+        await update_session_status(
+            session_id=session_id,
+            status=SessionStatus.FAILED,
+            error_message="reflector_not_configured",
+        )
         return {
             "status": "error",
             "error": "reflector_not_configured",
             "agent_id": agent_id,
+            "session_id": session_id,
         }
 
     client = AsyncLetta(base_url=letta_url)
@@ -143,10 +169,16 @@ async def summarize_session(
 
     if not summary_text:
         logger.warning("Reflector returned empty summary")
+        await update_session_status(
+            session_id=session_id,
+            status=SessionStatus.FAILED,
+            error_message="empty_summary",
+        )
         return {
             "status": "error",
             "error": "empty_summary",
             "agent_id": agent_id,
+            "session_id": session_id,
         }
 
     logger.info("Received summary (%d chars) from reflector", len(summary_text))
@@ -156,11 +188,11 @@ async def summarize_session(
     logger.info("Reset reflector agent %s message history", reflector_agent_id)
 
     # 4. Store summary in archival memory
-    await client.archives.passages.create(
+    passage = await client.archives.passages.create(
         archive_id=archive_id,
         text=f"[Session Summary: {period_start} to {period_end}]\n\n{summary_text}",
     )
-    logger.info("Stored summary in archival memory (archive %s)", archive_id)
+    logger.info("Stored summary in archival memory (archive %s, passage %s)", archive_id, passage.id)
 
     # 5. Update the last_session_summary block in the conversational agent's core memory
     # This keeps the summary in-window for continuity after reset
@@ -192,8 +224,18 @@ async def summarize_session(
     # 8. Emit context state update (blocks have changed)
     await emit_context_state(agent_id=agent_id, letta_url=letta_url)
 
+    # 9. Update session status to summarized
+    await update_session_status(
+        session_id=session_id,
+        status=SessionStatus.SUMMARIZED,
+        summary_passage_id=passage.id,
+        summarized_at=datetime.now(UTC),
+    )
+    logger.info("Updated session %s status to summarized", session_id)
+
     return {
         "status": "ok",
+        "session_id": session_id,
         "agent_id": agent_id,
         "reflector_id": reflector_agent_id,
         "message_count": len(message_ids),
@@ -201,4 +243,5 @@ async def summarize_session(
         "period_end": period_end,
         "summary_length": len(summary_text),
         "summary_stored": True,
+        "passage_id": passage.id,
     }

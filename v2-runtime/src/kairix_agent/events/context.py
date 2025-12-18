@@ -31,15 +31,13 @@ async def fetch_agent_blocks(client: AsyncLetta, agent_id: str) -> list[dict[str
         List of block dictionaries with label, value, and updated_at fields.
     """
     logger.info("[fetch_blocks] Starting fetch for agent %s", agent_id)
-    # Use dict keyed by label to dedupe (Letta SDK pagination bug returns duplicates)
-    blocks_by_label: dict[str, dict[str, Any]] = {}
-    async for block in client.agents.blocks.list(agent_id=agent_id):
+    blocks: list[dict[str, Any]] = []
+    # NOTE: order='asc' is required! The Letta server defaults to 'desc', but the SDK's
+    # cursor pagination assumes ascending order. Without this, `after=<last_id>` returns
+    # items we've already seen, causing duplicates.
+    async for block in client.agents.blocks.list(agent_id=agent_id, order="asc"):
         label = block.label or "unknown"
         logger.debug("[fetch_blocks] Got block: label=%s", label)
-
-        # Skip if we already have this block (dedupe)
-        if label in blocks_by_label:
-            continue
 
         block_data: dict[str, Any] = {
             "label": label,
@@ -55,9 +53,8 @@ async def fetch_agent_blocks(client: AsyncLetta, agent_id: str) -> list[dict[str
         else:
             block_data["updated_at"] = None
 
-        blocks_by_label[label] = block_data
+        blocks.append(block_data)
 
-    blocks = list(blocks_by_label.values())
     labels = [b["label"] for b in blocks]
     logger.info("[fetch_blocks] Completed: %d blocks, labels=%s", len(blocks), labels)
     return blocks

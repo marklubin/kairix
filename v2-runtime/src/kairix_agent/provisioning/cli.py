@@ -72,7 +72,8 @@ async def find_agent_by_name(
             # Get attached blocks via dedicated endpoint
             # (agents.retrieve().memory.blocks is broken in SDK - returns empty)
             existing_blocks: dict[str, str] = {}
-            async for block in client.agents.blocks.list(agent_id=agent.id):
+            # order='asc' required: SDK pagination assumes asc, but server defaults to desc
+            async for block in client.agents.blocks.list(agent_id=agent.id, order="asc"):
                 if block.label:
                     existing_blocks[block.label] = block.id
                     logger.debug("  Found existing block: %s (%s)", block.label, block.id)
@@ -422,7 +423,8 @@ async def get_conversational_agent_blocks(
     async for agent in client.agents.list(name=base_name):
         if agent.name == base_name:
             found_blocks: dict[str, str] = {}
-            async for block in client.agents.blocks.list(agent_id=agent.id):
+            # order='asc' required: SDK pagination assumes asc, but server defaults to desc
+            async for block in client.agents.blocks.list(agent_id=agent.id, order="asc"):
                 if block.label in block_labels:
                     found_blocks[block.label] = block.id
                     logger.info(
@@ -571,7 +573,8 @@ async def _attach_block_to_conversational_agent(
     """
     # Find the block on the source agent
     block_id: str | None = None
-    async for block in client.agents.blocks.list(agent_id=source_agent_id):
+    # order='asc' required: SDK pagination assumes asc, but server defaults to desc
+    async for block in client.agents.blocks.list(agent_id=source_agent_id, order="asc"):
         if block.label == block_label:
             block_id = block.id
             break
@@ -587,7 +590,8 @@ async def _attach_block_to_conversational_agent(
         if agent.name == base_name:
             conv_agent_id = agent.id
             # Check if conversational agent already has a block with this label
-            async for existing_block in client.agents.blocks.list(agent_id=agent.id):
+            # order='asc' required: SDK pagination assumes asc, but server defaults to desc
+            async for existing_block in client.agents.blocks.list(agent_id=agent.id, order="asc"):
                 if existing_block.label == block_label:
                     existing_block_id = existing_block.id
                     break

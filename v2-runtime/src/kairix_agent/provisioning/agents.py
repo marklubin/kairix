@@ -23,7 +23,7 @@ class AgentSpec:
     name: str
     description: str
     system_prompt: str
-    model: str = "anthropic/claude-opus-4-5-20251101"
+    model: str = "anthropic/claude-sonnet-4-20250514"
     embedding: str = "openai/text-embedding-3-small"
     context_window: int = 25000  # 2x to undercut Letta's auto summarizer
     enable_reasoner: bool = True
