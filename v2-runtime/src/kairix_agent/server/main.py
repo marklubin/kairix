@@ -18,6 +18,7 @@ from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.serializers.protobuf import ProtobufFrameSerializer
+from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.transports.websocket.fastapi import (
@@ -72,6 +73,8 @@ def get_or_die(env_var: str) -> str:
 # Config from environment
 agent_id = get_or_die("LETTA_AGENT_ID")
 deepgram_api_key = get_or_die("DEEPGRAM_API_KEY")
+cartesia_api_key = get_or_die("CARTESIA_API_KEY")
+cartesia_voice_id = get_or_die("CARTESIA_VOICE_ID")
 
 
 anthropic_provider = AnthropicProvider()
@@ -142,9 +145,11 @@ async def events_endpoint(websocket: WebSocket, agent_id: str) -> None:
             letta_url=Config.LETTA_BASE_URL.value,
             persist=False,
         )
-        logger.info("Sent initial context_state to client for agent %s", agent_id)
+        logger.info(
+            "Sent initial context_state to client for agent %s", agent_id)
     except Exception:
-        logger.exception("Failed to send initial context state for agent %s", agent_id)
+        logger.exception(
+            "Failed to send initial context state for agent %s", agent_id)
 
     try:
         # Keep connection open, events are pushed via ConnectionManager
@@ -169,7 +174,8 @@ async def voice_endpoint(websocket: WebSocket) -> None:
         sample_rate=16000,
         params=VADParams(
             start_secs=0.2,  # Quick to detect speech start (default 0.2)
-            stop_secs=1.5,  # Wait 1.5s of silence before "done speaking" (default 0.8)
+            # Wait 1.5s of silence before "done speaking" (default 0.8)
+            stop_secs=1.5,
         ),
     )
 
@@ -192,13 +198,17 @@ async def voice_endpoint(websocket: WebSocket) -> None:
             language="en-US",
             punctuate=True,
             interim_results=True,
-            utterance_end_ms="2000",  # Wait 2s of silence before finalizing (default ~1s)
+            # Wait 2s of silence before finalizing (default ~1s)
+            utterance_end_ms="2000",
             vad_events=True,
             profanity_filter=False,
         ),
     )
 
-    tts = DeepgramTTSService(api_key=deepgram_api_key, voice="aura-2-phoebe-en")
+    # tts = DeepgramTTSService(api_key=deepgram_api_key, voice="aura-2-phoebe-en")
+
+    tts = CartesiaTTSService(api_key=cartesia_api_key,
+                             voice_id=cartesia_voice_id)
     user_turn_aggregator = UserTurnAggregator()
 
     # Create SAQ queue for background jobs
@@ -238,7 +248,8 @@ def main() -> None:
     logger.info("Starting agent server...")
 
     # Hot reload disabled by default, enable with RELOAD=1
-    reload_enabled = os.environ.get("RELOAD", "").lower() in ("1", "true", "yes")
+    reload_enabled = os.environ.get(
+        "RELOAD", "").lower() in ("1", "true", "yes")
 
     uvicorn_kwargs: dict[str, object] = {
         "host": "0.0.0.0",
