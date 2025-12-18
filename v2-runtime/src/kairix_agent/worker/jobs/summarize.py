@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from letta_client import AsyncLetta
 from letta_client.types.agents import AssistantMessage
 
-from kairix_agent.events import EventType, publish_event
+from kairix_agent.events import EventType, emit_context_state, publish_event
 from kairix_agent.worker.jobs.transcript import format_transcript
 
 if TYPE_CHECKING:
@@ -188,6 +188,9 @@ async def summarize_session(
         },
     )
     logger.info("Published SUMMARY_COMPLETE event for agent %s", agent_id)
+
+    # 8. Emit context state update (blocks have changed)
+    await emit_context_state(agent_id=agent_id, letta_url=letta_url)
 
     return {
         "status": "ok",

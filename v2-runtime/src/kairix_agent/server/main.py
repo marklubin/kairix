@@ -4,8 +4,8 @@ import asyncio
 import logging
 import os
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 import aiohttp
 import dotenv
@@ -14,14 +14,12 @@ from deepgram import LiveOptions
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
-
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.serializers.protobuf import ProtobufFrameSerializer
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
-from pipecat.services.piper.tts import PiperTTSService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
@@ -30,6 +28,7 @@ from pipecat_whisker import WhiskerObserver
 from saq import Queue
 
 from kairix_agent.config import Config
+from kairix_agent.events import emit_context_state
 from kairix_agent.logging_config import setup_logging
 from kairix_agent.server.events import connection_manager, start_event_listener
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
@@ -128,9 +127,23 @@ async def events_endpoint(websocket: WebSocket, agent_id: str) -> None:
         "payload": {...},
         "created_at": "2025-12-06T10:30:00Z"
     }
+
+    On connect, immediately sends the current context_state so the client
+    has the latest memory blocks.
     """
     await websocket.accept()
     await connection_manager.register(agent_id, websocket)
+
+    # Send initial context state on connect (ephemeral, no DB storage)
+    try:
+        await emit_context_state(
+            agent_id=agent_id,
+            letta_url=Config.LETTA_BASE_URL.value,
+            persist=False,
+        )
+        logger.info("Sent initial context_state to client for agent %s", agent_id)
+    except Exception:
+        logger.exception("Failed to send initial context state for agent %s", agent_id)
 
     try:
         # Keep connection open, events are pushed via ConnectionManager

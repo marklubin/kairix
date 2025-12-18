@@ -15,7 +15,7 @@ from letta_client.types.agents import AssistantMessage
 
 from kairix_agent.agent_config import get_agent_config
 from kairix_agent.config import Config
-from kairix_agent.events import EventType, publish_event
+from kairix_agent.events import EventType, emit_context_state, publish_event
 from kairix_agent.worker.jobs.transcript import format_transcript
 
 if TYPE_CHECKING:
@@ -33,6 +33,7 @@ async def _check_agent_insights(
         client: AsyncLetta,
         agent_id: str,
         insights_agent_id: str,
+        letta_url: str,
 ) -> dict[str, object]:
     """Check and potentially update insights for a single agent.
 
@@ -40,6 +41,7 @@ async def _check_agent_insights(
         client: Letta client.
         agent_id: Conversational agent ID.
         insights_agent_id: Background insights agent ID.
+        letta_url: Letta server URL (for context state emission).
 
     Returns:
         Status dict.
@@ -161,6 +163,9 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
     )
     logger.info("Published INSIGHTS_COMPLETE event for agent %s", agent_id)
 
+    # Emit context state update (blocks may have changed)
+    await emit_context_state(agent_id=agent_id, letta_url=letta_url)
+
     return {
         "status": "ok",
         "messages_checked": len(messages),
@@ -212,6 +217,7 @@ async def check_insights_relevance(
                 client=client,
                 agent_id=agent_id,
                 insights_agent_id=config.insights_agent_id,
+                letta_url=letta_url,
             )
             results[agent_id] = result
 
@@ -331,6 +337,9 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
                 "response": response_text,
             },
         )
+
+        # Emit context state update (blocks may have changed)
+        await emit_context_state(agent_id=agent_id, letta_url=letta_url)
 
         return {
             "status": "ok",

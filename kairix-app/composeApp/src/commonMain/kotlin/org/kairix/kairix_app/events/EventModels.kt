@@ -58,6 +58,8 @@ sealed interface DisplayableEvent {
                     ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
                 "insights_complete" -> InsightsCompleteEvent.parse(event, json)
                     ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
+                "context_state" -> ContextStateEvent.parse(event, json)
+                    ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
                 else -> UnknownEvent(event.id, event.createdAt, event.eventType)
             }
         }
@@ -241,3 +243,62 @@ data class ParseErrorEvent(
     )
     override val expandableText: String? = null
 }
+
+// =============================================================================
+// Memory Block / Context State
+// =============================================================================
+
+/**
+ * A single memory block from the agent's context.
+ */
+@Serializable
+data class MemoryBlock(
+    val label: String,
+    val value: String,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/**
+ * Context state event - full snapshot of agent's memory blocks.
+ * Used to update the Context view with latest block values.
+ */
+data class ContextStateEvent(
+    override val id: String,
+    override val createdAt: String,
+    val blocks: List<MemoryBlock>
+) : DisplayableEvent {
+
+    override val title: String = "Context Updated"
+    override val titleColor: Color = Color(0xFFFF9800) // Orange
+
+    override val contentLines: List<String> = listOf(
+        "${blocks.size} memory blocks"
+    )
+
+    override val expandableText: String? = blocks.joinToString("\n\n") { block ->
+        "[${block.label}]\n${block.value.take(100)}${if (block.value.length > 100) "..." else ""}"
+    }.takeIf { it.isNotBlank() }
+
+    companion object {
+        fun parse(event: AgentEvent, json: Json): ContextStateEvent? {
+            return try {
+                val payload = json.decodeFromJsonElement<ContextStatePayload>(event.payload)
+                ContextStateEvent(
+                    id = event.id,
+                    createdAt = event.createdAt,
+                    blocks = payload.blocks
+                )
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse ContextStateEvent payload: ${e.message}")
+                println("  Event ID: ${event.id}")
+                println("  Payload: ${event.payload}")
+                null
+            }
+        }
+    }
+}
+
+@Serializable
+private data class ContextStatePayload(
+    val blocks: List<MemoryBlock>
+)

@@ -26,3 +26,22 @@ class InsightsCompletePayload(BaseModel):
 
     triggered: bool
     response: str | None = None
+
+
+class MemoryBlockPayload(BaseModel):
+    """A single memory block from the agent's core memory."""
+
+    label: str
+    value: str
+    updated_at: str | None = None
+
+
+class ContextStatePayload(BaseModel):
+    """Payload for CONTEXT_STATE events.
+
+    Contains the full list of memory blocks for the agent.
+    Note: The DB stores only lightweight metadata (block_count),
+    while the full blocks are fetched fresh from Letta when dispatching.
+    """
+
+    blocks: list[MemoryBlockPayload]

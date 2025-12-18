@@ -33,6 +33,15 @@ wheels/
 # Virtual environments
 .venv
 
+**/.idea/*
+**/.idea/*
+**/.idea/*
+**/.idea/*
+**/.idea/*
+**/.idea/*
+**/.idea/*
+**/.idea/*
+**/.idea/*
 neo4j/*
 data/*
 output/*

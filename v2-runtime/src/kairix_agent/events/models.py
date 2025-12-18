@@ -19,6 +19,7 @@ class EventType(str, Enum):
     SESSION_BOUNDARY = "session_boundary"
     SUMMARY_COMPLETE = "summary_complete"
     INSIGHTS_COMPLETE = "insights_complete"
+    CONTEXT_STATE = "context_state"
 
 
 class AgentEvent(Base):

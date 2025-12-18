@@ -1,13 +1,14 @@
 """Redis pub/sub listener for agent events."""
-
 import asyncio
 import logging
 
 import redis.asyncio as redis
+from letta_client import AsyncLetta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from kairix_agent.config import Config
+from kairix_agent.events.context import fetch_agent_blocks
 from kairix_agent.events.models import AgentEvent
 from kairix_agent.server.events.connection_manager import connection_manager
 
@@ -97,6 +98,15 @@ async def start_event_listener() -> None:
                         logger.error("[listener] Event %s not found in database, skipping", event_id)
                         continue
                     logger.info("[listener] Fetched event: type=%s", event_data.get("event_type"))
+
+                    # For context_state events, fetch fresh blocks from Letta
+                    # (DB only stores lightweight metadata)
+                    if event_data.get("event_type") == "context_state":
+                        logger.info("[listener] Fetching fresh blocks from Letta for context_state event")
+                        client = AsyncLetta(base_url=Config.LETTA_BASE_URL.value)
+                        blocks = await fetch_agent_blocks(client, agent_id)
+                        event_data["payload"] = {"blocks": blocks}
+                        logger.info("[listener] Fetched %d blocks for agent %s", len(blocks), agent_id)
 
                     # Dispatch to connected WebSocket clients
                     logger.info("[listener] Dispatching to ConnectionManager for agent %s...", agent_id)
