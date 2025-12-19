@@ -6,7 +6,6 @@ Wraps the Letta SDK to provide:
 - Passage search (for retrieving summaries)
 """
 
-from collections.abc import AsyncIterator
 from datetime import datetime
 from logging import getLogger
 
@@ -41,35 +40,20 @@ class LettaMemoryService:
         self.agent_id = agent_id
         self.archive_id = archive_id
 
-    async def get_messages_since(
-        self,
-        after_message_id: str | None = None,
-        limit: int = 100,
-    ) -> AsyncIterator[Message]:
-        """Get messages since a cursor position.
+    async def get_all_messages(self) -> list[Message]:
+        """Get all messages for the agent.
 
-        Uses Letta's message ID-based pagination. If no cursor is provided,
-        returns messages from the beginning.
-
-        Args:
-            after_message_id: Message ID to start after (exclusive).
-            limit: Maximum messages per page.
-
-        Yields:
-            Message objects in chronological order.
+        Returns:
+            List of Message objects in chronological order.
         """
-        # The AsyncPaginator automatically handles iteration across pages
-        # It implements __aiter__ which yields items directly
-        paginator = self.client.agents.messages.list(
-            agent_id=self.agent_id,
-            after=after_message_id,
-            limit=limit,
-            order="asc",
-            order_by="created_at",
-        )
-
-        async for message in paginator:
-            yield message
+        return [
+            message
+            async for message in self.client.agents.messages.list(
+                agent_id=self.agent_id,
+                order="asc",
+                order_by="created_at",
+            )
+        ]
 
     async def store_summary(self, summary: ConversationSummary) -> str:
         """Store a summary as a passage in archival memory.

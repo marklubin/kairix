@@ -13,25 +13,23 @@ _engine = create_async_engine(Config.DATABASE_URL.value, echo=False)
 _async_session = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
 
 
-async def get_associated_sessions(message_ids: list[str]) -> list[str]:
-    """Check if any messages are already associated with sessions.
+async def get_latest_session_end(agent_id: str) -> datetime | None:
+    """Get the period_end of the most recent session for an agent.
 
     Args:
-        message_ids: List of Letta message IDs to check.
+        agent_id: The Letta agent ID.
 
     Returns:
-        List of distinct session IDs that contain any of the message IDs.
+        The period_end timestamp of the latest session, or None if no sessions exist.
     """
-    if not message_ids:
-        return []
-
-    async with _async_session() as session:
-        result = await session.execute(
-            select(SessionMessage.session_id)
-            .where(SessionMessage.message_id.in_(message_ids))
-            .distinct()
+    async with _async_session() as db:
+        result = await db.execute(
+            select(Session.period_end)
+            .where(Session.agent_id == agent_id)
+            .order_by(Session.period_end.desc())
+            .limit(1)
         )
-        return list(result.scalars().all())
+        return result.scalar_one_or_none()
 
 
 async def create_session(

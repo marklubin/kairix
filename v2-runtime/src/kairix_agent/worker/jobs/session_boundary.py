@@ -12,16 +12,12 @@ from kairix_agent.agent_config import get_agent_config
 from kairix_agent.config import Config
 from kairix_agent.events import EventType, publish_event
 from kairix_agent.memory import LettaMemoryService
-from kairix_agent.sessions import create_session, get_associated_sessions
+from kairix_agent.sessions import create_session, get_latest_session_end
 
 if TYPE_CHECKING:
     from saq.types import Context
 
 logger = logging.getLogger(__name__)
-
-
-class SessionIntegrityError(Exception):
-    """Raised when session message associations are inconsistent."""
 
 
 async def _check_agent_session(
@@ -55,18 +51,19 @@ async def _check_agent_session(
         base_url=letta_url,
     )
 
-    # Fetch all messages (no cursor needed - messages are reset after summarization)
-    # Filter out system messages - only count user/assistant conversation
-    all_messages = [
-        message async for message in memory_service.get_messages_since(None)
-    ]
+    # Get the latest session end time for this agent (to filter out already-tracked messages)
+    latest_session_end = await get_latest_session_end(agent_config.agent_id)
+
+    # Fetch all messages and filter to user/assistant messages AFTER the last session
+    all_messages = await memory_service.get_all_messages()
     messages = [
         m for m in all_messages
         if m.message_type in ("user_message", "assistant_message")
+        and (latest_session_end is None or m.date > latest_session_end)
     ]
 
     if not messages:
-        logger.debug("No conversation messages for agent %s", agent_config.agent_id)
+        logger.debug("No new conversation messages for agent %s", agent_config.agent_id)
         await publish_event(
             agent_id=agent_config.agent_id,
             event_type=EventType.SESSION_BOUNDARY,
@@ -112,32 +109,7 @@ async def _check_agent_session(
     message_ids = [m.id for m in messages]
     first_message = messages[0]
 
-    # Check if these messages are already associated with a session
-    associated_sessions = await get_associated_sessions(message_ids)
-
-    if len(associated_sessions) == 1:
-        # Already processed - skip silently
-        logger.debug(
-            "Session for agent %s already tracked (session_id=%s), skipping",
-            agent_config.agent_id,
-            associated_sessions[0],
-        )
-        return {
-            "status": "ok",
-            "messages_found": len(messages),
-            "already_tracked": True,
-            "existing_session_id": associated_sessions[0],
-        }
-
-    if len(associated_sessions) > 1:
-        # Inconsistent state - messages span multiple sessions
-        msg = (
-            f"Messages for agent {agent_config.agent_id} span "
-            f"{len(associated_sessions)} sessions: {associated_sessions}"
-        )
-        raise SessionIntegrityError(msg)
-
-    # All messages are new - create session and proceed
+    # Session boundary detected - create session and proceed
     logger.info(
         "Detected session boundary for agent %s: %d messages, gap %s",
         agent_config.agent_id,

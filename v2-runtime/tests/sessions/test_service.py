@@ -42,41 +42,52 @@ class TestSessionModels:
         assert msg.message_id == "msg-abc-123"
 
 
-class TestGetAssociatedSessions:
-    """Tests for get_associated_sessions function."""
+class TestGetLatestSessionEnd:
+    """Tests for get_latest_session_end function."""
 
     @pytest.mark.asyncio
-    async def test_empty_message_ids_returns_empty(self) -> None:
-        """Empty message_ids list returns empty result."""
-        from kairix_agent.sessions.service import get_associated_sessions
-
-        result = await get_associated_sessions([])
-        assert result == []
-
-    @pytest.mark.asyncio
-    async def test_finds_associated_sessions(self) -> None:
-        """Returns session IDs for messages that have associations."""
-        # Create mock session and execute
-        mock_session = AsyncMock()
+    async def test_no_sessions_returns_none(self) -> None:
+        """Returns None when no sessions exist for the agent."""
+        mock_db = AsyncMock()
         mock_result = MagicMock()
-        mock_scalars = MagicMock()
-        mock_scalars.all.return_value = ["session-1", "session-2"]
-        mock_result.scalars.return_value = mock_scalars
-        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db.execute = AsyncMock(return_value=mock_result)
 
-        # Create mock async context manager
         mock_session_factory = MagicMock()
-        mock_session_factory.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_factory.__aenter__ = AsyncMock(return_value=mock_db)
         mock_session_factory.__aexit__ = AsyncMock(return_value=None)
 
         with patch(
             "kairix_agent.sessions.service._async_session",
             return_value=mock_session_factory,
         ):
-            from kairix_agent.sessions.service import get_associated_sessions
+            from kairix_agent.sessions.service import get_latest_session_end
 
-            result = await get_associated_sessions(["msg-1", "msg-2"])
-            assert result == ["session-1", "session-2"]
+            result = await get_latest_session_end("agent-123")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_returns_latest_session_end(self) -> None:
+        """Returns period_end of the most recent session."""
+        expected_time = datetime.now(UTC)
+
+        mock_db = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = expected_time
+        mock_db.execute = AsyncMock(return_value=mock_result)
+
+        mock_session_factory = MagicMock()
+        mock_session_factory.__aenter__ = AsyncMock(return_value=mock_db)
+        mock_session_factory.__aexit__ = AsyncMock(return_value=None)
+
+        with patch(
+            "kairix_agent.sessions.service._async_session",
+            return_value=mock_session_factory,
+        ):
+            from kairix_agent.sessions.service import get_latest_session_end
+
+            result = await get_latest_session_end("agent-123")
+            assert result == expected_time
 
 
 class TestCreateSession:
