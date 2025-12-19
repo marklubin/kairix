@@ -1,56 +1,183 @@
-"""Test fixtures using compose-managed Postgres + pgvector.
-
-Requires: Test database must exist before running tests.
-Run once: psql -h localhost -U kp3 -c "CREATE DATABASE kp3_test"
-"""
+"""Test fixtures for KP3 query service tests."""
 
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from kp3.db.models import Base
+from kp3.db.models import Base, Passage
 
-# Test database configuration - connects to compose-managed postgres
-TEST_DB_HOST = os.getenv("KP3_TEST_DB_HOST", "localhost")
-TEST_DB_PORT = os.getenv("KP3_TEST_DB_PORT", "5432")
-TEST_DB_USER = os.getenv("KP3_TEST_DB_USER", "kp3")
-TEST_DB_PASSWORD = os.getenv("KP3_TEST_DB_PASSWORD", "kp3")
-TEST_DB_NAME = os.getenv("KP3_TEST_DB_NAME", "kp3_test")
 
-TEST_DB_URL = (
-    f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PASSWORD}"
-    f"@{TEST_DB_HOST}:{TEST_DB_PORT}/{TEST_DB_NAME}"
-)
+def _docker_available() -> bool:
+    """Check if Docker/Podman is available and running."""
+    try:
+        import docker
+
+        client = docker.from_env()
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+
+# Cache the result to avoid checking multiple times
+_DOCKER_AVAILABLE: bool | None = None
+
+
+def docker_available() -> bool:
+    """Check if Docker is available (cached)."""
+    global _DOCKER_AVAILABLE
+    if _DOCKER_AVAILABLE is None:
+        _DOCKER_AVAILABLE = _docker_available()
+    return _DOCKER_AVAILABLE
+
+
+@pytest.fixture(autouse=True)
+def skip_docker_tests(request: pytest.FixtureRequest) -> None:
+    """Skip tests marked with 'docker' if Docker is not available."""
+    if request.node.get_closest_marker("docker"):
+        if not docker_available():
+            pytest.skip("Docker/Podman not available or not running")
+
+
+@pytest.fixture(scope="session")
+def postgres_container() -> Generator[Any, None, None]:
+    """Spin up a Postgres container with pgvector for tests."""
+    if not _docker_available():
+        pytest.skip("Docker/Podman not available")
+
+    from testcontainers.postgres import PostgresContainer
+
+    with PostgresContainer(
+        image="pgvector/pgvector:pg16",
+        driver="asyncpg",
+    ) as postgres:
+        yield postgres
+
+
+@pytest.fixture(scope="session")
+def database_url(postgres_container: Any) -> str:
+    """Get the database URL from the container."""
+    # testcontainers gives us a psycopg2 URL, convert to asyncpg
+    url = postgres_container.get_connection_url()
+    return url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+
+
+@pytest.fixture(scope="session")
+def _set_env(database_url: str) -> Generator[None, None, None]:
+    """Set environment variables for the test database."""
+    old_url = os.environ.get("KP3_DATABASE_URL")
+    os.environ["KP3_DATABASE_URL"] = database_url
+    yield
+    if old_url is not None:
+        os.environ["KP3_DATABASE_URL"] = old_url
+    else:
+        os.environ.pop("KP3_DATABASE_URL", None)
 
 
 @pytest.fixture
-async def engine() -> AsyncGenerator[AsyncEngine, None]:
-    """Create async engine and set up schema."""
-    eng = create_async_engine(TEST_DB_URL, echo=False)
+async def db_engine(database_url: str) -> AsyncGenerator[Any, None]:
+    """Create async engine for test database."""
+    engine = create_async_engine(database_url, echo=False)
 
-    async with eng.begin() as conn:
+    # Create tables and enable pgvector extension
+    async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    yield eng
+    yield engine
 
-    await eng.dispose()
+    # Cleanup
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+    await engine.dispose()
 
 
 @pytest.fixture
-async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a fresh session for each test."""
-    async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async def db_session(db_engine: Any) -> AsyncGenerator[AsyncSession, None]:
+    """Create a test database session."""
+    async_session_factory = async_sessionmaker(
+        db_engine, class_=AsyncSession, expire_on_commit=False
+    )
 
-    async with async_session_maker() as sess:
-        yield sess
-        await sess.rollback()
+    async with async_session_factory() as session:
+        yield session
+        await session.rollback()
+
+
+@pytest.fixture
+async def sample_passages(db_session: AsyncSession) -> list[Passage]:
+    """Insert sample passages for testing.
+
+    Note: These passages don't have embeddings, so semantic search won't find them.
+    FTS search will work based on content_tsv (auto-generated by Postgres).
+    """
+    passages = [
+        Passage(
+            content="Python is a high-level programming language known for its readability.",
+            content_hash="hash1",
+            passage_type="wiki",
+        ),
+        Passage(
+            content="Machine learning uses neural networks to learn from data.",
+            content_hash="hash2",
+            passage_type="wiki",
+        ),
+        Passage(
+            content="PostgreSQL is a powerful open-source relational database system.",
+            content_hash="hash3",
+            passage_type="docs",
+        ),
+        Passage(
+            content="FastAPI is a modern web framework for building APIs with Python.",
+            content_hash="hash4",
+            passage_type="docs",
+        ),
+        Passage(
+            content="Vector databases enable semantic search using embeddings.",
+            content_hash="hash5",
+            passage_type="wiki",
+        ),
+    ]
+
+    for p in passages:
+        db_session.add(p)
+
+    await db_session.commit()
+
+    # Refresh to get generated IDs and content_tsv
+    for p in passages:
+        await db_session.refresh(p)
+
+    return passages
+
+
+@pytest.fixture
+async def test_client(
+    db_engine: Any, _set_env: None
+) -> AsyncGenerator[AsyncClient, None]:
+    """Create an async HTTP client for testing the FastAPI app."""
+    # Import here to ensure env vars are set first
+    from kp3.db import engine as engine_module
+    from kp3.query_service.main import app
+
+    original_engine = engine_module.engine
+    original_session = engine_module.async_session
+
+    engine_module.engine = db_engine
+    engine_module.async_session = async_sessionmaker(
+        db_engine, class_=AsyncSession, expire_on_commit=False
+    )
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+    # Restore original engine
+    engine_module.engine = original_engine
+    engine_module.async_session = original_session
