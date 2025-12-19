@@ -1,9 +1,10 @@
 """Pydantic models for query service API."""
 
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from kp3.services.search import SearchMode
 
 
 class PassageResult(BaseModel):
@@ -19,7 +20,7 @@ class SearchRequest(BaseModel):
     """Search request parameters."""
 
     query: str = Field(min_length=1, description="Search query text")
-    mode: Literal["fts", "semantic", "hybrid"] = Field(
+    mode: SearchMode = Field(
         default="hybrid",
         description="Search mode: fts (full-text), semantic (vector), or hybrid (RRF fusion)",
     )

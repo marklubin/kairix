@@ -1,12 +1,10 @@
 """REST API router for passage search."""
 
-from typing import Literal
-
 from fastapi import APIRouter, Query
 
 from kp3.db.engine import async_session
 from kp3.query_service.models import PassageResult, SearchResponse
-from kp3.services.search import search_passages
+from kp3.services.search import SearchMode, search_passages
 
 router = APIRouter(prefix="/passages", tags=["passages"])
 
@@ -14,7 +12,7 @@ router = APIRouter(prefix="/passages", tags=["passages"])
 @router.get("/search", response_model=SearchResponse)
 async def search(
     query: str = Query(min_length=1, description="Search query text"),
-    mode: Literal["fts", "semantic", "hybrid"] = Query(
+    mode: SearchMode = Query(
         default="hybrid",
         description="Search mode: fts, semantic, or hybrid",
     ),

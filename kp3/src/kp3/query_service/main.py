@@ -3,6 +3,7 @@
 import logging
 import os
 
+import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
@@ -36,8 +37,6 @@ async def health() -> dict[str, str]:
 
 def main() -> None:
     """Run the query service."""
-    import uvicorn
-
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",

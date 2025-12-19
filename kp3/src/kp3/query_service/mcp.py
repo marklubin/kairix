@@ -1,11 +1,9 @@
 """MCP server for passage search."""
 
-from typing import Literal
-
 from fastmcp import FastMCP
 
 from kp3.db.engine import async_session
-from kp3.services.search import search_passages
+from kp3.services.search import SearchMode, search_passages
 
 mcp = FastMCP("KP3 Passages")
 
@@ -13,7 +11,7 @@ mcp = FastMCP("KP3 Passages")
 @mcp.tool
 async def search_kp3_passages(
     query: str,
-    mode: Literal["fts", "semantic", "hybrid"] = "hybrid",
+    mode: SearchMode = "hybrid",
     limit: int = 5,
 ) -> list[dict[str, object]]:
     """Search KP3 passages using full-text, semantic, or hybrid search.

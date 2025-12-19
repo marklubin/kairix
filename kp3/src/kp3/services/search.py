@@ -9,6 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from kp3.processors.embedding import generate_embedding
 
+# Search mode type - single source of truth
+SearchMode = Literal["fts", "semantic", "hybrid"]
+
 
 class PassageSearchResult(BaseModel):
     """A single passage search result."""
@@ -23,7 +26,7 @@ async def search_passages(
     session: AsyncSession,
     query: str,
     *,
-    mode: Literal["fts", "semantic", "hybrid"] = "hybrid",
+    mode: SearchMode = "hybrid",
     limit: int = 5,
 ) -> list[PassageSearchResult]:
     """Search passages using FTS, semantic, or hybrid search.
