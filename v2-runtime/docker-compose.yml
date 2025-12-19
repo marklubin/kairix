@@ -19,7 +19,7 @@ services:
   # Databases
   # ===========================================================================
   postgres:
-    image: postgres:16
+    image: pgvector/pgvector:pg16  # pgvector for kp3 embeddings support
     container_name: kairix-postgres
     environment:
       POSTGRES_USER: kairix
