@@ -204,8 +204,11 @@ async def voice_endpoint(websocket: WebSocket) -> None:
 
     # tts = DeepgramTTSService(api_key=deepgram_api_key, voice="aura-2-phoebe-en")
 
-    tts = CartesiaTTSService(api_key=cartesia_api_key,
-                             voice_id=cartesia_voice_id)
+    tts = CartesiaTTSService(
+        api_key=cartesia_api_key,
+        voice_id=cartesia_voice_id,
+        sample_rate=22050,  # Match KMP app playback rate
+    )
     user_turn_aggregator = UserTurnAggregator()
 
     # Create SAQ queue for background jobs
