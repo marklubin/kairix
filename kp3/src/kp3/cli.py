@@ -203,89 +203,36 @@ def passage_ls(passage_type: str | None, limit: int) -> None:
 @click.option("--limit", "-n", default=5, help="Max results to show")
 def passage_search(query: str, mode: str, limit: int) -> None:
     """Search passages using FTS, semantic, or hybrid search."""
-    from kp3.processors.embedding import generate_embedding
+    from rich.console import Console
+    from rich.panel import Panel
+
+    from kp3.services.search import search_passages
 
     async def _search() -> None:
         async with async_session() as session:
-            if mode == "fts":
-                # Full-text search only
-                sql = text("""
-                    SELECT id, content, passage_type,
-                           ts_rank(content_tsv, websearch_to_tsquery('english', :query)) as score
-                    FROM passages
-                    WHERE content_tsv @@ websearch_to_tsquery('english', :query)
-                    ORDER BY score DESC
-                    LIMIT :limit
-                """)
-                result = await session.execute(sql, {"query": query, "limit": limit})
+            results = await search_passages(
+                session,
+                query,
+                mode=mode,  # type: ignore[arg-type]
+                limit=limit,
+            )
 
-            elif mode == "semantic":
-                # Semantic search only
-                query_embedding = await generate_embedding(query)
-                sql = text("""
-                    WITH query_vec AS (
-                        SELECT cast(:embedding as vector) as vec
-                    ),
-                    scored AS (
-                        SELECT p.id, p.content, p.passage_type,
-                               1 - (p.embedding_qwen3 <=> q.vec) as score
-                        FROM passages p, query_vec q
-                        WHERE p.embedding_qwen3 IS NOT NULL
-                    )
-                    SELECT * FROM scored ORDER BY score DESC LIMIT :limit
-                """)
-                result = await session.execute(
-                    sql, {"embedding": str(query_embedding), "limit": limit}
-                )
-
-            else:  # hybrid
-                # Combine FTS and semantic with RRF
-                query_embedding = await generate_embedding(query)
-                sql = text("""
-                    WITH query_vec AS (
-                        SELECT cast(:embedding as vector) as vec
-                    ),
-                    fts AS (
-                        SELECT id, row_number() OVER (ORDER BY ts_rank(content_tsv, websearch_to_tsquery('english', :query)) DESC) as rank
-                        FROM passages
-                        WHERE content_tsv @@ websearch_to_tsquery('english', :query)
-                    ),
-                    semantic AS (
-                        SELECT p.id, row_number() OVER (ORDER BY p.embedding_qwen3 <=> q.vec) as rank
-                        FROM passages p, query_vec q
-                        WHERE p.embedding_qwen3 IS NOT NULL
-                    )
-                    SELECT p.id, p.content, p.passage_type,
-                           COALESCE(1.0 / (60 + fts.rank), 0) + COALESCE(1.0 / (60 + semantic.rank), 0) as score
-                    FROM passages p
-                    LEFT JOIN fts ON p.id = fts.id
-                    LEFT JOIN semantic ON p.id = semantic.id
-                    WHERE fts.id IS NOT NULL OR semantic.id IS NOT NULL
-                    ORDER BY score DESC
-                    LIMIT :limit
-                """)
-                result = await session.execute(
-                    sql, {"query": query, "embedding": str(query_embedding), "limit": limit}
-                )
-
-            rows = result.fetchall()
-            if not rows:
+            if not results:
                 click.echo("No results found.")
                 return
-
-            from rich.console import Console
-            from rich.panel import Panel
 
             console = Console()
             console.print(f"\n[bold]{mode.upper()}[/bold] search for: [cyan]{query}[/cyan]\n")
 
-            for i, row in enumerate(rows, 1):
-                title = f"#{i} [bold green][{row.score:.4f}][/] [bold blue]{row.passage_type}[/]"
-                subtitle = f"[dim]{row.id}[/]"
+            for i, result in enumerate(results, 1):
+                score = f"[bold green][{result.score:.4f}][/]"
+                ptype = f"[bold blue]{result.passage_type}[/]"
+                title = f"#{i} {score} {ptype}"
+                subtitle = f"[dim]{result.id}[/]"
 
                 console.print(
                     Panel(
-                        row.content,
+                        result.content,
                         title=title,
                         subtitle=subtitle,
                         title_align="left",
