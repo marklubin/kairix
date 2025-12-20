@@ -65,6 +65,10 @@ DATABASE:
     psql            Connect to PostgreSQL shell
     db:reset        Reset database (WARNING: destroys data)
 
+HEALTH:
+    wait [svc]      Wait for services to be healthy (default: postgres redis)
+                    Timeout: 30 seconds
+
 KP3:
     kp3 <cmd>       Run kp3 CLI command
                     Examples:
@@ -170,10 +174,132 @@ cmd_db_reset() {
     print_header "Resetting Database"
     $COMPOSE down -v postgres
     $COMPOSE up -d postgres
-    echo "Waiting for postgres to be ready..."
-    sleep 5
+    cmd_wait postgres
     $COMPOSE run --rm migrate
     echo -e "${GREEN}Database reset complete.${NC}"
+}
+
+# =============================================================================
+# Health Check Commands
+# =============================================================================
+
+CONTAINER_CMD="docker"
+if command -v podman &> /dev/null; then
+    CONTAINER_CMD="podman"
+fi
+
+wait_for_postgres() {
+    local timeout=${1:-30}
+    local elapsed=0
+    echo -n "  postgres: "
+    while ! $CONTAINER_CMD exec kairix-postgres pg_isready -U kairix -d kairix >/dev/null 2>&1; do
+        if [[ $elapsed -ge $timeout ]]; then
+            echo -e "${RED}timeout${NC}"
+            return 1
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+    echo -e "${GREEN}ready${NC}"
+}
+
+wait_for_redis() {
+    local timeout=${1:-30}
+    local elapsed=0
+    echo -n "  redis: "
+    while ! $CONTAINER_CMD exec kairix-redis redis-cli ping >/dev/null 2>&1; do
+        if [[ $elapsed -ge $timeout ]]; then
+            echo -e "${RED}timeout${NC}"
+            return 1
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+    echo -e "${GREEN}ready${NC}"
+}
+
+wait_for_letta() {
+    local timeout=${1:-30}
+    local elapsed=0
+    echo -n "  letta: "
+    while ! curl -sf http://localhost:9000/health >/dev/null 2>&1; do
+        if [[ $elapsed -ge $timeout ]]; then
+            echo -e "${RED}timeout${NC}"
+            return 1
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+    echo -e "${GREEN}ready${NC}"
+}
+
+wait_for_kairix() {
+    local timeout=${1:-30}
+    local elapsed=0
+    echo -n "  kairix-server: "
+    while ! curl -sf http://localhost:8000/hello >/dev/null 2>&1; do
+        if [[ $elapsed -ge $timeout ]]; then
+            echo -e "${RED}timeout${NC}"
+            return 1
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+    echo -e "${GREEN}ready${NC}"
+}
+
+wait_for_kp3() {
+    local timeout=${1:-30}
+    local elapsed=0
+    echo -n "  kp3-service: "
+    while ! curl -sf http://localhost:8080/health >/dev/null 2>&1; do
+        if [[ $elapsed -ge $timeout ]]; then
+            echo -e "${RED}timeout${NC}"
+            return 1
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+    echo -e "${GREEN}ready${NC}"
+}
+
+cmd_wait() {
+    print_header "Waiting for Services"
+    local failed=0
+
+    if [[ $# -eq 0 ]]; then
+        # Default: wait for core infrastructure
+        wait_for_postgres || ((failed++))
+        wait_for_redis || ((failed++))
+    else
+        # Wait for specific services
+        for svc in "$@"; do
+            case "$svc" in
+                postgres) wait_for_postgres || ((failed++)) ;;
+                redis) wait_for_redis || ((failed++)) ;;
+                letta) wait_for_letta || ((failed++)) ;;
+                kairix|kairix-server) wait_for_kairix || ((failed++)) ;;
+                kp3|kp3-service) wait_for_kp3 || ((failed++)) ;;
+                all)
+                    wait_for_postgres || ((failed++))
+                    wait_for_redis || ((failed++))
+                    wait_for_letta || ((failed++))
+                    wait_for_kairix || ((failed++))
+                    wait_for_kp3 || ((failed++))
+                    ;;
+                *)
+                    echo -e "  ${YELLOW}$svc: unknown service${NC}"
+                    ((failed++))
+                    ;;
+            esac
+        done
+    fi
+
+    if [[ $failed -gt 0 ]]; then
+        echo -e "\n${RED}$failed service(s) failed health check${NC}"
+        exit 1
+    fi
+    echo -e "\n${GREEN}All services healthy${NC}"
 }
 
 # =============================================================================
@@ -267,6 +393,11 @@ case "$command" in
         ;;
     db:reset)
         cmd_db_reset "$@"
+        ;;
+
+    # Health
+    wait)
+        cmd_wait "$@"
         ;;
 
     # KP3

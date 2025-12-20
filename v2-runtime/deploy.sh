@@ -41,12 +41,7 @@ echo ">>> Building images..."
 echo ">>> Starting infrastructure..."
 ./kx dev
 
-echo ">>> Waiting for postgres..."
-until podman exec kairix-postgres pg_isready -U kairix -d kairix >/dev/null 2>&1; do
-    echo "    waiting..."
-    sleep 2
-done
-echo "    postgres ready!"
+./kx wait postgres
 
 echo ">>> Running migrations..."
 ./kx migrate
