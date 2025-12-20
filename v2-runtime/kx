@@ -65,6 +65,13 @@ DATABASE:
     psql            Connect to PostgreSQL shell
     db:reset        Reset database (WARNING: destroys data)
 
+VOICE:
+    voice <cmd>     Manage TTS voices
+                    Commands:
+                      kx voice list           List configured voices
+                      kx voice add            Add a new voice (interactive)
+                      kx voice assign         Assign a voice to an agent
+
 HEALTH:
     wait [svc]      Wait for services to be healthy (default: postgres redis)
                     Timeout: 30 seconds
@@ -177,6 +184,24 @@ cmd_db_reset() {
     cmd_wait postgres
     $COMPOSE run --rm migrate
     echo -e "${GREEN}Database reset complete.${NC}"
+}
+
+# =============================================================================
+# Voice Commands
+# =============================================================================
+
+cmd_voice() {
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: kx voice <command>"
+        echo
+        echo "Commands:"
+        echo "  list      List configured voices"
+        echo "  add       Add a new voice (interactive)"
+        echo "  assign    Assign a voice to an agent"
+        exit 1
+    fi
+
+    $COMPOSE run --rm voice-admin voice-admin "$@"
 }
 
 # =============================================================================
@@ -393,6 +418,11 @@ case "$command" in
         ;;
     db:reset)
         cmd_db_reset "$@"
+        ;;
+
+    # Voice
+    voice)
+        cmd_voice "$@"
         ;;
 
     # Health

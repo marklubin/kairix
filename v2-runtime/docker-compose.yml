@@ -306,3 +306,26 @@ services:
       - kairix-net
     profiles:
       - cli
+
+  voice-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-server:latest
+    container_name: kairix-voice-admin
+    # Override CMD with: docker compose run --rm voice-admin voice-admin <command>
+    # Examples:
+    #   docker compose run --rm voice-admin voice-admin list
+    #   docker compose run --rm voice-admin voice-admin add
+    #   docker compose run --rm voice-admin voice-admin assign
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kairix-net
+    profiles:
+      - cli

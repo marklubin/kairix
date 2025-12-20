@@ -34,7 +34,10 @@ from kairix_agent.server.events import connection_manager
 from kairix_agent.server.events.listener import start_event_listener
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
 from kairix_agent.server.pipecat import LettaLLMService, UserTurnAggregator
-from kairix_agent.server.provider import AnthropicProvider, LettaProvider
+from kairix_agent.server.provider import LettaProvider
+from kairix_agent.server.voice.pipeline_manager import voice_pipeline_manager
+from kairix_agent.voices import service as voice_service
+from kairix_agent.voices.router import router as voices_router
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +61,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(voices_router)
 
 
 def get_or_die(env_var: str) -> str:
@@ -68,14 +72,8 @@ def get_or_die(env_var: str) -> str:
 
 
 # Config from environment
-agent_id = get_or_die("LETTA_AGENT_ID")
 deepgram_api_key = get_or_die("DEEPGRAM_API_KEY")
 cartesia_api_key = get_or_die("CARTESIA_API_KEY")
-cartesia_voice_id = get_or_die("CARTESIA_VOICE_ID")
-
-
-anthropic_provider = AnthropicProvider()
-letta_provider = LettaProvider(agent_id=agent_id)
 
 
 @app.get("/hello")
@@ -84,8 +82,15 @@ async def hello() -> str:
 
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket) -> None:
+async def websocket_endpoint(websocket: WebSocket, agent_id: str) -> None:
+    """Text-based WebSocket endpoint for streaming responses.
+
+    Args:
+        websocket: The WebSocket connection.
+        agent_id: Required agent ID query param.
+    """
     await websocket.accept()
+    letta_provider = LettaProvider(agent_id=agent_id)
     try:
         while True:
             text = await websocket.receive_text()
@@ -160,9 +165,24 @@ async def events_endpoint(websocket: WebSocket, agent_id: str) -> None:
 
 
 @app.websocket("/voice")
-async def voice_endpoint(websocket: WebSocket) -> None:
-    """Voice pipeline endpoint using Pipecat."""
+async def voice_endpoint(
+    websocket: WebSocket,
+    agent_id: str,
+) -> None:
+    """Voice pipeline endpoint using Pipecat.
+
+    Args:
+        websocket: The WebSocket connection.
+        agent_id: Required agent ID query param.
+    """
     await websocket.accept()
+
+    # Look up voice from database (required)
+    db_voice = await voice_service.get_agent_voice(agent_id)
+    if db_voice is None:
+        await websocket.close(code=4000, reason=f"No voice configured for agent {agent_id}")
+        return
+    voice_id = db_voice.provider_voice_id
 
     # Create transport for this WebSocket connection
     # ProtobufFrameSerializer defines the wire format for audio/text frames
@@ -206,7 +226,7 @@ async def voice_endpoint(websocket: WebSocket) -> None:
 
     tts = CartesiaTTSService(
         api_key=cartesia_api_key,
-        voice_id=cartesia_voice_id,
+        voice_id=voice_id,
         sample_rate=22050,  # Match KMP app playback rate
     )
     user_turn_aggregator = UserTurnAggregator()
@@ -216,30 +236,37 @@ async def voice_endpoint(websocket: WebSocket) -> None:
 
     llm = LettaLLMService(agent_id=agent_id, name="letta", queue=job_queue)
 
-    async with aiohttp.ClientSession():
-        # Build the pipeline
-        pipeline = Pipeline(
-            [
-                transport.input(),  # Audio from client
-                stt,  # Speech-to-text
-                user_turn_aggregator,
-                llm,  # Letta LLM
-                tts,  # Text-to-speech
-                transport.output(),  # Audio back to client
-            ]
-        )
+    # Register TTS with pipeline manager for live voice updates
+    await voice_pipeline_manager.register(agent_id, tts)
 
-        # WhiskerObserver starts a WebSocket server on port 9090 for the Whisker debugger
-        whisker = WhiskerObserver(pipeline)
+    try:
+        async with aiohttp.ClientSession():
+            # Build the pipeline
+            pipeline = Pipeline(
+                [
+                    transport.input(),  # Audio from client
+                    stt,  # Speech-to-text
+                    user_turn_aggregator,
+                    llm,  # Letta LLM
+                    tts,  # Text-to-speech
+                    transport.output(),  # Audio back to client
+                ]
+            )
 
-        task = PipelineTask(
-            pipeline,
-            params=PipelineParams(allow_interruptions=True),
-            observers=[whisker],
-        )
+            # WhiskerObserver starts a WebSocket server on port 9090 for the Whisker debugger
+            whisker = WhiskerObserver(pipeline)
 
-        runner = PipelineRunner()
-        await runner.run(task)
+            task = PipelineTask(
+                pipeline,
+                params=PipelineParams(allow_interruptions=True),
+                observers=[whisker],
+            )
+
+            runner = PipelineRunner()
+            await runner.run(task)
+    finally:
+        # Unregister on disconnect
+        await voice_pipeline_manager.unregister(agent_id, tts)
 
 
 def main() -> None:
