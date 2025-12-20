@@ -32,6 +32,9 @@ else
     echo 'COMPOSE_PROFILES=app' >> .env
 fi
 
+echo ">>> Stopping existing services..."
+./kx down
+
 echo ">>> Building images..."
 ./kx build
 
@@ -39,7 +42,7 @@ echo ">>> Starting infrastructure..."
 ./kx dev
 
 echo ">>> Waiting for postgres..."
-sleep 5
+sleep 10
 
 echo ">>> Running migrations..."
 ./kx migrate
