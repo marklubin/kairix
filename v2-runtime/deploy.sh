@@ -32,29 +32,15 @@ else
     echo 'COMPOSE_PROFILES=app' >> .env
 fi
 
-# Detect compose command
-if command -v podman-compose &> /dev/null; then
-    COMPOSE="podman-compose"
-elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
-    COMPOSE="docker compose"
-else
-    echo "Error: Neither podman-compose nor docker compose found"
-    exit 1
-fi
-echo ">>> Using: $COMPOSE"
-
 echo ">>> Building images..."
-$COMPOSE build
+./kx build
 
 echo ">>> Running migrations..."
-$COMPOSE run --rm migrate
+./kx migrate
 
 echo ">>> Restarting services..."
-$COMPOSE down --remove-orphans
-$COMPOSE up -d
+./kx restart
 
-echo ">>> Status:"
-$COMPOSE ps
 REMOTE
 
 echo
