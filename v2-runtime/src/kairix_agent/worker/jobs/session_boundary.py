@@ -6,26 +6,76 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+import redis.asyncio as redis
 from saq import Queue
 
 from kairix_agent.agent_config import get_agent_config
 from kairix_agent.config import Config
 from kairix_agent.events import EventType, publish_event
 from kairix_agent.memory import LettaMemoryService
-from kairix_agent.sessions import create_session, get_latest_session_end
+from kairix_agent.sessions import (
+    create_session,
+    get_latest_session_end,
+    get_pending_session_for_agent,
+)
 
 if TYPE_CHECKING:
     from saq.types import Context
 
 logger = logging.getLogger(__name__)
 
+# Lock settings
+BOUNDARY_CHECK_LOCK_TTL = 120  # 2 minutes - longer than job timeout
+
 
 async def _check_agent_session(
     queue: Queue,
     agent_id: str,
     letta_url: str,
+    redis_client: redis.Redis,
 ) -> dict[str, object]:
     """Check session boundary for a single agent.
+
+    Uses Redis locking to prevent race conditions between concurrent checks.
+
+    Args:
+        queue: SAQ queue for enqueueing summarization jobs.
+        agent_id: The agent ID to check.
+        letta_url: The Letta server URL.
+        redis_client: Redis client for distributed locking.
+
+    Returns:
+        Status dict with detection results for this agent.
+    """
+    # Try to acquire a distributed lock for this agent
+    lock_key = f"session_boundary_lock:{agent_id}"
+    lock_acquired = await redis_client.set(
+        lock_key,
+        "1",
+        nx=True,  # Only set if not exists
+        ex=BOUNDARY_CHECK_LOCK_TTL,
+    )
+
+    if not lock_acquired:
+        logger.info(
+            "Session boundary check already running for agent %s, skipping",
+            agent_id,
+        )
+        return {"status": "skipped", "reason": "lock_held"}
+
+    try:
+        return await _check_agent_session_locked(queue, agent_id, letta_url)
+    finally:
+        # Release the lock
+        await redis_client.delete(lock_key)
+
+
+async def _check_agent_session_locked(
+    queue: Queue,
+    agent_id: str,
+    letta_url: str,
+) -> dict[str, object]:
+    """Check session boundary for a single agent (lock already held).
 
     Args:
         queue: SAQ queue for enqueueing summarization jobs.
@@ -35,6 +85,20 @@ async def _check_agent_session(
     Returns:
         Status dict with detection results for this agent.
     """
+    # Check if there's already a pending session (prevents duplicates)
+    pending_session = await get_pending_session_for_agent(agent_id)
+    if pending_session:
+        logger.info(
+            "Agent %s already has pending session %s, skipping boundary check",
+            agent_id,
+            pending_session.id,
+        )
+        return {
+            "status": "skipped",
+            "reason": "pending_session_exists",
+            "session_id": pending_session.id,
+        }
+
     # Load agent config (cached per agent_id after first call)
     agent_config = await get_agent_config(agent_id=agent_id, letta_url=letta_url)
 
@@ -171,6 +235,8 @@ async def check_session_boundaries(
 ) -> dict[str, object]:
     """Check for completed sessions across all configured agents.
 
+    Uses Redis distributed locking to prevent race conditions.
+
     Args:
         ctx: SAQ job context (contains queue reference for enqueueing).
         agents: List of agent configs, each with 'agent_id' and 'letta_url'.
@@ -191,21 +257,28 @@ async def check_session_boundaries(
 
     queue: Queue = queue_obj
 
+    # Create Redis client for distributed locking
+    redis_client = redis.from_url(Config.REDIS_URL.value)
+
     results: dict[str, object] = {}
 
-    for agent_cfg in agents:
-        agent_id = agent_cfg["agent_id"]
-        letta_url = agent_cfg["letta_url"]
+    try:
+        for agent_cfg in agents:
+            agent_id = agent_cfg["agent_id"]
+            letta_url = agent_cfg["letta_url"]
 
-        try:
-            result = await _check_agent_session(
-                queue=queue,
-                agent_id=agent_id,
-                letta_url=letta_url,
-            )
-            results[agent_id] = result
-        except Exception:
-            logger.exception("Error checking session for agent %s", agent_id)
-            results[agent_id] = {"status": "error", "reason": "exception"}
+            try:
+                result = await _check_agent_session(
+                    queue=queue,
+                    agent_id=agent_id,
+                    letta_url=letta_url,
+                    redis_client=redis_client,
+                )
+                results[agent_id] = result
+            except Exception:
+                logger.exception("Error checking session for agent %s", agent_id)
+                results[agent_id] = {"status": "error", "reason": "exception"}
+    finally:
+        await redis_client.aclose()
 
     return {"status": "ok", "agents": results}

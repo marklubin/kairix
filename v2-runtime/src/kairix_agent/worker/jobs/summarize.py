@@ -114,6 +114,20 @@ async def summarize_session(
             "session_id": session_id,
         }
 
+    # Idempotency check: skip if already summarized or failed
+    if session.status != SessionStatus.PENDING.value:
+        logger.info(
+            "Session %s already processed (status=%s), skipping",
+            session_id,
+            session.status,
+        )
+        return {
+            "status": "skipped",
+            "reason": "already_processed",
+            "session_id": session_id,
+            "session_status": session.status,
+        }
+
     message_ids = await get_session_message_ids(session_id)
     period_start = session.period_start.isoformat()
     period_end = session.period_end.isoformat()
