@@ -153,7 +153,7 @@ services:
     container_name: kairix-server
     command: >
       python -m uvicorn kairix_agent.server.main:app
-      --host 0.0.0.0 --port 8000 --workers 2 --log-level info
+      --host 0.0.0.0 --port 8000 --workers 1 --log-level info
     ports:
       - "8000:8000"
     env_file:
