@@ -39,6 +39,7 @@ dev = [
 [project.scripts]
 kp3 = "kp3.cli:cli"
 kp3-service = "kp3.query_service.main:main"
+kp3-mcp = "kp3.query_service.mcp:main"
 
 [build-system]
 requires = ["uv_build"]

@@ -1,9 +1,13 @@
 """MCP server for passage search."""
 
+from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 from kp3.db.engine import async_session
 from kp3.services.search import SearchMode, search_passages
+
+# Load .env for standalone stdio mode
+load_dotenv()
 
 mcp = FastMCP("KP3 Passages")
 
@@ -39,3 +43,12 @@ async def search_kp3_passages(
         }
         for r in results
     ]
+
+
+def main() -> None:
+    """Run MCP server in stdio mode (for Claude Desktop)."""
+    mcp.run()
+
+
+if __name__ == "__main__":
+    main()
