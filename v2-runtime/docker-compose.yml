@@ -235,7 +235,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kp3
       - KP3_OLLAMA_HOST=http://host.containers.internal:11434
       - KP3_OLLAMA_EMBEDDING_MODEL=qwen3-embedding:4b
       - KP3_QUERY_HOST=0.0.0.0
@@ -292,7 +292,7 @@ services:
     #   docker compose run --rm kp3 kp3 passage ls
     #   docker compose run --rm kp3 kp3 run ls
     environment:
-      - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kp3
       - KP3_OLLAMA_HOST=http://host.containers.internal:11434
       - KP3_OLLAMA_EMBEDDING_MODEL=qwen3-embedding:4b
     extra_hosts:
