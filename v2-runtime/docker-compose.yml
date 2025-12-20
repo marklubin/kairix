@@ -1,11 +1,12 @@
 # =============================================================================
-# Infrastructure Services - Always Running
+# Kairix Docker Compose - Consolidated Configuration
 # =============================================================================
-# Usage: docker compose up -d
+# Usage:
+#   Default (everything):    docker compose up -d
+#   Dependencies only:       COMPOSE_PROFILES= docker compose up -d
+#   Run migrations:          docker compose run --rm migrate
 #
-# This file contains only infrastructure services that should always be running
-# on the server. Application services (kairix-server, kairix-worker) are defined
-# in docker-compose.dev.yml and docker-compose.prod.yml.
+# Requires COMPOSE_PROFILES=app in .env for default behavior to start all services
 
 networks:
   kairix-net:
@@ -16,10 +17,11 @@ volumes:
 
 services:
   # ===========================================================================
-  # Databases
+  # INFRASTRUCTURE (no profile = always starts)
   # ===========================================================================
+
   postgres:
-    image: pgvector/pgvector:pg16  # pgvector for kp3 embeddings support
+    image: pgvector/pgvector:pg16
     container_name: kairix-postgres
     environment:
       POSTGRES_USER: kairix
@@ -52,9 +54,6 @@ services:
     networks:
       - kairix-net
 
-  # ===========================================================================
-  # Letta AI Platform (has its own embedded postgres)
-  # ===========================================================================
   letta:
     image: letta/letta:latest
     container_name: letta
@@ -73,6 +72,7 @@ services:
   # ===========================================================================
   # Monitoring & Debugging
   # ===========================================================================
+
   redis-insight:
     image: redis/redisinsight:latest
     container_name: redis-insight
@@ -88,8 +88,6 @@ services:
     image: amir20/dozzle:latest
     container_name: dozzle
     volumes:
-      # Podman rootless socket - set DOCKER_SOCK in .env if UID differs
-      # Find yours: echo $XDG_RUNTIME_DIR/podman/podman.sock
       - ${DOCKER_SOCK:-/run/user/1000/podman/podman.sock}:/var/run/docker.sock:ro
     ports:
       - "9999:8080"
@@ -100,8 +98,9 @@ services:
       - kairix-net
 
   # ===========================================================================
-  # MetaMCP - MCP Server Gateway
+  # MCP Gateway & Proxies
   # ===========================================================================
+
   metamcp:
     image: ghcr.io/metatool-ai/metamcp:latest
     container_name: metamcp
@@ -119,7 +118,6 @@ services:
     networks:
       - kairix-net
 
-  # Proxy localhost IMAP into kairix-net for containers
   pmb-imap-proxy:
     image: alpine/socat
     container_name: pmb-imap-proxy
@@ -130,7 +128,6 @@ services:
     networks:
       - kairix-net
 
-  # Proxy localhost SMTP into kairix-net for containers
   pmb-smtp-proxy:
     image: alpine/socat
     container_name: pmb-smtp-proxy
@@ -140,3 +137,144 @@ services:
     restart: unless-stopped
     networks:
       - kairix-net
+
+  # ===========================================================================
+  # APPLICATION SERVICES (profile: app)
+  # ===========================================================================
+
+  kairix-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-server:latest
+    container_name: kairix-server
+    command: >
+      python -m uvicorn kairix_agent.server.main:app
+      --host 0.0.0.0 --port 8000 --workers 2 --log-level info
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://kairix-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_BASE_URL=http://letta:8283
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      letta:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/hello"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    restart: always
+    networks:
+      - kairix-net
+    profiles:
+      - app
+
+  kairix-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-worker:latest
+    container_name: kairix-worker
+    command: python -m saq kairix_agent.worker.settings --verbose
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://kairix-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_BASE_URL=http://letta:8283
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      letta:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'saq' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: always
+    networks:
+      - kairix-net
+    profiles:
+      - app
+
+  kp3-service:
+    build:
+      context: ../kp3
+      dockerfile: Dockerfile
+    image: kp3-service:latest
+    container_name: kp3-service
+    command: kp3-service
+    ports:
+      - "8080:8080"
+    environment:
+      - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - KP3_OLLAMA_HOST=http://host.containers.internal:11434
+      - KP3_OLLAMA_EMBEDDING_MODEL=qwen3-embedding:4b
+      - KP3_QUERY_HOST=0.0.0.0
+      - KP3_QUERY_PORT=8080
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: always
+    networks:
+      - kairix-net
+    profiles:
+      - app
+
+  # ===========================================================================
+  # Migration Runner (one-shot, profile: migrate)
+  # ===========================================================================
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-server:latest
+    container_name: kairix-migrate
+    command: python -m alembic upgrade head
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kairix-net
+    profiles:
+      - migrate
