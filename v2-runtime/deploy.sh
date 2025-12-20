@@ -1,119 +1,36 @@
 #!/bin/bash
 # =============================================================================
-# Deploy Script
+# Deploy Script - Deploys kairix to remote host
 # =============================================================================
-# Deploys agent-server to a remote host via SSH.
-#
 # Usage:
-#   ./deploy.sh                      # uses DEPLOY_TARGET env var
 #   ./deploy.sh salinas              # deploy to 'salinas'
 #   ./deploy.sh user@host.example    # deploy to specific user@host
-#
-# Environment variables:
-#   DEPLOY_TARGET     - Default SSH target (e.g., "salinas" or "user@host")
-#   DEPLOY_PATH       - Remote path for symlink (default: ~/agent-server)
-#   KAIRIX_REPO_PATH  - Where to clone monorepo (default: ~/kairix)
-#   GITHUB_REPO       - Repository URL (default: from local git remote)
+#   DEPLOY_TARGET=salinas ./deploy.sh
 
-set -e
+set -euo pipefail
 
-# =============================================================================
-# Configuration
-# =============================================================================
-
-# Target: CLI arg > env var > error
 TARGET="${1:-${DEPLOY_TARGET:-}}"
-if [ -z "$TARGET" ]; then
-    echo "Error: No deploy target specified."
-    echo "Usage: ./deploy.sh <target>"
-    echo "   or: DEPLOY_TARGET=<target> ./deploy.sh"
+if [[ -z "$TARGET" ]]; then
+    echo "Usage: $0 <target>"
+    echo "   or: DEPLOY_TARGET=<target> $0"
     exit 1
 fi
-
-# Remote path (symlink target)
-REMOTE_PATH="${DEPLOY_PATH:-~/agent-server}"
-
-# Monorepo path on remote
-KAIRIX_REPO_PATH="${KAIRIX_REPO_PATH:-~/kairix}"
-
-# Subdirectory within monorepo containing v2-runtime
-RUNTIME_SUBDIR="v2-runtime"
-
-# GitHub repo: env var > detect from local git
-if [ -z "$GITHUB_REPO" ]; then
-    GITHUB_REPO=$(git remote get-url origin 2>/dev/null || echo "")
-fi
-
-if [ -z "$GITHUB_REPO" ]; then
-    echo "Error: Could not detect GitHub repo. Set GITHUB_REPO env var."
-    exit 1
-fi
-
-# =============================================================================
-# Deploy
-# =============================================================================
 
 echo "=== Deploying to ${TARGET} ==="
-echo "Repository: ${GITHUB_REPO}"
-echo "Monorepo path: ${KAIRIX_REPO_PATH}"
-echo "Runtime symlink: ${REMOTE_PATH} → ${KAIRIX_REPO_PATH}/${RUNTIME_SUBDIR}"
-echo
 
-# Build the remote commands
-read -r -d '' REMOTE_SCRIPT << 'EOF' || true
+ssh "$TARGET" << 'REMOTE'
 set -e
+cd ~/kairix/v2-runtime
 
-REMOTE_PATH="__REMOTE_PATH__"
-KAIRIX_REPO_PATH="__KAIRIX_REPO_PATH__"
-RUNTIME_SUBDIR="__RUNTIME_SUBDIR__"
-GITHUB_REPO="__GITHUB_REPO__"
+echo ">>> Pulling latest..."
+git fetch origin && git reset --hard origin/main
 
-# Expand ~ to $HOME (tilde doesn't expand inside quotes)
-REMOTE_PATH="${REMOTE_PATH/#\~/$HOME}"
-KAIRIX_REPO_PATH="${KAIRIX_REPO_PATH/#\~/$HOME}"
-
-# Clone or pull the monorepo
-if [ ! -d "$KAIRIX_REPO_PATH" ]; then
-    echo ">>> Cloning monorepo to $KAIRIX_REPO_PATH..."
-    git clone "$GITHUB_REPO" "$KAIRIX_REPO_PATH"
+echo ">>> Ensuring COMPOSE_PROFILES=app in .env..."
+if grep -q '^COMPOSE_PROFILES=' .env 2>/dev/null; then
+    sed -i 's/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=app/' .env
 else
-    echo ">>> Pulling latest changes in $KAIRIX_REPO_PATH..."
-    cd "$KAIRIX_REPO_PATH"
-    git fetch origin
-    git reset --hard origin/main
+    echo 'COMPOSE_PROFILES=app' >> .env
 fi
-
-# Source directory for runtime
-SOURCE_DIR="$KAIRIX_REPO_PATH/$RUNTIME_SUBDIR"
-
-# Ensure symlink exists: SOURCE_DIR → REMOTE_PATH
-if [ -L "$REMOTE_PATH" ]; then
-    # Is a symlink - verify it points to correct location
-    CURRENT_TARGET=$(readlink "$REMOTE_PATH")
-    if [ "$CURRENT_TARGET" != "$SOURCE_DIR" ]; then
-        echo ">>> Updating symlink to point to $SOURCE_DIR"
-        ln -sfn "$SOURCE_DIR" "$REMOTE_PATH"
-    else
-        echo ">>> Symlink $REMOTE_PATH already points to $SOURCE_DIR"
-    fi
-elif [ -e "$REMOTE_PATH" ]; then
-    # Exists but is not a symlink (old deployment)
-    echo "Error: $REMOTE_PATH exists but is not a symlink."
-    echo "       This appears to be an old deployment."
-    echo "       Please backup and remove it, then re-run deploy."
-    exit 1
-else
-    # Does not exist - create symlink
-    echo ">>> Creating symlink: $REMOTE_PATH → $SOURCE_DIR"
-    ln -s "$SOURCE_DIR" "$REMOTE_PATH"
-fi
-
-# Change to runtime directory
-cd "$REMOTE_PATH"
-
-# Show current commit
-echo ">>> Current commit:"
-git log -1 --oneline
 
 # Detect compose command
 if command -v podman-compose &> /dev/null; then
@@ -126,97 +43,19 @@ else
 fi
 echo ">>> Using: $COMPOSE"
 
-# Compose files for production
-COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
+echo ">>> Building images..."
+$COMPOSE build
 
-# Project name - use symlink name, not resolved path
-PROJECT_NAME=$(basename "$REMOTE_PATH")
-COMPOSE_CMD="$COMPOSE -p $PROJECT_NAME"
+echo ">>> Running migrations..."
+$COMPOSE run --rm migrate
 
-# Pull latest dependency images
-echo ">>> Pulling dependency images..."
-$COMPOSE_CMD -f docker-compose.yml pull
+echo ">>> Restarting services..."
+$COMPOSE down --remove-orphans
+$COMPOSE up -d
 
-# Build application images (while old containers still running)
-echo ">>> Building application images..."
-$COMPOSE_CMD $COMPOSE_FILES build
-
-# =============================================================================
-# Clean environment flip - stop everything, then bring up fresh
-# =============================================================================
-
-echo ">>> Stopping all services..."
-$COMPOSE_CMD $COMPOSE_FILES down --remove-orphans 2>/dev/null || true
-
-# Start just postgres and redis first (need postgres for migrations)
-echo ">>> Starting databases..."
-$COMPOSE_CMD $COMPOSE_FILES up -d postgres redis
-
-# Wait for postgres to be healthy
-echo ">>> Waiting for postgres to be healthy..."
-for i in {1..30}; do
-    if $COMPOSE_CMD $COMPOSE_FILES exec -T postgres pg_isready -U kairix &> /dev/null; then
-        echo "    Postgres is ready!"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo "Error: Postgres failed to become healthy"
-        exit 1
-    fi
-    echo "    Waiting... ($i/30)"
-    sleep 2
-done
-
-# Run database migrations
-echo ">>> Running database migrations..."
-if command -v podman &> /dev/null; then
-    # Use podman directly - more reliable than podman-compose run
-    # Network name is prefixed with project name by podman-compose
-    podman run --rm --network "${PROJECT_NAME}_kairix-net" \
-        -e DATABASE_URL="postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix" \
-        kairix-server:latest python -m alembic upgrade head
-else
-    # Docker compose run works fine
-    $COMPOSE_CMD $COMPOSE_FILES run --rm --no-deps \
-        -e DATABASE_URL="postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix" \
-        kairix-server python -m alembic upgrade head
-fi
-if [ $? -ne 0 ]; then
-    echo "Error: Database migrations failed!"
-    exit 1
-fi
-echo ">>> Migrations completed successfully"
-
-# Bring up all services fresh
-echo ">>> Starting all services..."
-$COMPOSE_CMD $COMPOSE_FILES up -d
-
-# Wait a moment for services to initialize
-sleep 5
-
-# Show status
-echo ">>> Container status:"
-if command -v podman &> /dev/null; then
-    podman ps --format "table {{.Names}}\t{{.Status}}" | grep -E "kairix|letta|redis|postgres|dozzle|metamcp" || true
-else
-    $COMPOSE_CMD $COMPOSE_FILES ps
-fi
+echo ">>> Status:"
+$COMPOSE ps
+REMOTE
 
 echo
-echo "=== Deploy complete ==="
-EOF
-
-# Substitute variables into the script
-REMOTE_SCRIPT="${REMOTE_SCRIPT//__REMOTE_PATH__/$REMOTE_PATH}"
-REMOTE_SCRIPT="${REMOTE_SCRIPT//__KAIRIX_REPO_PATH__/$KAIRIX_REPO_PATH}"
-REMOTE_SCRIPT="${REMOTE_SCRIPT//__RUNTIME_SUBDIR__/$RUNTIME_SUBDIR}"
-REMOTE_SCRIPT="${REMOTE_SCRIPT//__GITHUB_REPO__/$GITHUB_REPO}"
-
-# Execute on remote
-echo ">>> Connecting to ${TARGET}..."
-ssh "$TARGET" "$REMOTE_SCRIPT"
-
-echo
-echo "Done! Deployed to ${TARGET}"
-echo "  Repo: ${KAIRIX_REPO_PATH}"
-echo "  Runtime: ${REMOTE_PATH}"
+echo "=== Deployed to ${TARGET} ==="

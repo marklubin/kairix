@@ -1,7 +1,10 @@
 # KP3 - Knowledge Processing Pipeline
-# Ephemeral container for running processing jobs
+# Runs as kp3-service by default, can override with different command
 
 FROM python:3.12-slim
+
+# Install curl for healthchecks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -17,6 +20,6 @@ COPY alembic.ini ./
 # Install dependencies
 RUN uv sync --frozen --no-dev
 
-# Default entrypoint runs kp3 CLI
-ENTRYPOINT ["uv", "run", "kp3"]
-CMD ["--help"]
+# Allow any kp3 command via CMD override
+ENTRYPOINT ["uv", "run"]
+CMD ["kp3-service"]
