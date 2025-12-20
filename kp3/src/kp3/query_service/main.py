@@ -25,8 +25,8 @@ app = FastAPI(
 # Include REST routes
 app.include_router(router)
 
-# Mount MCP server at /mcp
-app.mount("/mcp", mcp.http_app())
+# Mount MCP server at /mcp (SSE transport for HTTP clients)
+app.mount("/mcp", mcp.http_app(transport="sse"))
 
 
 @app.get("/health")
