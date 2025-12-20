@@ -1,26 +1,40 @@
 package org.kairix.kairix_app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.kairix.kairix_app.ConnectionState
 import org.kairix.kairix_app.Endpoint
+import org.kairix.kairix_app.voice.Voice
 
 /**
  * Settings view for configuring the app.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsView(
     selectedEndpoint: Endpoint,
     onEndpointSelected: (Endpoint) -> Unit,
     connectionState: ConnectionState,
+    voices: List<Voice>,
+    currentVoice: Voice?,
+    selectedVoice: Voice?,
+    onVoiceSelected: (Voice) -> Unit,
+    onSaveVoice: () -> Unit,
+    isLoadingVoices: Boolean,
+    isSavingVoice: Boolean,
+    voiceSaveError: String?,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         // Endpoint selection
@@ -64,6 +78,114 @@ fun SettingsView(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
             )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Voice selection
+        Text(
+            text = "Voice",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Select the voice for this agent",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (isLoadingVoices) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                Text(
+                    text = "Loading voices...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            var expanded by remember { mutableStateOf(false) }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = selectedVoice?.name ?: currentVoice?.name ?: "No voice configured",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        voices.forEach { voice ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(voice.name)
+                                        voice.description?.let { desc ->
+                                            Text(
+                                                text = desc,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    onVoiceSelected(voice)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Save button - enabled when selection differs from current
+                val hasChanges = selectedVoice != null && selectedVoice.id != currentVoice?.id
+                Button(
+                    onClick = onSaveVoice,
+                    enabled = hasChanges && !isSavingVoice
+                ) {
+                    if (isSavingVoice) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Save")
+                    }
+                }
+            }
+
+            // Error message
+            voiceSaveError?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))

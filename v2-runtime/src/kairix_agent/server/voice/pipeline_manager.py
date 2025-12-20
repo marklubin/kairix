@@ -53,7 +53,7 @@ class VoicePipelineManager:
             services = list(self._pipelines.get(agent_id, []))
 
         if not services:
-            logger.debug("No active pipelines for agent %s", agent_id)
+            logger.info("No active pipelines for agent %s to update", agent_id)
             return 0
 
         update_frame = TTSUpdateSettingsFrame(settings={"voice_id": provider_voice_id})

@@ -89,6 +89,8 @@ async def get_agent_voice(agent_id: str) -> AgentVoiceSettingsResponse:
 @router.put("/agents/{agent_id}")
 async def set_agent_voice(agent_id: str, body: SetAgentVoiceRequest) -> dict[str, Any]:
     """Set the voice for an agent and update active pipelines."""
+    logger.info("Setting voice %s for agent %s", body.voice_id, agent_id)
+
     # Verify voice exists
     voice = await service.get_voice(body.voice_id)
     if voice is None:

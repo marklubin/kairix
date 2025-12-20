@@ -144,6 +144,83 @@ Concepts that need deeper exploration:
 
 ---
 
+## v2-runtime Operations
+
+### kx CLI
+
+The `kx` script in `v2-runtime/` is the unified CLI for managing Kairix services:
+
+```bash
+cd v2-runtime
+
+# Service management
+./kx up              # Start all services
+./kx down            # Stop all services
+./kx restart         # Restart all services
+./kx status          # Show service status
+./kx logs [service]  # View logs
+
+# Development
+./kx dev             # Start dependencies only (postgres, redis, letta)
+./kx dev:down        # Stop dev dependencies
+
+# Database
+./kx migrate         # Run alembic migrations
+./kx psql            # Connect to PostgreSQL shell
+./kx db:reset        # Reset database (destroys data)
+
+# Voice management
+./kx voice list      # List configured TTS voices
+./kx voice add       # Add a new voice (interactive)
+./kx voice assign    # Assign voice to an agent
+
+# KP3 (passage/knowledge management)
+./kx kp3 passage search "query"
+./kx kp3 passage ls
+./kx kp3 sql "SELECT ..."
+
+# Health checks
+./kx wait postgres redis    # Wait for specific services
+./kx wait all               # Wait for all services
+```
+
+### Deploying to Remote Hosts
+
+Use `deploy.sh` to deploy changes to remote hosts (e.g., salinas):
+
+```bash
+cd v2-runtime
+./deploy.sh salinas
+# or
+./kx deploy salinas
+```
+
+The deploy script:
+1. SSHs to the target host
+2. Pulls latest from `origin/main`
+3. Stops existing services (`kx down`)
+4. Rebuilds images (`kx build`)
+5. Starts infrastructure (`kx dev`)
+6. Waits for postgres to be healthy
+7. Runs migrations (`kx migrate`)
+8. Starts app services (`kx up`)
+
+**Prerequisites**: SSH access configured for the target host, and the repo cloned at `~/kairix/v2-runtime` on the remote.
+
+### Running Commands on Remote
+
+For ad-hoc commands on salinas, SSH and use the REST API or kx CLI:
+
+```bash
+# REST API
+ssh salinas 'curl -s http://localhost:8000/voices | jq'
+
+# kx CLI
+ssh salinas 'cd ~/kairix/v2-runtime && ./kx voice list'
+```
+
+---
+
 ## External Documentation
 
 - **Letta SDK**: Use official docs at https://docs.letta.com/api (not Context7 - outdated)

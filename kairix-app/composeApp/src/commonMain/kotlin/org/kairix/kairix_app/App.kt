@@ -22,18 +22,30 @@ import org.kairix.kairix_app.theme.KairixTheme
 import org.kairix.kairix_app.ui.ContextView
 import org.kairix.kairix_app.ui.EventsView
 import org.kairix.kairix_app.ui.SettingsView
+import org.kairix.kairix_app.voice.Voice
+import org.kairix.kairix_app.voice.VoiceApiClient
 import org.kairix.kairix_app.voice.VoiceSession
 
-enum class Endpoint(val label: String, val voiceUrl: String, val eventsUrl: String) {
+enum class Endpoint(
+    val label: String,
+    val baseUrl: String,
+    val voiceUrl: String,
+    val eventsUrl: String,
+    val agentId: String
+) {
     CARRIZO(
-        "Carrizo",
-        "ws://100.86.139.116:8000/voice",
-        "ws://100.86.139.116:8000/events/agent-62f4b273-69c4-41d3-8571-02a0413756fb"
+        label = "Carrizo",
+        baseUrl = "http://100.86.139.116:8000",
+        voiceUrl = "ws://100.86.139.116:8000/voice",
+        eventsUrl = "ws://100.86.139.116:8000/events/agent-62f4b273-69c4-41d3-8571-02a0413756fb",
+        agentId = "agent-62f4b273-69c4-41d3-8571-02a0413756fb"
     ),
     SALINAS(
-        "Salinas",
-        "ws://100.120.96.128:8000/voice",
-        "ws://100.120.96.128:8000/events/agent-56a10649-420a-4639-83f3-575e12964442"
+        label = "Salinas",
+        baseUrl = "http://100.120.96.128:8000",
+        voiceUrl = "ws://100.120.96.128:8000/voice",
+        eventsUrl = "ws://100.120.96.128:8000/events/agent-56a10649-420a-4639-83f3-575e12964442",
+        agentId = "agent-56a10649-420a-4639-83f3-575e12964442"
     ),
 }
 
@@ -58,6 +70,14 @@ fun App() {
         // Memory blocks state - extract from latest ContextStateEvent
         var currentBlocks by remember { mutableStateOf(emptyList<MemoryBlock>()) }
 
+        // Voice state
+        var voices by remember { mutableStateOf(emptyList<Voice>()) }
+        var currentVoice by remember { mutableStateOf<Voice?>(null) }
+        var selectedVoice by remember { mutableStateOf<Voice?>(null) }
+        var isLoadingVoices by remember { mutableStateOf(false) }
+        var isSavingVoice by remember { mutableStateOf(false) }
+        var voiceSaveError by remember { mutableStateOf<String?>(null) }
+
         // Update blocks when events change
         LaunchedEffect(events) {
             // Find the most recent ContextStateEvent
@@ -73,6 +93,46 @@ fun App() {
                 eventSession.connect(selectedEndpoint.eventsUrl)
             } catch (e: Exception) {
                 println("Failed to connect to events: ${e.message}")
+            }
+        }
+
+        // Load voices and current agent voice when settings tab is selected or endpoint changes
+        LaunchedEffect(currentScreen, selectedEndpoint) {
+            if (currentScreen != AppScreen.Settings) return@LaunchedEffect
+
+            isLoadingVoices = true
+            voiceSaveError = null
+            selectedVoice = null
+            val apiClient = VoiceApiClient(selectedEndpoint.baseUrl)
+            try {
+                voices = apiClient.listVoices()
+                val agentSettings = apiClient.getAgentVoice(selectedEndpoint.agentId)
+                currentVoice = agentSettings.voice
+            } catch (e: Exception) {
+                println("Failed to load voices: ${e.message}")
+                voiceSaveError = "Failed to load voices: ${e.message}"
+            } finally {
+                isLoadingVoices = false
+            }
+        }
+
+        // Save voice callback
+        val onSaveVoice: () -> Unit = {
+            selectedVoice?.let { voice ->
+                scope.launch {
+                    isSavingVoice = true
+                    voiceSaveError = null
+                    val apiClient = VoiceApiClient(selectedEndpoint.baseUrl)
+                    try {
+                        apiClient.setAgentVoice(selectedEndpoint.agentId, voice.id)
+                        currentVoice = voice
+                        selectedVoice = null
+                    } catch (e: Exception) {
+                        voiceSaveError = "Failed to save voice"
+                    } finally {
+                        isSavingVoice = false
+                    }
+                }
             }
         }
 
@@ -129,7 +189,7 @@ fun App() {
                         onClick = {
                             scope.launch {
                                 when (connectionState) {
-                                    ConnectionState.DISCONNECTED -> voiceSession.connect(selectedEndpoint.voiceUrl)
+                                    ConnectionState.DISCONNECTED -> voiceSession.connect(selectedEndpoint.voiceUrl, selectedEndpoint.agentId)
                                     ConnectionState.CONNECTED -> voiceSession.disconnect()
                                     else -> { /* ignore during connecting/error */ }
                                 }
@@ -172,7 +232,15 @@ fun App() {
                         AppScreen.Settings -> SettingsView(
                             selectedEndpoint = selectedEndpoint,
                             onEndpointSelected = { selectedEndpoint = it },
-                            connectionState = connectionState
+                            connectionState = connectionState,
+                            voices = voices,
+                            currentVoice = currentVoice,
+                            selectedVoice = selectedVoice,
+                            onVoiceSelected = { selectedVoice = it },
+                            onSaveVoice = onSaveVoice,
+                            isLoadingVoices = isLoadingVoices,
+                            isSavingVoice = isSavingVoice,
+                            voiceSaveError = voiceSaveError
                         )
                     }
                 }

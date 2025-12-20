@@ -39,8 +39,10 @@ class VoiceSession(
 
     /**
      * Connect to voice server and start streaming.
+     * @param serverUrl Base WebSocket URL (e.g., ws://server:8000/voice)
+     * @param agentId Agent ID to use for voice lookup
      */
-    suspend fun connect(serverUrl: String) {
+    suspend fun connect(serverUrl: String, agentId: String) {
         if (_state.value != ConnectionState.DISCONNECTED) return
 
         _state.value = ConnectionState.CONNECTING
@@ -48,8 +50,11 @@ class VoiceSession(
         // Create session-scoped coroutine context
         sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+        // Append agent_id as query parameter for voice lookup
+        val urlWithAgent = "$serverUrl?agent_id=$agentId"
+
         try {
-            client.webSocketSession(serverUrl).also { ws ->
+            client.webSocketSession(urlWithAgent).also { ws ->
                 session = ws
 
                 // Create audio stream
