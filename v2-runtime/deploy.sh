@@ -35,11 +35,17 @@ fi
 echo ">>> Building images..."
 ./kx build
 
+echo ">>> Starting infrastructure..."
+./kx dev
+
+echo ">>> Waiting for postgres..."
+sleep 5
+
 echo ">>> Running migrations..."
 ./kx migrate
 
-echo ">>> Restarting services..."
-./kx restart
+echo ">>> Starting app services..."
+./kx up
 
 REMOTE
 
