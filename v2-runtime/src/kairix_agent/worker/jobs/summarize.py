@@ -85,12 +85,13 @@ async def summarize_session(
 
     This job:
     1. Loads session info from our database
-    2. Sends session transcript to reflector for summarization
-    3. Resets the reflector agent's message history
-    4. Stores the summary in the conversational agent's archival memory
-    5. Updates the last_session_summary block
-    6. Resets the conversational agent's message history
-    7. Updates session status in our database
+    2. Resets the reflector agent (clears stale context from failed jobs)
+    3. Sends session transcript to reflector for summarization
+    4. Resets the reflector agent again (defense in depth)
+    5. Stores the summary in the conversational agent's archival memory
+    6. Updates the last_session_summary block
+    7. Resets the conversational agent's message history
+    8. Updates session status in our database
 
     Args:
         _ctx: SAQ job context.
@@ -142,12 +143,17 @@ async def summarize_session(
 
     client = AsyncLetta(base_url=letta_url)
 
-    # 1. Format session for reflector
+    # 1. Reset reflector BEFORE summarization to ensure clean context
+    # This prevents accumulation from failed previous jobs
+    await client.agents.messages.reset(agent_id=reflector_agent_id)
+    logger.info("Reset reflector agent %s before summarization", reflector_agent_id)
+
+    # 2. Format session for reflector
     prompt = await _format_session_for_reflector(
         client, agent_id, message_ids, period_start, period_end
     )
 
-    # 2. Send to reflector and get summary
+    # 3. Send to reflector and get summary
     logger.info("Sending session to reflector %s for summarization", reflector_agent_id)
     response = await client.agents.messages.create(
         agent_id=reflector_agent_id,
@@ -183,18 +189,19 @@ async def summarize_session(
 
     logger.info("Received summary (%d chars) from reflector", len(summary_text))
 
-    # 3. Reset the reflector agent to prevent context buildup
+    # 4. Reset the reflector agent after summarization (defense in depth)
+    # The pre-summarization reset handles failed jobs; this handles successful ones
     await client.agents.messages.reset(agent_id=reflector_agent_id)
     logger.info("Reset reflector agent %s message history", reflector_agent_id)
 
-    # 4. Store summary in archival memory
+    # 5. Store summary in archival memory
     passage = await client.archives.passages.create(
         archive_id=archive_id,
         text=f"[Session Summary: {period_start} to {period_end}]\n\n{summary_text}",
     )
     logger.info("Stored summary in archival memory (archive %s, passage %s)", archive_id, passage.id)
 
-    # 5. Update the last_session_summary block in the conversational agent's core memory
+    # 6. Update the last_session_summary block in the conversational agent's core memory
     # This keeps the summary in-window for continuity after reset
     try:
         await client.agents.blocks.update(
@@ -206,11 +213,11 @@ async def summarize_session(
     except Exception:
         logger.exception("Failed to update last_session_summary block")
 
-    # 6. Reset message history (Letta preserves the system message automatically)
+    # 7. Reset message history (Letta preserves the system message automatically)
     await client.agents.messages.reset(agent_id=agent_id)
     logger.info("Reset message history for agent %s (system message preserved)", agent_id)
 
-    # 7. Publish event for connected clients
+    # 8. Publish event for connected clients
     await publish_event(
         agent_id=agent_id,
         event_type=EventType.SUMMARY_COMPLETE,
@@ -221,10 +228,10 @@ async def summarize_session(
     )
     logger.info("Published SUMMARY_COMPLETE event for agent %s", agent_id)
 
-    # 8. Emit context state update (blocks have changed)
+    # 9. Emit context state update (blocks have changed)
     await emit_context_state(agent_id=agent_id, letta_url=letta_url)
 
-    # 9. Update session status to summarized
+    # 10. Update session status to summarized
     await update_session_status(
         session_id=session_id,
         status=SessionStatus.SUMMARIZED,
