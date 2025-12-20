@@ -1,0 +1,288 @@
+#!/bin/bash
+# =============================================================================
+# kx - Kairix Admin CLI
+# =============================================================================
+# Unified CLI for managing Kairix services, database, and KP3 operations.
+
+set -euo pipefail
+
+# Detect compose command
+detect_compose() {
+    if command -v podman-compose &> /dev/null; then
+        echo "podman-compose"
+    elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
+        echo "docker compose"
+    else
+        echo "Error: Neither podman-compose nor docker compose found" >&2
+        exit 1
+    fi
+}
+
+COMPOSE=$(detect_compose)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+print_header() {
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}  $1${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << 'EOF'
+kx - Kairix Admin CLI
+
+USAGE:
+    kx <command> [args...]
+
+SERVICES:
+    up              Start all services (default production mode)
+    down            Stop all services
+    restart         Restart all services
+    status, ps      Show service status
+    logs [svc]      View logs (optionally for specific service)
+    build           Build all images
+
+DEVELOPMENT:
+    dev             Start dependencies only (no app services)
+    dev:up          Alias for 'dev'
+    dev:down        Stop dev dependencies
+
+DATABASE:
+    migrate         Run database migrations
+    psql            Connect to PostgreSQL shell
+    db:reset        Reset database (WARNING: destroys data)
+
+KP3:
+    kp3 <cmd>       Run kp3 CLI command
+                    Examples:
+                      kx kp3 passage search "query"
+                      kx kp3 passage ls
+                      kx kp3 run ls
+                      kx kp3 sql "SELECT count(*) FROM passages"
+
+DEPLOYMENT:
+    deploy <target> Deploy to remote host (e.g., kx deploy salinas)
+
+EXAMPLES:
+    kx up                           # Start everything
+    kx dev                          # Start only dependencies
+    kx logs kairix-server           # View server logs
+    kx kp3 passage search "hello"   # Search passages
+    kx psql                         # Open database shell
+    kx deploy salinas               # Deploy to salinas
+
+EOF
+}
+
+# =============================================================================
+# Service Commands
+# =============================================================================
+
+cmd_up() {
+    print_header "Starting Kairix Services"
+    $COMPOSE up -d "$@"
+    echo
+    $COMPOSE ps
+}
+
+cmd_down() {
+    print_header "Stopping Kairix Services"
+    $COMPOSE down --remove-orphans "$@"
+}
+
+cmd_restart() {
+    print_header "Restarting Kairix Services"
+    $COMPOSE down --remove-orphans
+    $COMPOSE up -d "$@"
+    echo
+    $COMPOSE ps
+}
+
+cmd_status() {
+    print_header "Service Status"
+    $COMPOSE ps "$@"
+}
+
+cmd_logs() {
+    $COMPOSE logs -f "$@"
+}
+
+cmd_build() {
+    print_header "Building Images"
+    $COMPOSE build "$@"
+}
+
+# =============================================================================
+# Development Commands
+# =============================================================================
+
+cmd_dev() {
+    print_header "Starting Development Dependencies"
+    COMPOSE_PROFILES= $COMPOSE up -d "$@"
+    echo
+    $COMPOSE ps
+}
+
+cmd_dev_down() {
+    print_header "Stopping Development Dependencies"
+    COMPOSE_PROFILES= $COMPOSE down --remove-orphans "$@"
+}
+
+# =============================================================================
+# Database Commands
+# =============================================================================
+
+cmd_migrate() {
+    print_header "Running Migrations"
+    $COMPOSE run --rm migrate
+}
+
+cmd_psql() {
+    print_header "Connecting to PostgreSQL"
+    if command -v podman &> /dev/null; then
+        podman exec -it kairix-postgres psql -U kairix -d kairix "$@"
+    else
+        docker exec -it kairix-postgres psql -U kairix -d kairix "$@"
+    fi
+}
+
+cmd_db_reset() {
+    echo -e "${RED}WARNING: This will destroy all data in the database!${NC}"
+    read -p "Type 'yes' to confirm: " confirm
+    if [[ "$confirm" != "yes" ]]; then
+        echo "Aborted."
+        exit 1
+    fi
+
+    print_header "Resetting Database"
+    $COMPOSE down -v postgres
+    $COMPOSE up -d postgres
+    echo "Waiting for postgres to be ready..."
+    sleep 5
+    $COMPOSE run --rm migrate
+    echo -e "${GREEN}Database reset complete.${NC}"
+}
+
+# =============================================================================
+# KP3 Commands
+# =============================================================================
+
+cmd_kp3() {
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: kx kp3 <command> [args...]"
+        echo
+        echo "Available commands:"
+        echo "  passage search <query>   Search passages"
+        echo "  passage ls               List passages"
+        echo "  passage create <text>    Create a passage"
+        echo "  run ls                   List processing runs"
+        echo "  run create <sql> -p <t>  Create a processing run"
+        echo "  sql <query>              Execute raw SQL"
+        echo "  importer kairix <path>   Import from SQLite backup"
+        exit 1
+    fi
+
+    $COMPOSE run --rm kp3 kp3 "$@"
+}
+
+# =============================================================================
+# Deployment Commands
+# =============================================================================
+
+cmd_deploy() {
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: kx deploy <target>"
+        echo "Example: kx deploy salinas"
+        exit 1
+    fi
+
+    ./deploy.sh "$@"
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+if [[ $# -eq 0 ]]; then
+    show_help
+    exit 0
+fi
+
+command="$1"
+shift
+
+case "$command" in
+    # Help
+    help|--help|-h)
+        show_help
+        ;;
+
+    # Services
+    up)
+        cmd_up "$@"
+        ;;
+    down)
+        cmd_down "$@"
+        ;;
+    restart)
+        cmd_restart "$@"
+        ;;
+    status|ps)
+        cmd_status "$@"
+        ;;
+    logs)
+        cmd_logs "$@"
+        ;;
+    build)
+        cmd_build "$@"
+        ;;
+
+    # Development
+    dev|dev:up)
+        cmd_dev "$@"
+        ;;
+    dev:down)
+        cmd_dev_down "$@"
+        ;;
+
+    # Database
+    migrate)
+        cmd_migrate "$@"
+        ;;
+    psql)
+        cmd_psql "$@"
+        ;;
+    db:reset)
+        cmd_db_reset "$@"
+        ;;
+
+    # KP3
+    kp3)
+        cmd_kp3 "$@"
+        ;;
+
+    # Deployment
+    deploy)
+        cmd_deploy "$@"
+        ;;
+
+    # Unknown
+    *)
+        echo -e "${RED}Unknown command: $command${NC}"
+        echo "Run 'kx help' for usage."
+        exit 1
+        ;;
+esac
