@@ -104,7 +104,7 @@ EOF
 
 cmd_up() {
     print_header "Starting Kairix Services"
-    $COMPOSE up -d "$@"
+    $COMPOSE up -d --force-recreate "$@"
     echo
     $COMPOSE ps
 }
@@ -142,7 +142,7 @@ cmd_build() {
 
 cmd_dev() {
     print_header "Starting Development Dependencies"
-    COMPOSE_PROFILES= $COMPOSE up -d "$@"
+    COMPOSE_PROFILES= $COMPOSE up -d --force-recreate "$@"
     echo
     $COMPOSE ps
 }
