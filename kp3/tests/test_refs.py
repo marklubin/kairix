@@ -173,10 +173,10 @@ async def test_ref_history_recorded(
     assert len(history) == 2
 
     # Most recent first
-    assert history[0]["passage_id"] == str(another_passage.id)
-    assert history[0]["previous_passage_id"] == str(sample_passage.id)
+    assert history[0]["passage_id"] == another_passage.id
+    assert history[0]["previous_passage_id"] == sample_passage.id
 
-    assert history[1]["passage_id"] == str(sample_passage.id)
+    assert history[1]["passage_id"] == sample_passage.id
     assert history[1]["previous_passage_id"] is None
 
 
@@ -215,7 +215,7 @@ async def test_list_ref_hooks(db_session: AsyncSession) -> None:
     hooks = await list_ref_hooks(db_session, "world/persona/HEAD")
     assert len(hooks) == 2
 
-    action_types = {h["action_type"] for h in hooks}
+    action_types = {h.action_type for h in hooks}
     assert action_types == {"letta_agent_block_update", "custom_action"}
 
 
@@ -234,7 +234,7 @@ async def test_disabled_hooks_not_listed(db_session: AsyncSession) -> None:
     hooks = await list_ref_hooks(db_session, "world/disabled/HEAD")
     assert len(hooks) == 0
 
-    # Can include disabled
-    hooks = await list_ref_hooks(db_session, "world/disabled/HEAD", include_disabled=True)
+    # Can include disabled with enabled_only=False
+    hooks = await list_ref_hooks(db_session, "world/disabled/HEAD", enabled_only=False)
     assert len(hooks) == 1
-    assert hooks[0]["enabled"] is False
+    assert hooks[0].enabled is False

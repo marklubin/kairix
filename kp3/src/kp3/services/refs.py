@@ -82,7 +82,7 @@ async def set_ref(
         index_elements=["name"],
         set_={
             "passage_id": passage_id,
-            "metadata_": metadata or {},
+            "metadata": metadata or {},  # Use actual column name, not Python attr
             "updated_at": stmt.excluded.updated_at,
         },
     )

@@ -4,6 +4,9 @@ import os
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
+# Disable testcontainers Ryuk reaper - required for podman compatibility
+os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
@@ -53,7 +56,7 @@ def postgres_container() -> Generator[Any, None, None]:
     from testcontainers.postgres import PostgresContainer
 
     with PostgresContainer(
-        image="pgvector/pgvector:pg16",
+        image="docker.io/pgvector/pgvector:pg16",
         driver="asyncpg",
     ) as postgres:
         yield postgres
