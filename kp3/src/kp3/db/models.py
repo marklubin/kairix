@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Boolean,
     Computed,
     DateTime,
     ForeignKey,
@@ -207,3 +208,49 @@ class ProcessingRun(Base):
     )
 
     __table_args__ = (Index("idx_runs_status", "status"),)
+
+
+class PassageRef(Base):
+    """Mutable pointer to a passage, analogous to git refs."""
+
+    __tablename__ = "passage_refs"
+
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
+    passage_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("passages.id"), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    metadata_: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, server_default="{}"
+    )
+
+    # Relationships
+    passage: Mapped[Passage] = relationship("Passage")
+
+    __table_args__ = (Index("idx_passage_refs_passage_id", "passage_id"),)
+
+
+class ExtractionPrompt(Base):
+    """Versioned prompts for world model extraction."""
+
+    __tablename__ = "extraction_prompts"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    user_prompt_template: Mapped[str] = mapped_column(Text, nullable=False)
+    field_descriptions: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("name", "version", name="uq_extraction_prompts_name_version"),
+        Index("idx_extraction_prompts_name", "name"),
+    )

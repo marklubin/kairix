@@ -28,12 +28,18 @@ from kp3.db.engine import async_session
 from kp3.processors.base import Processor
 from kp3.processors.embedding import EmbeddingProcessor
 from kp3.processors.llm_prompt import LLMPromptProcessor
+from kp3.processors.world_model import WorldModelProcessor
 from kp3.services.passages import create_passage
 from kp3.services.runs import create_run, execute_run, list_runs
 
 
-def get_processor(processor_type: str) -> Processor[Any]:
+def get_processor(processor_type: str, session: Any = None) -> Processor[Any]:
     """Get processor instance by type."""
+    if processor_type == "world_model":
+        if session is None:
+            raise click.ClickException("world_model processor requires a session")
+        return WorldModelProcessor(session)
+
     processors: dict[str, Processor[Any]] = {
         "embedding": EmbeddingProcessor(),
         "llm_prompt": LLMPromptProcessor(),
@@ -273,6 +279,88 @@ def import_kairix(db_path: Path) -> None:
                 click.echo(f"  Empty:        {stats.skipped_empty}")
 
     asyncio.run(_import())
+
+
+@cli.group("world-model")
+def world_model() -> None:
+    """World model extraction and management."""
+    pass
+
+
+@world_model.command("backfill")
+@click.option("--branch", "-b", default="HEAD", help="Ref branch name (e.g., HEAD, experiment-v2)")
+@click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
+@click.option("--limit", "-n", type=int, help="Max passages to process")
+@click.option("--dry-run", is_flag=True, help="Don't update refs")
+@click.option("--type", "-t", "passage_type", default="memory_shard", help="Passage type to process")
+def world_model_backfill(
+    branch: str, model: str, limit: int | None, dry_run: bool, passage_type: str
+) -> None:
+    """Process historical passages to build world model state.
+
+    Processes passages sequentially using fold semantic (each passage
+    conditioned on prior state).
+    """
+    from kp3.scripts.backfill_world_models import backfill_world_models
+
+    async def _backfill() -> None:
+        async with async_session() as session:
+            stats = await backfill_world_models(
+                session,
+                branch=branch,
+                llm_model=model,
+                limit=limit,
+                dry_run=dry_run,
+                passage_type=passage_type,
+            )
+
+            click.echo("\nBackfill complete:")
+            click.echo(f"  Run ID:    {stats['run_id']}")
+            click.echo(f"  Branch:    {stats['branch']}")
+            click.echo(f"  Total:     {stats['total']}")
+            click.echo(f"  Processed: {stats['processed']}")
+            click.echo(f"  Errors:    {stats['errors']}")
+            if stats['dry_run']:
+                click.echo("  (dry run - refs not updated)")
+
+    asyncio.run(_backfill())
+
+
+@world_model.command("seed-prompts")
+def world_model_seed_prompts() -> None:
+    """Seed the initial world model extraction prompt."""
+    from kp3.scripts.seed_prompts import seed_world_model_prompt
+
+    async def _seed() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                await seed_world_model_prompt(session)
+                click.echo("Seeded world model prompts.")
+
+    asyncio.run(_seed())
+
+
+@world_model.command("refs")
+@click.option("--prefix", "-p", default="world/", help="Ref prefix to list")
+def world_model_refs(prefix: str) -> None:
+    """List world model refs."""
+    from kp3.services.refs import list_refs
+
+    async def _list() -> None:
+        async with async_session() as session:
+            refs = await list_refs(session, prefix=prefix)
+
+            if not refs:
+                click.echo("No refs found.")
+                return
+
+            for ref in refs:
+                click.echo(
+                    f"{ref['name']:<30} -> {ref['passage_id']}  "
+                    f"({ref['updated_at']:%Y-%m-%d %H:%M})"
+                )
+
+    asyncio.run(_list())
 
 
 if __name__ == "__main__":

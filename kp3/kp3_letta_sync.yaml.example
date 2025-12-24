@@ -1,0 +1,21 @@
+# KP3 Letta Sync Configuration
+#
+# This file maps passage refs to Letta agent blocks.
+# Copy to kp3_letta_sync.yaml and configure with your Letta agent IDs.
+
+# Letta server URL
+letta_base_url: "http://localhost:8283"
+
+# Mappings from refs to Letta agents/blocks
+mappings:
+  - ref: "world/human/HEAD"
+    agent_id: "agent-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    block_label: "human"
+
+  - ref: "world/persona/HEAD"
+    agent_id: "agent-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    block_label: "persona"
+
+  - ref: "world/world/HEAD"
+    agent_id: "agent-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    block_label: "world"

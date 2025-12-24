@@ -12,10 +12,10 @@ async def create_derivations(
     session: AsyncSession,
     derived_passage_id: UUID,
     source_passage_ids: list[UUID],
-    processing_run_id: UUID,
+    processing_run_id: UUID | None = None,
 ) -> list[PassageDerivation]:
     """Create derivation links from source passages to a derived passage."""
-    derivations = []
+    derivations: list[PassageDerivation] = []
     for order, source_id in enumerate(source_passage_ids):
         derivation = PassageDerivation(
             derived_passage_id=derived_passage_id,
