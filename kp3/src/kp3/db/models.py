@@ -232,6 +232,61 @@ class PassageRef(Base):
     __table_args__ = (Index("idx_passage_refs_passage_id", "passage_id"),)
 
 
+class PassageRefHistory(Base):
+    """History of ref changes for auditing and time-travel queries."""
+
+    __tablename__ = "passage_ref_history"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    ref_name: Mapped[str] = mapped_column(Text, nullable=False)
+    passage_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("passages.id"), nullable=False
+    )
+    previous_passage_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("passages.id"), nullable=True
+    )
+    changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    metadata_: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, server_default="{}"
+    )
+
+    # Relationships
+    passage: Mapped[Passage] = relationship("Passage", foreign_keys=[passage_id])
+    previous_passage: Mapped[Passage | None] = relationship(
+        "Passage", foreign_keys=[previous_passage_id]
+    )
+
+    __table_args__ = (
+        Index("idx_passage_ref_history_ref_name", "ref_name"),
+        Index("idx_passage_ref_history_changed_at", "changed_at"),
+    )
+
+
+class PassageRefHook(Base):
+    """Configurable hooks triggered on ref updates."""
+
+    __tablename__ = "passage_ref_hooks"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    ref_name: Mapped[str] = mapped_column(Text, nullable=False)
+    action_type: Mapped[str] = mapped_column(
+        Text, nullable=False
+    )  # e.g., "letta_agent_block_update"
+    config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (Index("idx_passage_ref_hooks_ref_name", "ref_name"),)
+
+
 class ExtractionPrompt(Base):
     """Versioned prompts for world model extraction."""
 

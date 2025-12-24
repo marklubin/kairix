@@ -5,13 +5,35 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import click
 from dotenv import load_dotenv
-from sqlalchemy import text
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+from sqlalchemy import select, text
 
 # Load .env file before importing config
 load_dotenv()
+
+from kp3.db.engine import async_session  # noqa: E402
+from kp3.db.models import Passage  # noqa: E402
+from kp3.processors.base import Processor, ProcessorGroup  # noqa: E402
+from kp3.processors.embedding import EmbeddingProcessor  # noqa: E402
+from kp3.processors.llm_prompt import LLMPromptProcessor  # noqa: E402
+from kp3.processors.world_model import WorldModelConfig, WorldModelProcessor  # noqa: E402
+from kp3.scripts.backfill_world_models import backfill_world_models  # noqa: E402
+from kp3.scripts.seed_prompts import seed_all_prompts  # noqa: E402
+from kp3.services.passages import create_passage  # noqa: E402
+from kp3.services.refs import (  # noqa: E402
+    create_ref_hook,
+    get_ref_history,
+    get_ref_passage,
+    list_ref_hooks,
+    list_refs,
+)
+from kp3.services.runs import create_run, execute_run, list_runs  # noqa: E402
 
 
 def setup_logging(verbose: bool) -> None:
@@ -24,16 +46,7 @@ def setup_logging(verbose: bool) -> None:
     )
 
 
-from kp3.db.engine import async_session
-from kp3.processors.base import Processor
-from kp3.processors.embedding import EmbeddingProcessor
-from kp3.processors.llm_prompt import LLMPromptProcessor
-from kp3.processors.world_model import WorldModelProcessor
-from kp3.services.passages import create_passage
-from kp3.services.runs import create_run, execute_run, list_runs
-
-
-def get_processor(processor_type: str, session: Any = None) -> Processor[Any]:
+def get_processor(processor_type: str, session: Any = None) -> Processor[Any]:  # noqa: ANN401
     """Get processor instance by type."""
     if processor_type == "world_model":
         if session is None:
@@ -82,7 +95,7 @@ def run_create(input_sql: str, processor: str, config: str) -> None:
 
     async def _run() -> None:
         proc = get_processor(processor)
-        typed_config = proc.parse_config(config_dict)
+        _ = proc.parse_config(config_dict)  # Validate config
 
         async with async_session() as session:
             async with session.begin():
@@ -209,9 +222,6 @@ def passage_ls(passage_type: str | None, limit: int) -> None:
 @click.option("--limit", "-n", default=5, help="Max results to show")
 def passage_search(query: str, mode: str, limit: int) -> None:
     """Search passages using FTS, semantic, or hybrid search."""
-    from rich.console import Console
-    from rich.panel import Panel
-
     from kp3.services.search import search_passages
 
     async def _search() -> None:
@@ -281,6 +291,144 @@ def import_kairix(db_path: Path) -> None:
     asyncio.run(_import())
 
 
+# =============================================================================
+# REFS COMMANDS
+# =============================================================================
+
+
+@cli.group()
+def refs() -> None:
+    """Manage passage refs (mutable pointers to passages)."""
+    pass
+
+
+@refs.command("list")
+@click.option("--prefix", "-p", help="Ref prefix to filter by")
+def refs_list(prefix: str | None) -> None:
+    """List all refs."""
+
+    async def _list() -> None:
+        async with async_session() as session:
+            ref_list = await list_refs(session, prefix=prefix)
+
+            if not ref_list:
+                click.echo("No refs found.")
+                return
+
+            for ref in ref_list:
+                click.echo(
+                    f"{ref['name']:<30} -> {ref['passage_id']}  "
+                    f"({ref['updated_at']:%Y-%m-%d %H:%M})"
+                )
+
+    asyncio.run(_list())
+
+
+@refs.command("get")
+@click.argument("name")
+def refs_get(name: str) -> None:
+    """Get details of a specific ref."""
+
+    async def _get() -> None:
+        async with async_session() as session:
+            passage = await get_ref_passage(session, name)
+
+            if not passage:
+                click.echo(f"Ref '{name}' not found.")
+                return
+
+            console = Console()
+            console.print(f"\n[bold]Ref:[/] {name}")
+            console.print(f"[bold]Passage ID:[/] {passage.id}")
+            console.print(f"[bold]Type:[/] {passage.passage_type}")
+            console.print(f"[bold]Created:[/] {passage.created_at}")
+            console.print()
+            console.print(Panel(passage.content, title="Content", border_style="blue"))
+
+    asyncio.run(_get())
+
+
+@refs.command("history")
+@click.argument("name")
+@click.option("--limit", "-n", default=10, help="Max history entries to show")
+def refs_history(name: str, limit: int) -> None:
+    """Show history of changes for a ref."""
+
+    async def _history() -> None:
+        async with async_session() as session:
+            history = await get_ref_history(session, name, limit=limit)
+
+            if not history:
+                click.echo(f"No history found for ref '{name}'.")
+                return
+
+            click.echo(f"\nHistory for ref: {name}\n")
+            for entry in history:
+                prev = entry["previous_passage_id"] or "(none)"
+                click.echo(
+                    f"  {entry['changed_at']:%Y-%m-%d %H:%M:%S}  {prev} -> {entry['passage_id']}"
+                )
+
+    asyncio.run(_history())
+
+
+@refs.command("hooks")
+@click.option("--ref", "-r", "ref_name", help="Filter by ref name")
+def refs_hooks(ref_name: str | None) -> None:
+    """List configured hooks for refs."""
+
+    async def _hooks() -> None:
+        async with async_session() as session:
+            hooks = await list_ref_hooks(session, ref_name=ref_name)
+
+            if not hooks:
+                click.echo("No hooks found.")
+                return
+
+            for hook in hooks:
+                status = "[green]enabled[/]" if hook.enabled else "[red]disabled[/]"
+                Console().print(
+                    f"{hook.ref_name:<30} {hook.action_type:<25} {status}  "
+                    f"config={json.dumps(hook.config)}"
+                )
+
+    asyncio.run(_hooks())
+
+
+@refs.command("add-hook")
+@click.argument("ref_name")
+@click.argument("action_type")
+@click.argument("config_json")
+def refs_add_hook(ref_name: str, action_type: str, config_json: str) -> None:
+    """Add a hook to a ref.
+
+    ACTION_TYPE should be e.g., "letta_agent_block_update".
+    CONFIG_JSON should be a JSON object with action-specific config.
+    """
+    try:
+        config = json.loads(config_json)
+    except json.JSONDecodeError as e:
+        raise click.ClickException(f"Invalid JSON: {e}") from e
+
+    async def _add() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                hook = await create_ref_hook(
+                    session,
+                    ref_name=ref_name,
+                    action_type=action_type,
+                    config=config,
+                )
+                click.echo(f"Created hook: {hook.id}")
+
+    asyncio.run(_add())
+
+
+# =============================================================================
+# WORLD MODEL COMMANDS
+# =============================================================================
+
+
 @cli.group("world-model")
 def world_model() -> None:
     """World model extraction and management."""
@@ -292,75 +440,141 @@ def world_model() -> None:
 @click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
 @click.option("--limit", "-n", type=int, help="Max passages to process")
 @click.option("--dry-run", is_flag=True, help="Don't update refs")
-@click.option("--type", "-t", "passage_type", default="memory_shard", help="Passage type to process")
+@click.option(
+    "--type", "-t", "passage_type", default="memory_shard", help="Passage type to process"
+)
 def world_model_backfill(
     branch: str, model: str, limit: int | None, dry_run: bool, passage_type: str
 ) -> None:
     """Process historical passages to build world model state.
 
     Processes passages sequentially using fold semantic (each passage
-    conditioned on prior state).
+    conditioned on prior state). Shows progress bar for long operations.
     """
-    from kp3.scripts.backfill_world_models import backfill_world_models
 
     async def _backfill() -> None:
         async with async_session() as session:
-            stats = await backfill_world_models(
-                session,
-                branch=branch,
-                llm_model=model,
-                limit=limit,
-                dry_run=dry_run,
-                passage_type=passage_type,
-            )
+            # Count total passages for progress bar
+            count_stmt = select(Passage).where(Passage.passage_type == passage_type)
+            if limit:
+                count_stmt = count_stmt.limit(limit)
+            count_result = await session.execute(count_stmt)
+            total = len(count_result.scalars().all())
 
-            click.echo("\nBackfill complete:")
-            click.echo(f"  Run ID:    {stats['run_id']}")
-            click.echo(f"  Branch:    {stats['branch']}")
-            click.echo(f"  Total:     {stats['total']}")
-            click.echo(f"  Processed: {stats['processed']}")
-            click.echo(f"  Errors:    {stats['errors']}")
-            if stats['dry_run']:
-                click.echo("  (dry run - refs not updated)")
+            console = Console()
+            console.print("\n[bold]World Model Backfill[/]")
+            console.print(f"  Branch: {branch}")
+            console.print(f"  Model: {model}")
+            console.print(f"  Passages: {total}")
+            if dry_run:
+                console.print("  [yellow](dry run - refs not updated)[/]")
+            console.print()
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                console=console,
+            ) as progress:
+                task = progress.add_task("Processing passages...", total=total)
+
+                # Run backfill with progress updates
+                stats = await backfill_world_models(
+                    session,
+                    branch=branch,
+                    llm_model=model,
+                    limit=limit,
+                    dry_run=dry_run,
+                    passage_type=passage_type,
+                )
+
+                progress.update(task, completed=stats["processed"])
+
+            console.print("\n[bold green]Backfill complete:[/]")
+            console.print(f"  Run ID:    {stats['run_id']}")
+            console.print(f"  Branch:    {stats['branch']}")
+            console.print(f"  Total:     {stats['total']}")
+            console.print(f"  Processed: {stats['processed']}")
+            console.print(f"  Errors:    {stats['errors']}")
+            if stats["dry_run"]:
+                console.print("  [yellow](dry run - refs not updated)[/]")
 
     asyncio.run(_backfill())
 
 
+@world_model.command("commit")
+@click.argument("passage_id")
+@click.option("--branch", "-b", default="HEAD", help="Ref branch name")
+@click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
+def world_model_commit(passage_id: str, branch: str, model: str) -> None:
+    """Process a single passage to update world model state.
+
+    Takes an existing passage and updates the world model refs based on it.
+    This is the "tick" operation that processes one passage through the
+    world model extraction.
+    """
+
+    async def _commit() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                # Get the passage
+                passage = await session.get(Passage, UUID(passage_id))
+                if not passage:
+                    raise click.ClickException(f"Passage {passage_id} not found")
+
+                # Create processor and config
+                processor = WorldModelProcessor(session)
+                config = WorldModelConfig(
+                    llm_model=model,
+                    human_ref=f"world/human/{branch}",
+                    persona_ref=f"world/persona/{branch}",
+                    world_ref=f"world/world/{branch}",
+                    update_refs=True,
+                    fire_hooks=True,
+                )
+
+                # Create a group with just this passage
+                group = ProcessorGroup(
+                    passage_ids=[passage.id],
+                    passages=[passage],
+                    group_key=str(passage.id),
+                    group_metadata={},
+                )
+
+                console = Console()
+                console.print("\n[bold]World Model Commit[/]")
+                console.print(f"  Passage: {passage.id}")
+                console.print(f"  Branch: {branch}")
+                console.print(f"  Model: {model}")
+                console.print()
+
+                with console.status("Processing passage..."):
+                    result = await processor.process(group, config)
+
+                if result.action == "create":
+                    content = json.loads(result.content) if result.content else {}
+                    console.print("[bold green]Success![/]")
+                    console.print(f"  Human passage:  {content.get('human_id')}")
+                    console.print(f"  Persona passage: {content.get('persona_id')}")
+                    console.print(f"  World passage:   {content.get('world_id')}")
+                else:
+                    console.print(f"[bold red]Failed:[/] {result.action}")
+
+    asyncio.run(_commit())
+
+
 @world_model.command("seed-prompts")
 def world_model_seed_prompts() -> None:
-    """Seed the initial world model extraction prompt."""
-    from kp3.scripts.seed_prompts import seed_world_model_prompt
+    """Seed the initial world model extraction prompts."""
 
     async def _seed() -> None:
         async with async_session() as session:
             async with session.begin():
-                await seed_world_model_prompt(session)
-                click.echo("Seeded world model prompts.")
+                await seed_all_prompts(session)
+                click.echo("Seeded world model prompts (human, persona, world).")
 
     asyncio.run(_seed())
-
-
-@world_model.command("refs")
-@click.option("--prefix", "-p", default="world/", help="Ref prefix to list")
-def world_model_refs(prefix: str) -> None:
-    """List world model refs."""
-    from kp3.services.refs import list_refs
-
-    async def _list() -> None:
-        async with async_session() as session:
-            refs = await list_refs(session, prefix=prefix)
-
-            if not refs:
-                click.echo("No refs found.")
-                return
-
-            for ref in refs:
-                click.echo(
-                    f"{ref['name']:<30} -> {ref['passage_id']}  "
-                    f"({ref['updated_at']:%Y-%m-%d %H:%M})"
-                )
-
-    asyncio.run(_list())
 
 
 if __name__ == "__main__":

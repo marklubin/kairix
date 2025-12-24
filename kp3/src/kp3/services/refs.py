@@ -1,53 +1,16 @@
 """Refs service for managing mutable pointers to passages."""
 
-from collections.abc import Awaitable, Callable
+import logging
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from kp3.db.models import Passage, PassageRef
+from kp3.db.models import Passage, PassageRef, PassageRefHistory, PassageRefHook
 
-# Type for hook callbacks
-RefHook = Callable[[str, Passage], Awaitable[None]]
-
-# Global hook registry
-_ref_hooks: dict[str, list[RefHook]] = {}
-
-
-def register_hook(ref_pattern: str, hook: RefHook) -> None:
-    """Register a hook to fire when a ref matching pattern is updated.
-
-    Args:
-        ref_pattern: Exact ref name to match (glob patterns not yet supported)
-        hook: Async callback that receives (ref_name, passage)
-    """
-    if ref_pattern not in _ref_hooks:
-        _ref_hooks[ref_pattern] = []
-    _ref_hooks[ref_pattern].append(hook)
-
-
-def clear_hooks() -> None:
-    """Clear all registered hooks. Useful for testing."""
-    _ref_hooks.clear()
-
-
-async def _fire_hooks(ref_name: str, passage: Passage) -> None:
-    """Fire all hooks matching the ref name."""
-    for pattern, hooks in _ref_hooks.items():
-        if _matches_pattern(ref_name, pattern):
-            for hook in hooks:
-                await hook(ref_name, passage)
-
-
-def _matches_pattern(name: str, pattern: str) -> bool:
-    """Check if ref name matches pattern.
-
-    Currently supports exact match only. Future: add glob/prefix matching.
-    """
-    return name == pattern
+logger = logging.getLogger(__name__)
 
 
 async def get_ref(session: AsyncSession, name: str) -> UUID | None:
@@ -62,8 +25,7 @@ async def get_ref(session: AsyncSession, name: str) -> UUID | None:
     """
     stmt = select(PassageRef.passage_id).where(PassageRef.name == name)
     result = await session.execute(stmt)
-    row = result.scalar_one_or_none()
-    return row
+    return result.scalar_one_or_none()
 
 
 async def get_ref_passage(session: AsyncSession, name: str) -> Passage | None:
@@ -95,16 +57,21 @@ async def set_ref(
 ) -> PassageRef:
     """Set a ref to point to a passage, creating or updating as needed.
 
+    Records history and fires DB-configured hooks.
+
     Args:
         session: Database session
         name: Ref name (e.g., "world/human/HEAD")
         passage_id: UUID of the passage to point to
         metadata: Optional metadata to store with the ref
-        fire_hooks: Whether to fire registered hooks (default True)
+        fire_hooks: Whether to fire DB-configured hooks (default True)
 
     Returns:
         The created or updated PassageRef
     """
+    # Get current ref state for history
+    previous_passage_id = await get_ref(session, name)
+
     # Use upsert (INSERT ... ON CONFLICT UPDATE)
     stmt = insert(PassageRef).values(
         name=name,
@@ -120,6 +87,15 @@ async def set_ref(
         },
     )
     await session.execute(stmt)
+
+    # Record history
+    history_entry = PassageRefHistory(
+        ref_name=name,
+        passage_id=passage_id,
+        previous_passage_id=previous_passage_id,
+        metadata_=metadata or {},
+    )
+    session.add(history_entry)
     await session.flush()
 
     # Fetch the ref to return
@@ -127,12 +103,58 @@ async def set_ref(
     result = await session.execute(ref_stmt)
     ref = result.scalar_one()
 
+    # Fire DB-configured hooks
     if fire_hooks:
         passage = await session.get(Passage, passage_id)
         if passage:
-            await _fire_hooks(name, passage)
+            await _execute_db_hooks(session, name, passage)
 
     return ref
+
+
+async def _execute_db_hooks(session: AsyncSession, ref_name: str, passage: Passage) -> None:
+    """Execute hooks configured in the database for this ref."""
+    stmt = select(PassageRefHook).where(
+        PassageRefHook.ref_name == ref_name,
+        PassageRefHook.enabled == True,  # noqa: E712
+    )
+    result = await session.execute(stmt)
+    hooks = result.scalars().all()
+
+    for hook in hooks:
+        try:
+            await _execute_hook_action(hook, passage)
+        except Exception as e:
+            logger.exception("Hook %s failed for ref %s: %s", hook.id, ref_name, e)
+            # Re-raise to let caller handle - hooks should not silently fail
+            raise
+
+
+async def _execute_hook_action(hook: PassageRefHook, passage: Passage) -> None:
+    """Execute a single hook action based on its type."""
+    if hook.action_type == "letta_agent_block_update":
+        await _execute_letta_hook(hook.config, passage)
+    else:
+        logger.warning("Unknown hook action type: %s", hook.action_type)
+
+
+async def _execute_letta_hook(config: dict[str, Any], passage: Passage) -> None:
+    """Execute a Letta agent block update hook.
+
+    Config should contain:
+        - agent_id: Letta agent ID
+        - block_label: Block label (human, persona, world)
+    """
+    # Import here to avoid circular dependency and allow lazy loading
+    from kp3.hooks.letta_sync import update_letta_block
+
+    agent_id = config.get("agent_id")
+    block_label = config.get("block_label")
+
+    if not agent_id or not block_label:
+        raise ValueError("Invalid Letta hook config: missing agent_id or block_label")
+
+    await update_letta_block(agent_id, block_label, passage.content)
 
 
 async def list_refs(
@@ -182,33 +204,106 @@ async def delete_ref(session: AsyncSession, name: str) -> bool:
     Returns:
         True if the ref existed and was deleted, False otherwise
     """
+    from sqlalchemy import delete
+
     stmt = delete(PassageRef).where(PassageRef.name == name).returning(PassageRef.name)
     result = await session.execute(stmt)
     await session.flush()
     return result.scalar_one_or_none() is not None
 
 
-async def update_ref_metadata(
+async def get_ref_history(
     session: AsyncSession,
     name: str,
-    metadata: dict[str, Any],
-) -> PassageRef | None:
-    """Update only the metadata of a ref without changing the passage.
+    *,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Get history of changes for a ref.
 
     Args:
         session: Database session
         name: Ref name
-        metadata: New metadata to set
+        limit: Maximum number of history entries to return
 
     Returns:
-        Updated PassageRef if it exists, None otherwise
+        List of history entries, newest first
     """
     stmt = (
-        update(PassageRef)
-        .where(PassageRef.name == name)
-        .values(metadata_=metadata)
-        .returning(PassageRef)
+        select(PassageRefHistory)
+        .where(PassageRefHistory.ref_name == name)
+        .order_by(PassageRefHistory.changed_at.desc())
+        .limit(limit)
     )
     result = await session.execute(stmt)
+    entries = result.scalars().all()
+
+    return [
+        {
+            "id": entry.id,
+            "ref_name": entry.ref_name,
+            "passage_id": entry.passage_id,
+            "previous_passage_id": entry.previous_passage_id,
+            "changed_at": entry.changed_at,
+            "metadata": entry.metadata_,
+        }
+        for entry in entries
+    ]
+
+
+async def create_ref_hook(
+    session: AsyncSession,
+    ref_name: str,
+    action_type: str,
+    config: dict[str, Any],
+    *,
+    enabled: bool = True,
+) -> PassageRefHook:
+    """Create a new hook for a ref.
+
+    Args:
+        session: Database session
+        ref_name: Ref name to attach hook to
+        action_type: Hook action type (e.g., "letta_agent_block_update")
+        config: Action-specific configuration
+        enabled: Whether hook is enabled (default True)
+
+    Returns:
+        The created PassageRefHook
+    """
+    hook = PassageRefHook(
+        ref_name=ref_name,
+        action_type=action_type,
+        config=config,
+        enabled=enabled,
+    )
+    session.add(hook)
     await session.flush()
-    return result.scalar_one_or_none()
+    return hook
+
+
+async def list_ref_hooks(
+    session: AsyncSession,
+    ref_name: str | None = None,
+    *,
+    enabled_only: bool = True,
+) -> list[PassageRefHook]:
+    """List hooks, optionally filtered by ref name.
+
+    Args:
+        session: Database session
+        ref_name: Optional ref name to filter by
+        enabled_only: Only return enabled hooks (default True)
+
+    Returns:
+        List of PassageRefHook objects
+    """
+    stmt = select(PassageRefHook)
+
+    if ref_name:
+        stmt = stmt.where(PassageRefHook.ref_name == ref_name)
+
+    if enabled_only:
+        stmt = stmt.where(PassageRefHook.enabled == True)  # noqa: E712
+
+    result = await session.execute(stmt)
+    return list(result.scalars().all())

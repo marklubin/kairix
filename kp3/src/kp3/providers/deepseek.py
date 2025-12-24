@@ -1,10 +1,15 @@
-"""DeepSeek API client for world model extraction."""
+"""DeepSeek API client for world model extraction.
+
+Uses the OpenAI SDK since DeepSeek provides an OpenAI-compatible API.
+See: https://api-docs.deepseek.com/
+"""
 
 import json
 from dataclasses import dataclass, field
 from typing import Any
 
-import httpx
+from openai import NOT_GIVEN, AsyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from kp3.config import settings
 
@@ -39,7 +44,10 @@ class DeepSeekError(Exception):
 
 
 class DeepSeekClient:
-    """Async client for DeepSeek chat completions."""
+    """Async client for DeepSeek chat completions.
+
+    Uses the OpenAI SDK configured for DeepSeek's API endpoint.
+    """
 
     DEFAULT_BASE_URL = "https://api.deepseek.com"
     DEFAULT_MODEL = "deepseek-chat"
@@ -65,6 +73,13 @@ class DeepSeekClient:
 
         if not self.api_key:
             raise ValueError("DeepSeek API key is required (set DEEPSEEK_API_KEY)")
+
+        # Create OpenAI client configured for DeepSeek
+        self._client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=timeout,
+        )
 
     async def complete(
         self,
@@ -94,64 +109,37 @@ class DeepSeekClient:
         """
         model = model or self.DEFAULT_MODEL
 
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ]
 
-        payload: dict[str, Any] = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
-
-        if json_mode:
-            payload["response_format"] = {"type": "json_object"}
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                f"{self.base_url}/v1/chat/completions",
-                headers=headers,
-                json=payload,
+        try:
+            response = await self._client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                response_format=(  # type: ignore[arg-type]
+                    {"type": "json_object"} if json_mode else NOT_GIVEN
+                ),
             )
-
-            if response.status_code != 200:
-                try:
-                    error_body = response.json()
-                except Exception:
-                    error_body = response.text
-                raise DeepSeekError(
-                    f"DeepSeek API error: {response.status_code}",
-                    status_code=response.status_code,
-                    response=error_body,
-                )
-
-            data = response.json()
+        except Exception as e:
+            raise DeepSeekError(f"DeepSeek API error: {e}") from e
 
         # Extract response content
-        choices = data.get("choices", [])
-        if not choices:
-            raise DeepSeekError("No choices in response", response=data)
-
-        choice = choices[0]
-        content = choice.get("message", {}).get("content", "")
+        choice = response.choices[0]
+        content = choice.message.content or ""
 
         # Build metadata
-        usage = data.get("usage", {})
         metadata = InferenceMetadata(
             provider="deepseek",
             model=model,
-            prompt_tokens=usage.get("prompt_tokens", 0),
-            completion_tokens=usage.get("completion_tokens", 0),
-            total_tokens=usage.get("total_tokens", 0),
-            finish_reason=choice.get("finish_reason", ""),
-            response_id=data.get("id", ""),
+            prompt_tokens=response.usage.prompt_tokens if response.usage else 0,
+            completion_tokens=response.usage.completion_tokens if response.usage else 0,
+            total_tokens=response.usage.total_tokens if response.usage else 0,
+            finish_reason=choice.finish_reason or "",
+            response_id=response.id,
         )
 
         return content, metadata

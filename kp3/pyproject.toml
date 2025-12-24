@@ -16,14 +16,15 @@ dependencies = [
     # LLM & embeddings
     "anthropic>=0.40",
     "ollama>=0.4",
+    "openai>=1.0",  # Used for DeepSeek (OpenAI-compatible API)
     # CLI
     "click>=8.1",
     "python-dotenv>=1.2.1",
     "rich>=14.2.0",
     # HTTP client
     "httpx>=0.27",
-    # YAML parsing
-    "pyyaml>=6.0",
+    # Letta integration
+    "letta>=0.6",
     # Query service
     "fastapi>=0.115",
     "uvicorn>=0.34",

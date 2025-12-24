@@ -8,8 +8,6 @@ from uuid import UUID
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-logger = logging.getLogger(__name__)
-
 from kp3.db.models import Passage, ProcessingRun
 from kp3.processors.base import ProcessorGroup, ProcessorResult
 from kp3.services.derivations import create_derivations
@@ -17,6 +15,8 @@ from kp3.services.passages import archive_passage, create_passage
 
 if TYPE_CHECKING:
     from kp3.processors.base import Processor
+
+logger = logging.getLogger(__name__)
 
 
 async def create_run(

@@ -22,7 +22,7 @@ class LLMPromptConfig:
 class LLMPromptProcessor(Processor[LLMPromptConfig]):
     """Processor that uses Claude to generate new passages from groups."""
 
-    def __init__(self, client: anthropic.AsyncAnthropic | None = None):
+    def __init__(self, client: anthropic.AsyncAnthropic | None = None) -> None:
         settings = get_settings()
         self._client = client or anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
         self._default_model = settings.anthropic_model

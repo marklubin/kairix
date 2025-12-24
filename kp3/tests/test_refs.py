@@ -6,12 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kp3.db.models import Passage
 from kp3.services.passages import create_passage
 from kp3.services.refs import (
-    clear_hooks,
+    create_ref_hook,
     delete_ref,
     get_ref,
+    get_ref_history,
     get_ref_passage,
+    list_ref_hooks,
     list_refs,
-    register_hook,
     set_ref,
 )
 
@@ -42,15 +43,7 @@ async def another_passage(db_session: AsyncSession) -> Passage:
     return passage
 
 
-@pytest.fixture(autouse=True)
-def clear_hooks_fixture():
-    """Clear hooks before and after each test."""
-    clear_hooks()
-    yield
-    clear_hooks()
-
-
-async def test_create_ref(db_session: AsyncSession, sample_passage: Passage):
+async def test_create_ref(db_session: AsyncSession, sample_passage: Passage) -> None:
     """Create a new ref pointing to a passage."""
     ref = await set_ref(db_session, "test/ref/HEAD", sample_passage.id, fire_hooks=False)
 
@@ -59,7 +52,7 @@ async def test_create_ref(db_session: AsyncSession, sample_passage: Passage):
     assert ref.updated_at is not None
 
 
-async def test_get_ref(db_session: AsyncSession, sample_passage: Passage):
+async def test_get_ref(db_session: AsyncSession, sample_passage: Passage) -> None:
     """Get passage ID from a ref."""
     await set_ref(db_session, "test/ref/HEAD", sample_passage.id, fire_hooks=False)
 
@@ -67,13 +60,13 @@ async def test_get_ref(db_session: AsyncSession, sample_passage: Passage):
     assert passage_id == sample_passage.id
 
 
-async def test_get_ref_not_found(db_session: AsyncSession):
+async def test_get_ref_not_found(db_session: AsyncSession) -> None:
     """Return None for non-existent ref."""
     passage_id = await get_ref(db_session, "nonexistent/ref")
     assert passage_id is None
 
 
-async def test_get_ref_passage(db_session: AsyncSession, sample_passage: Passage):
+async def test_get_ref_passage(db_session: AsyncSession, sample_passage: Passage) -> None:
     """Get full passage object from a ref."""
     await set_ref(db_session, "test/ref/HEAD", sample_passage.id, fire_hooks=False)
 
@@ -85,7 +78,7 @@ async def test_get_ref_passage(db_session: AsyncSession, sample_passage: Passage
 
 async def test_update_ref(
     db_session: AsyncSession, sample_passage: Passage, another_passage: Passage
-):
+) -> None:
     """Update an existing ref to point to a different passage."""
     # Create initial ref
     await set_ref(db_session, "test/ref/HEAD", sample_passage.id, fire_hooks=False)
@@ -100,38 +93,9 @@ async def test_update_ref(
     assert current_id == another_passage.id
 
 
-async def test_ref_hooks_fire(db_session: AsyncSession, sample_passage: Passage):
-    """Hooks are called when refs are updated."""
-    hook_calls: list[tuple[str, Passage]] = []
-
-    async def test_hook(ref_name: str, passage: Passage) -> None:
-        hook_calls.append((ref_name, passage))
-
-    register_hook("test/hook/HEAD", test_hook)
-
-    # Set ref should trigger hook
-    await set_ref(db_session, "test/hook/HEAD", sample_passage.id, fire_hooks=True)
-
-    assert len(hook_calls) == 1
-    assert hook_calls[0][0] == "test/hook/HEAD"
-    assert hook_calls[0][1].id == sample_passage.id
-
-
-async def test_hooks_not_fired_when_disabled(db_session: AsyncSession, sample_passage: Passage):
-    """Hooks are not called when fire_hooks=False."""
-    hook_calls: list[tuple[str, Passage]] = []
-
-    async def test_hook(ref_name: str, passage: Passage) -> None:
-        hook_calls.append((ref_name, passage))
-
-    register_hook("test/no-hook/HEAD", test_hook)
-
-    await set_ref(db_session, "test/no-hook/HEAD", sample_passage.id, fire_hooks=False)
-
-    assert len(hook_calls) == 0
-
-
-async def test_list_refs(db_session: AsyncSession, sample_passage: Passage, another_passage: Passage):
+async def test_list_refs(
+    db_session: AsyncSession, sample_passage: Passage, another_passage: Passage
+) -> None:
     """List all refs."""
     await set_ref(db_session, "world/human/HEAD", sample_passage.id, fire_hooks=False)
     await set_ref(db_session, "world/persona/HEAD", another_passage.id, fire_hooks=False)
@@ -145,7 +109,7 @@ async def test_list_refs(db_session: AsyncSession, sample_passage: Passage, anot
 
 async def test_list_refs_with_prefix(
     db_session: AsyncSession, sample_passage: Passage, another_passage: Passage
-):
+) -> None:
     """List refs filtered by prefix."""
     await set_ref(db_session, "world/human/HEAD", sample_passage.id, fire_hooks=False)
     await set_ref(db_session, "world/persona/HEAD", another_passage.id, fire_hooks=False)
@@ -158,7 +122,7 @@ async def test_list_refs_with_prefix(
     assert len(other_refs) == 1
 
 
-async def test_delete_ref(db_session: AsyncSession, sample_passage: Passage):
+async def test_delete_ref(db_session: AsyncSession, sample_passage: Passage) -> None:
     """Delete an existing ref."""
     await set_ref(db_session, "test/delete/HEAD", sample_passage.id, fire_hooks=False)
 
@@ -173,13 +137,13 @@ async def test_delete_ref(db_session: AsyncSession, sample_passage: Passage):
     assert await get_ref(db_session, "test/delete/HEAD") is None
 
 
-async def test_delete_nonexistent_ref(db_session: AsyncSession):
+async def test_delete_nonexistent_ref(db_session: AsyncSession) -> None:
     """Deleting a non-existent ref returns False."""
     deleted = await delete_ref(db_session, "nonexistent/ref")
     assert deleted is False
 
 
-async def test_ref_with_metadata(db_session: AsyncSession, sample_passage: Passage):
+async def test_ref_with_metadata(db_session: AsyncSession, sample_passage: Passage) -> None:
     """Refs can store metadata."""
     ref = await set_ref(
         db_session,
@@ -190,3 +154,87 @@ async def test_ref_with_metadata(db_session: AsyncSession, sample_passage: Passa
     )
 
     assert ref.metadata_ == {"branch": "experiment-v2", "created_by": "test"}
+
+
+async def test_ref_history_recorded(
+    db_session: AsyncSession, sample_passage: Passage, another_passage: Passage
+) -> None:
+    """Setting refs records history."""
+    # Create initial ref
+    await set_ref(db_session, "test/history/HEAD", sample_passage.id, fire_hooks=False)
+    await db_session.commit()
+
+    # Update ref
+    await set_ref(db_session, "test/history/HEAD", another_passage.id, fire_hooks=False)
+    await db_session.commit()
+
+    # Check history
+    history = await get_ref_history(db_session, "test/history/HEAD")
+    assert len(history) == 2
+
+    # Most recent first
+    assert history[0]["passage_id"] == str(another_passage.id)
+    assert history[0]["previous_passage_id"] == str(sample_passage.id)
+
+    assert history[1]["passage_id"] == str(sample_passage.id)
+    assert history[1]["previous_passage_id"] is None
+
+
+async def test_create_ref_hook(db_session: AsyncSession) -> None:
+    """Create a ref hook in the database."""
+    hook = await create_ref_hook(
+        db_session,
+        ref_name="world/human/HEAD",
+        action_type="letta_agent_block_update",
+        config={"agent_id": "test-agent", "block_label": "human"},
+    )
+    await db_session.commit()
+
+    assert hook.ref_name == "world/human/HEAD"
+    assert hook.action_type == "letta_agent_block_update"
+    assert hook.config == {"agent_id": "test-agent", "block_label": "human"}
+    assert hook.enabled is True
+
+
+async def test_list_ref_hooks(db_session: AsyncSession) -> None:
+    """List hooks for a ref."""
+    await create_ref_hook(
+        db_session,
+        ref_name="world/persona/HEAD",
+        action_type="letta_agent_block_update",
+        config={"agent_id": "agent-1", "block_label": "persona"},
+    )
+    await create_ref_hook(
+        db_session,
+        ref_name="world/persona/HEAD",
+        action_type="custom_action",
+        config={"custom": "config"},
+    )
+    await db_session.commit()
+
+    hooks = await list_ref_hooks(db_session, "world/persona/HEAD")
+    assert len(hooks) == 2
+
+    action_types = {h["action_type"] for h in hooks}
+    assert action_types == {"letta_agent_block_update", "custom_action"}
+
+
+async def test_disabled_hooks_not_listed(db_session: AsyncSession) -> None:
+    """Disabled hooks are filtered out by default."""
+    await create_ref_hook(
+        db_session,
+        ref_name="world/disabled/HEAD",
+        action_type="test_action",
+        config={},
+        enabled=False,
+    )
+    await db_session.commit()
+
+    # By default, list only enabled hooks
+    hooks = await list_ref_hooks(db_session, "world/disabled/HEAD")
+    assert len(hooks) == 0
+
+    # Can include disabled
+    hooks = await list_ref_hooks(db_session, "world/disabled/HEAD", include_disabled=True)
+    assert len(hooks) == 1
+    assert hooks[0]["enabled"] is False

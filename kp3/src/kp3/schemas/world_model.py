@@ -24,19 +24,39 @@ class ProjectEntry(BaseModel):
 
 
 class EntityEntry(BaseModel):
-    """A key entity (person, tool, place) in the world model."""
+    """A durable entity (person, tool, place) in the world model.
+
+    These should be recurring, perennial entities - not temporary/immediate context.
+    Entities should be pruned when no longer relevant.
+    """
 
     name: str = Field(description="Entity name")
     relevance: str = Field(description="Why this entity is relevant to interactions")
+    last_mentioned: str = Field(
+        default="", description="When this entity was last relevant (for pruning decisions)"
+    )
 
 
 class HumanBlock(BaseModel):
     """The agent's model of the user.
 
-    Tracks values, patterns, current state, and ongoing concerns.
+    Tracks values, patterns, current state, ongoing concerns, and a free-form
+    narrative interpretation of who this person is.
     """
 
     version: int = Field(description="Monotonically increasing version number")
+
+    # Free-form interpretive narrative - the main context for understanding the human
+    narrative: str = Field(
+        default="",
+        description=(
+            "Free-form interpretive narrative about this person. "
+            "The subjective, holistic understanding of who they are, their journey, "
+            "what drives them, and what's important to understand about them. "
+            "This is the primary context for the human model."
+        ),
+    )
+
     core_values: list[str] = Field(
         default_factory=_empty_list_str, description="What matters most to this person"
     )
@@ -59,13 +79,24 @@ class HumanBlock(BaseModel):
 class PersonaBlock(BaseModel):
     """The agent's model of itself in relation to the user.
 
-    Tracks voice, stance, learned preferences, and relationship history.
+    Tracks voice, stance, learned preferences, relationship history,
+    and subjective reflection on the relationship.
     """
 
     version: int = Field(description="Monotonically increasing version number")
-    voice: str = Field(
-        default="", description="Communication style that works for this person"
+
+    # Free-form relationship reflection - the main context for the persona
+    relationship_reflection: str = Field(
+        default="",
+        description=(
+            "Subjective self-reflection on the relationship with this human. "
+            "How the agent experiences the relationship, what it means, "
+            "how it has evolved, and what the agent's role feels like. "
+            "This is the primary context for the persona model."
+        ),
     )
+
+    voice: str = Field(default="", description="Communication style that works for this person")
     stance_toward_human: str = Field(
         default="", description="Role in relationship (peer, advisor, collaborator, etc.)"
     )
@@ -79,21 +110,41 @@ class PersonaBlock(BaseModel):
 
 
 class WorldBlock(BaseModel):
-    """Shared environmental context.
+    """Durable world entities and context.
 
-    Tracks active projects, key entities, and situational context.
+    Tracks persistent entities (people, places, things) that are specific to the
+    user's situation and are recurring or perennial topics. This is NOT for
+    immediate environmental context (which is provided in real-time).
+
+    Entities should be:
+    - Recurring: mentioned or relevant across multiple conversations
+    - Durable: persistent aspects of the user's world
+    - Pruned: removed when no longer deemed relevant
+
+    Archival/retrieval search will fill in missed context, but this block
+    contains what's immediate, recurring, and perennial.
     """
 
     version: int = Field(description="Monotonically increasing version number")
     active_projects: list[ProjectEntry] = Field(
-        default_factory=_empty_list_projects, description="Currently active projects with status"
+        default_factory=_empty_list_projects,
+        description="Currently active projects with status - prune completed/abandoned ones",
     )
     key_entities: list[EntityEntry] = Field(
         default_factory=_empty_list_entities,
-        description="People, tools, places relevant to interactions",
+        description=(
+            "Durable people, tools, places that are recurring topics. "
+            "Should be pruned if no longer relevant. "
+            "Not for immediate/temporary context."
+        ),
     )
-    environmental_context: str = Field(
-        default="", description="Time, location, life phase, situational context"
+    recurring_themes: list[str] = Field(
+        default_factory=_empty_list_str,
+        description="Perennial topics, interests, or concerns that come up repeatedly",
+    )
+    key_insights: list[str] = Field(
+        default_factory=_empty_list_str,
+        description="Important insights about the user's world that inform interactions",
     )
 
 

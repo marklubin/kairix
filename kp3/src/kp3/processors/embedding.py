@@ -19,7 +19,7 @@ class EmbeddingConfig:
 class EmbeddingProcessor(Processor[EmbeddingConfig]):
     """Processor that generates embeddings for passages using Ollama."""
 
-    def __init__(self, client: ollama.AsyncClient | None = None):
+    def __init__(self, client: ollama.AsyncClient | None = None) -> None:
         settings = get_settings()
         self._client = client or ollama.AsyncClient(host=settings.ollama_host)
         self._default_model = settings.ollama_embedding_model

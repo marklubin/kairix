@@ -95,9 +95,7 @@ async def _search_semantic(
         )
         SELECT * FROM scored ORDER BY score DESC LIMIT :limit
     """)
-    result = await session.execute(
-        sql, {"embedding": str(query_embedding), "limit": limit}
-    )
+    result = await session.execute(sql, {"embedding": str(query_embedding), "limit": limit})
     rows = result.fetchall()
 
     return [

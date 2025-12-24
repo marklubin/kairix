@@ -1,5 +1,10 @@
-"""World model extraction processor using DeepSeek."""
+"""World model extraction processor using DeepSeek.
 
+Makes 3 parallel LLM calls to update human/persona/world blocks.
+Each call sees all 3 previous states but only updates its own block.
+"""
+
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
@@ -12,7 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kp3.db.models import ExtractionPrompt, Passage
 from kp3.processors.base import Processor, ProcessorGroup, ProcessorResult
 from kp3.providers.deepseek import DeepSeekClient, DeepSeekError, InferenceMetadata
-from kp3.schemas.world_model import WorldModelState
+from kp3.schemas.world_model import (
+    HumanBlock,
+    PersonaBlock,
+    WorldBlock,
+    WorldModelState,
+)
 from kp3.services.derivations import create_derivations
 from kp3.services.passages import create_passage
 from kp3.services.prompts import get_active_prompt
@@ -35,8 +45,10 @@ class WorldModelConfig:
     persona_ref: str = "world/persona/HEAD"
     world_ref: str = "world/world/HEAD"
 
-    # Prompt to use (loaded from DB)
-    prompt_name: str = "world_model"
+    # Prompt names (3 separate prompts)
+    human_prompt_name: str = "world_model_human"
+    persona_prompt_name: str = "world_model_persona"
+    world_prompt_name: str = "world_model_world"
 
     # Whether to update refs after creating passages
     update_refs: bool = True
@@ -50,6 +62,10 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
 
     This processor implements a fold semantic - each passage is processed
     with the previous state as context, producing an updated state.
+
+    Makes 3 PARALLEL LLM calls:
+    - Each call sees all 3 previous states (human, persona, world)
+    - Each call only updates its own block
 
     Unlike other processors, this one manages its own DB operations:
     - Loads previous state from refs
@@ -102,21 +118,24 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
             previous_state, prior_passage_ids = await self._load_previous_state(config)
             logger.debug("Loaded previous state with %d prior passages", len(prior_passage_ids))
 
-            # 2. Load active prompt from DB
-            prompt = await get_active_prompt(self.session, config.prompt_name)
-            if not prompt:
-                logger.error("No active prompt found for '%s'", config.prompt_name)
+            # 2. Load prompts from DB (all 3)
+            prompts = await self._load_prompts(config)
+            if not prompts:
                 return ProcessorResult(action="pass")
 
-            # 3. Build prompts and call LLM
-            new_state, metadata = await self._extract_world_model(
+            # 3. Make 3 PARALLEL LLM calls
+            new_state, metadata_list = await self._extract_world_model_parallel(
                 passage=input_passage,
                 previous_state=previous_state,
-                prompt=prompt,
+                prompts=prompts,
                 config=config,
             )
-            logger.info("Extracted new state with versions: human=%d, persona=%d, world=%d",
-                       new_state.human.version, new_state.persona.version, new_state.world.version)
+            logger.info(
+                "Extracted new state with versions: human=%d, persona=%d, world=%d",
+                new_state.human.version,
+                new_state.persona.version,
+                new_state.world.version,
+            )
 
             # 4. Create state passages with derivations
             source_ids = [input_passage.id, *prior_passage_ids]
@@ -124,9 +143,8 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
                 new_state=new_state,
                 source_ids=source_ids,
                 input_passage_id=input_passage.id,
-                prompt_id=prompt.id,
-                prompt_version=prompt.version,
-                metadata=metadata,
+                prompts=prompts,
+                metadata_list=metadata_list,
                 config=config,
             )
 
@@ -137,17 +155,17 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
 
             return ProcessorResult(
                 action="create",
-                content=json.dumps({
-                    "human_id": str(created_ids["human"]),
-                    "persona_id": str(created_ids["persona"]),
-                    "world_id": str(created_ids["world"]),
-                }),
+                content=json.dumps(
+                    {
+                        "human_id": str(created_ids["human"]),
+                        "persona_id": str(created_ids["persona"]),
+                        "world_id": str(created_ids["world"]),
+                    }
+                ),
                 metadata={
                     "human_version": new_state.human.version,
                     "persona_version": new_state.persona.version,
                     "world_version": new_state.world.version,
-                    "prompt_id": str(prompt.id),
-                    "prompt_version": prompt.version,
                     "llm_model": config.llm_model,
                     "llm_provider": "deepseek",
                 },
@@ -204,47 +222,112 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
 
         return state, prior_ids
 
-    async def _extract_world_model(
+    async def _load_prompts(self, config: WorldModelConfig) -> dict[str, ExtractionPrompt] | None:
+        """Load all 3 prompts from DB.
+
+        Returns:
+            Dict mapping block type to prompt, or None if any missing
+        """
+        prompts: dict[str, ExtractionPrompt] = {}
+
+        for block_type, prompt_name in [
+            ("human", config.human_prompt_name),
+            ("persona", config.persona_prompt_name),
+            ("world", config.world_prompt_name),
+        ]:
+            prompt = await get_active_prompt(self.session, prompt_name)
+            if not prompt:
+                logger.error("No active prompt found for '%s'", prompt_name)
+                return None
+            prompts[block_type] = prompt
+
+        return prompts
+
+    async def _extract_world_model_parallel(
         self,
         passage: Passage,
         previous_state: WorldModelState,
-        prompt: ExtractionPrompt,
+        prompts: dict[str, ExtractionPrompt],
         config: WorldModelConfig,
-    ) -> tuple[WorldModelState, InferenceMetadata]:
-        """Extract updated world model via LLM.
+    ) -> tuple[WorldModelState, dict[str, InferenceMetadata]]:
+        """Extract updated world model via 3 parallel LLM calls.
+
+        Each call:
+        - Sees ALL previous state (human, persona, world)
+        - Only updates its own block
 
         Returns:
-            Tuple of (new_state, inference_metadata)
+            Tuple of (new_state, dict of metadata per block)
         """
-        # Build user prompt from template
-        user_prompt = prompt.user_prompt_template.format(
-            passage=passage.content,
-            previous_state=previous_state.model_dump_json(indent=2),
-            field_descriptions=json.dumps(prompt.field_descriptions, indent=2),
+        # Calculate next versions (we control versioning, not the LLM)
+        next_versions = {
+            "human": previous_state.human.version + 1,
+            "persona": previous_state.persona.version + 1,
+            "world": previous_state.world.version + 1,
+        }
+
+        # Prepare full previous state JSON for all calls
+        full_previous_state = previous_state.model_dump_json(indent=2)
+
+        # Create tasks for parallel execution
+        async def extract_block(
+            block_type: str,
+        ) -> tuple[str, dict[str, Any], InferenceMetadata]:
+            prompt = prompts[block_type]
+
+            # Build user prompt with full state and version hint
+            user_prompt = prompt.user_prompt_template.format(
+                passage=passage.content,
+                previous_state=full_previous_state,
+                field_descriptions=json.dumps(prompt.field_descriptions, indent=2),
+            )
+            # Replace version placeholder with actual next version
+            user_prompt = user_prompt.replace("<provided_version>", str(next_versions[block_type]))
+
+            response, metadata = await self._client.complete_json(
+                system_prompt=prompt.system_prompt,
+                user_prompt=user_prompt,
+                model=config.llm_model,
+                max_tokens=config.max_tokens,
+                temperature=config.temperature,
+            )
+
+            # Force correct version (don't trust LLM)
+            response["version"] = next_versions[block_type]
+
+            return block_type, response, metadata
+
+        # Run all 3 extractions in parallel
+        results = await asyncio.gather(
+            extract_block("human"),
+            extract_block("persona"),
+            extract_block("world"),
         )
 
-        # Call DeepSeek
-        response, metadata = await self._client.complete_json(
-            system_prompt=prompt.system_prompt,
-            user_prompt=user_prompt,
-            model=config.llm_model,
-            max_tokens=config.max_tokens,
-            temperature=config.temperature,
+        # Build new state from results
+        blocks: dict[str, Any] = {}
+        metadata_dict: dict[str, InferenceMetadata] = {}
+
+        for block_type, response, metadata in results:
+            blocks[block_type] = response
+            metadata_dict[block_type] = metadata
+
+        # Validate and create state
+        new_state = WorldModelState(
+            human=HumanBlock.model_validate(blocks["human"]),
+            persona=PersonaBlock.model_validate(blocks["persona"]),
+            world=WorldBlock.model_validate(blocks["world"]),
         )
 
-        # Validate and parse response
-        new_state = WorldModelState.model_validate(response)
-
-        return new_state, metadata
+        return new_state, metadata_dict
 
     async def _create_state_passages(
         self,
         new_state: WorldModelState,
         source_ids: list[UUID],
         input_passage_id: UUID,
-        prompt_id: UUID,
-        prompt_version: int,
-        metadata: InferenceMetadata,
+        prompts: dict[str, ExtractionPrompt],
+        metadata_list: dict[str, InferenceMetadata],
         config: WorldModelConfig,
     ) -> dict[str, UUID]:
         """Create state passages for each block.
@@ -257,6 +340,8 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
         for block_type in ["human", "persona", "world"]:
             block = new_state.get_block(block_type)
             content = block.model_dump_json(indent=2)
+            prompt = prompts[block_type]
+            metadata = metadata_list[block_type]
 
             passage = await create_passage(
                 self.session,
@@ -265,8 +350,8 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
                 metadata={
                     "version": block.version,
                     "source_passage_id": str(input_passage_id),
-                    "prompt_id": str(prompt_id),
-                    "prompt_version": prompt_version,
+                    "prompt_id": str(prompt.id),
+                    "prompt_version": prompt.version,
                     "llm_provider": "deepseek",
                     "llm_model": config.llm_model,
                     "prompt_tokens": metadata.prompt_tokens,
@@ -275,8 +360,6 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
             )
 
             # Create derivation links
-            # Import here to get the run context (hacky but works for now)
-            # TODO: Pass run_id into processor
             await create_derivations(
                 self.session,
                 derived_passage_id=passage.id,
@@ -320,7 +403,9 @@ class WorldModelProcessor(Processor[WorldModelConfig]):
             human_ref=raw.get("human_ref", "world/human/HEAD"),
             persona_ref=raw.get("persona_ref", "world/persona/HEAD"),
             world_ref=raw.get("world_ref", "world/world/HEAD"),
-            prompt_name=raw.get("prompt_name", "world_model"),
+            human_prompt_name=raw.get("human_prompt_name", "world_model_human"),
+            persona_prompt_name=raw.get("persona_prompt_name", "world_model_persona"),
+            world_prompt_name=raw.get("world_prompt_name", "world_model_world"),
             update_refs=raw.get("update_refs", True),
             fire_hooks=raw.get("fire_hooks", True),
         )
