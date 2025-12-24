@@ -11,7 +11,6 @@ from sqlalchemy import select
 from kp3.db.models import Passage
 from kp3.importers.kairix_sqlite import (
     SOURCE_SYSTEM,
-    ImportStats,
     import_memory_shards,
     load_memory_shards,
 )

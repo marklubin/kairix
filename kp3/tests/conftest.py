@@ -29,6 +29,7 @@ def _docker_available() -> bool:
 
 # Cache the result to avoid checking multiple times
 _DOCKER_AVAILABLE: bool | None = None
+_OLLAMA_AVAILABLE: bool | None = None
 
 
 def docker_available() -> bool:
@@ -39,12 +40,39 @@ def docker_available() -> bool:
     return _DOCKER_AVAILABLE
 
 
+def _ollama_available() -> bool:
+    """Check if Ollama is available and running."""
+    try:
+        import httpx
+
+        response = httpx.get("http://localhost:11434/api/version", timeout=2.0)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+def ollama_available() -> bool:
+    """Check if Ollama is available (cached)."""
+    global _OLLAMA_AVAILABLE
+    if _OLLAMA_AVAILABLE is None:
+        _OLLAMA_AVAILABLE = _ollama_available()
+    return _OLLAMA_AVAILABLE
+
+
 @pytest.fixture(autouse=True)
 def skip_docker_tests(request: pytest.FixtureRequest) -> None:
     """Skip tests marked with 'docker' if Docker is not available."""
     if request.node.get_closest_marker("docker"):
         if not docker_available():
             pytest.skip("Docker/Podman not available or not running")
+
+
+@pytest.fixture(autouse=True)
+def skip_ollama_tests(request: pytest.FixtureRequest) -> None:
+    """Skip tests marked with 'ollama' if Ollama is not available."""
+    if request.node.get_closest_marker("ollama"):
+        if not ollama_available():
+            pytest.skip("Ollama not available or not running")
 
 
 @pytest.fixture(scope="session")
@@ -111,6 +139,12 @@ async def db_session(db_engine: Any) -> AsyncGenerator[AsyncSession, None]:
     async with async_session_factory() as session:
         yield session
         await session.rollback()
+
+
+@pytest.fixture
+async def session(db_session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+    """Alias for db_session for backward compatibility."""
+    yield db_session
 
 
 @pytest.fixture

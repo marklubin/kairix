@@ -91,4 +91,5 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 markers = [
     "docker: marks tests as requiring Docker/Podman (deselect with '-m \"not docker\"')",
+    "ollama: marks tests as requiring Ollama (skipped automatically if unavailable)",
 ]
