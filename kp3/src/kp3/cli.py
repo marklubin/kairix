@@ -32,6 +32,7 @@ from kp3.services.refs import (  # noqa: E402
     get_ref_passage,
     list_ref_hooks,
     list_refs,
+    set_ref,
 )
 from kp3.services.runs import create_run, execute_run, list_runs  # noqa: E402
 
@@ -145,6 +146,113 @@ def run_ls(status: str | None, limit: int) -> None:
                 )
 
     asyncio.run(_list())
+
+
+@run.command("fold")
+@click.argument("sql_query")
+@click.option("--processor", "-p", required=True, help="Processor type")
+@click.option("--config", "-c", default="{}", help="Processor config as JSON")
+@click.option("--dry-run", is_flag=True, help="Show what would be processed without executing")
+def run_fold(sql_query: str, processor: str, config: str, dry_run: bool) -> None:
+    """Execute a fold operation over passages.
+
+    Takes a SQL query that returns passage IDs and processes each one
+    sequentially. Each passage becomes a single-element group, processed
+    in order. Processors can implement fold semantics by reading/writing
+    external state (e.g., refs) between iterations.
+
+    The SQL query should return rows with a single 'id' column (passage UUIDs),
+    ordered as desired. Example:
+
+    \b
+        kp3 run fold \\
+            "SELECT id FROM passages WHERE passage_type = 'memory_shard' ORDER BY created_at" \\
+            -p world_model \\
+            -c '{"human_ref": "corindel/human/HEAD", ...}'
+
+    For world_model processor, fold semantics are achieved via refs - each
+    step reads current refs, processes the passage, and updates refs for
+    the next iteration.
+    """
+    try:
+        config_dict = json.loads(config)
+    except json.JSONDecodeError as e:
+        raise click.ClickException(f"Invalid JSON config: {e}") from e
+
+    async def _fold() -> None:
+        console = Console()
+
+        async with async_session() as session:
+            # Execute query to get passage IDs
+            result = await session.execute(text(sql_query))
+            rows = result.fetchall()
+
+            if not rows:
+                console.print("[yellow]No passages found matching query.[/]")
+                return
+
+            passage_ids = [row[0] for row in rows]
+
+            console.print("\n[bold]Run Fold[/]")
+            console.print(f"  Processor: {processor}")
+            console.print(f"  Passages:  {len(passage_ids)}")
+            console.print(f"  Config:    {config_dict}")
+            console.print()
+
+            if dry_run:
+                console.print("[yellow]Dry run - showing first 10 passages:[/]")
+                for i, pid in enumerate(passage_ids[:10], 1):
+                    console.print(f"  {i}. {pid}")
+                if len(passage_ids) > 10:
+                    console.print(f"  ... and {len(passage_ids) - 10} more")
+                return
+
+            # Transform SQL into single-passage groups for fold processing
+            # NOTE: This is intentional SQL construction - user provides SQL query
+            groups_sql = f"""
+                SELECT
+                    ARRAY[id] as passage_ids,
+                    id::text as group_key,
+                    '{{}}'::jsonb as group_metadata
+                FROM ({sql_query}) as q
+            """  # noqa: S608
+
+            async with session.begin():
+                # Create the run
+                processing_run = await create_run(
+                    session,
+                    input_sql=groups_sql,
+                    processor_type=processor,
+                    processor_config=config_dict,
+                )
+                console.print(f"Created run: {processing_run.id}")
+
+                # Get processor instance
+                proc = get_processor(processor, session=session)
+
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    console=console,
+                ) as progress:
+                    task = progress.add_task("Processing passages...", total=len(passage_ids))
+
+                    processing_run = await execute_run(session, processing_run, proc)
+
+                    progress.update(task, completed=processing_run.processed_groups or 0)
+
+                console.print("\n[bold green]Fold complete:[/]")
+                console.print(f"  Run ID:    {processing_run.id}")
+                console.print(f"  Status:    {processing_run.status}")
+                groups = f"{processing_run.processed_groups}/{processing_run.total_groups}"
+                console.print(f"  Processed: {groups}")
+                console.print(f"  Output:    {processing_run.output_count}")
+                if processing_run.error_message:
+                    console.print(f"  [red]Error: {processing_run.error_message}[/]")
+
+    asyncio.run(_fold())
 
 
 @cli.command("sql")
@@ -424,6 +532,43 @@ def refs_add_hook(ref_name: str, action_type: str, config_json: str) -> None:
     asyncio.run(_add())
 
 
+@refs.command("set")
+@click.argument("ref_name")
+@click.argument("passage_id")
+@click.option("--no-hooks", is_flag=True, help="Don't fire hooks after setting ref")
+def refs_set(ref_name: str, passage_id: str, no_hooks: bool) -> None:
+    """Set a ref to point to a passage.
+
+    Updates the ref to point to the specified passage and fires any
+    configured hooks (e.g., Letta block sync).
+
+    Example:
+        kp3 refs set corindel/world/HEAD abc123-def456-...
+    """
+
+    async def _set() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                # Verify passage exists
+                passage = await session.get(Passage, UUID(passage_id))
+                if not passage:
+                    raise click.ClickException(f"Passage {passage_id} not found")
+
+                await set_ref(
+                    session,
+                    name=ref_name,
+                    passage_id=UUID(passage_id),
+                    fire_hooks=not no_hooks,
+                )
+
+                console = Console()
+                console.print(f"[green]Set ref:[/] {ref_name} -> {passage_id}")
+                if not no_hooks:
+                    console.print("[dim]Hooks fired[/]")
+
+    asyncio.run(_set())
+
+
 # =============================================================================
 # WORLD MODEL COMMANDS
 # =============================================================================
@@ -503,19 +648,32 @@ def world_model_backfill(
     asyncio.run(_backfill())
 
 
-@world_model.command("commit")
+@world_model.command("step")
 @click.argument("passage_id")
 @click.option("--branch", "-b", default="HEAD", help="Ref branch name")
+@click.option("--ref-prefix", "-p", default="world", help="Ref prefix (e.g., 'corindel')")
 @click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
-def world_model_commit(passage_id: str, branch: str, model: str) -> None:
+@click.option("--agent-id", "-a", default="", help="Letta agent ID for shadow table sync")
+def world_model_step(
+    passage_id: str, branch: str, ref_prefix: str, model: str, agent_id: str
+) -> None:
     """Process a single passage to update world model state.
 
-    Takes an existing passage and updates the world model refs based on it.
-    This is the "tick" operation that processes one passage through the
-    world model extraction.
+    Takes a passage and runs one step of world model extraction, updating
+    the human/persona/world blocks based on the passage content.
+
+    Use --ref-prefix to target specific agent refs (e.g., --ref-prefix corindel
+    will use corindel/human/HEAD, corindel/persona/HEAD, corindel/world/HEAD).
+
+    If --agent-id is provided, entities will be synced to shadow tables
+    (world_model_projects, world_model_entities, world_model_themes) with
+    proper agent segmentation for multi-agent support.
+
+    NOTE: Like fold, step does NOT fire hooks directly. Use 'branch promote'
+    or 'refs set' to explicitly fire hooks after processing.
     """
 
-    async def _commit() -> None:
+    async def _step() -> None:
         async with async_session() as session:
             async with session.begin():
                 # Get the passage
@@ -524,14 +682,17 @@ def world_model_commit(passage_id: str, branch: str, model: str) -> None:
                     raise click.ClickException(f"Passage {passage_id} not found")
 
                 # Create processor and config
+                # NOTE: fire_hooks=False - step never fires hooks directly
                 processor = WorldModelProcessor(session)
                 config = WorldModelConfig(
                     llm_model=model,
-                    human_ref=f"world/human/{branch}",
-                    persona_ref=f"world/persona/{branch}",
-                    world_ref=f"world/world/{branch}",
+                    human_ref=f"{ref_prefix}/human/{branch}",
+                    persona_ref=f"{ref_prefix}/persona/{branch}",
+                    world_ref=f"{ref_prefix}/world/{branch}",
                     update_refs=True,
-                    fire_hooks=True,
+                    fire_hooks=False,  # Step never fires hooks
+                    agent_id=agent_id,
+                    sync_shadow_tables=bool(agent_id),
                 )
 
                 # Create a group with just this passage
@@ -543,10 +704,12 @@ def world_model_commit(passage_id: str, branch: str, model: str) -> None:
                 )
 
                 console = Console()
-                console.print("\n[bold]World Model Commit[/]")
+                console.print("\n[bold]World Model Step[/]")
                 console.print(f"  Passage: {passage.id}")
-                console.print(f"  Branch: {branch}")
+                console.print(f"  Refs: {ref_prefix}/*/{branch}")
                 console.print(f"  Model: {model}")
+                if agent_id:
+                    console.print(f"  Agent ID: {agent_id} (shadow sync enabled)")
                 console.print()
 
                 with console.status("Processing passage..."):
@@ -558,10 +721,71 @@ def world_model_commit(passage_id: str, branch: str, model: str) -> None:
                     console.print(f"  Human passage:  {content.get('human_id')}")
                     console.print(f"  Persona passage: {content.get('persona_id')}")
                     console.print(f"  World passage:   {content.get('world_id')}")
+                    if agent_id:
+                        console.print("  [dim]Shadow tables synced[/]")
                 else:
                     console.print(f"[bold red]Failed:[/] {result.action}")
 
-    asyncio.run(_commit())
+    asyncio.run(_step())
+
+
+@world_model.command("fold")
+@click.argument("sql_query")
+@click.option("--branch", "-b", default="HEAD", help="Ref branch name")
+@click.option(
+    "--ref-prefix", "-p", default="world", help="Ref prefix (e.g., 'corindel')"
+)
+@click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
+@click.option("--agent-id", "-a", default="", help="Letta agent ID for shadow table sync")
+@click.option("--dry-run", is_flag=True, help="Show what would be processed without executing")
+@click.pass_context
+def world_model_fold(
+    ctx: click.Context,
+    sql_query: str,
+    branch: str,
+    ref_prefix: str,
+    model: str,
+    agent_id: str,
+    dry_run: bool,
+) -> None:
+    """Process multiple passages sequentially with fold semantics.
+
+    Convenience wrapper around 'kp3 run fold' for world model extraction.
+    Each step reads current refs, processes the passage, and updates refs
+    for the next iteration.
+
+    IMPORTANT: Fold operations NEVER fire hooks directly. Hooks only fire via
+    explicit 'world-model branch promote' or 'refs set' commands. This allows
+    running fold on experiment branches without affecting production agents.
+
+    \b
+        kp3 world-model fold \\
+            "SELECT id FROM passages WHERE passage_type = 'memory_shard' ORDER BY created_at" \\
+            --ref-prefix corindel \\
+            --agent-id agent-56a10649-...
+    """
+    # Build world model config
+    # NOTE: fire_hooks=False - fold NEVER fires hooks directly
+    # Hooks only fire via explicit 'branch promote' or 'refs set' commands
+    config = {
+        "llm_model": model,
+        "human_ref": f"{ref_prefix}/human/{branch}",
+        "persona_ref": f"{ref_prefix}/persona/{branch}",
+        "world_ref": f"{ref_prefix}/world/{branch}",
+        "update_refs": True,
+        "fire_hooks": False,  # Fold never fires hooks
+        "agent_id": agent_id,
+        "sync_shadow_tables": bool(agent_id),
+    }
+
+    # Invoke the generic run fold command
+    ctx.invoke(
+        run_fold,
+        sql_query=sql_query,
+        processor="world_model",
+        config=json.dumps(config),
+        dry_run=dry_run,
+    )
 
 
 @world_model.command("seed-prompts")
@@ -575,6 +799,286 @@ def world_model_seed_prompts() -> None:
                 click.echo("Seeded world model prompts (human, persona, world).")
 
     asyncio.run(_seed())
+
+
+# =============================================================================
+# BRANCH COMMANDS
+# =============================================================================
+
+
+@world_model.group("branch")
+def branch() -> None:
+    """Manage world model branches."""
+    pass
+
+
+@branch.command("create")
+@click.argument("name")
+@click.option("--description", "-d", help="Branch description")
+@click.option("--main", "is_main", is_flag=True, help="Create as main/production branch")
+def branch_create(name: str, description: str | None, is_main: bool) -> None:
+    """Create a new world model branch (new lineage, empty refs).
+
+    NAME should be in format 'prefix/branch' (e.g., 'corindel/HEAD').
+    Use 'branch fork' to derive from an existing branch.
+
+    \b
+    Examples:
+        kp3 world-model branch create corindel/HEAD --main
+        kp3 world-model branch create myagent/HEAD --main -d "Main branch for myagent"
+    """
+    from kp3.services.branches import BranchExistsError, create_branch
+
+    parts = name.split("/")
+    if len(parts) != 2:
+        raise click.ClickException(
+            "Branch name must be in format 'prefix/branch' (e.g., 'agent/HEAD')"
+        )
+
+    ref_prefix, branch_name = parts
+
+    async def _create() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                try:
+                    new_branch = await create_branch(
+                        session,
+                        ref_prefix,
+                        branch_name,
+                        description=description,
+                        is_main=is_main,
+                        hooks_enabled=is_main,
+                    )
+                    Console().print(f"[green]Created branch[/] {new_branch.name}")
+                    Console().print(f"  human_ref:   {new_branch.human_ref}")
+                    Console().print(f"  persona_ref: {new_branch.persona_ref}")
+                    Console().print(f"  world_ref:   {new_branch.world_ref}")
+                    hooks_status = "enabled" if new_branch.hooks_enabled else "disabled"
+                    Console().print(f"  hooks:       {hooks_status}")
+
+                except BranchExistsError as e:
+                    raise click.ClickException(str(e)) from e
+
+    asyncio.run(_create())
+
+
+@branch.command("fork")
+@click.argument("source")
+@click.argument("name")
+@click.option("--description", "-d", help="Branch description")
+def branch_fork(source: str, name: str, description: str | None) -> None:
+    """Fork a new branch from an existing branch (copies refs).
+
+    SOURCE is the branch to fork from (e.g., 'corindel/HEAD').
+    NAME is the new branch name (e.g., 'corindel/experiment-1').
+
+    \b
+    Examples:
+        kp3 world-model branch fork corindel/HEAD corindel/experiment-1
+        kp3 world-model branch fork corindel/HEAD corindel/test -d "Testing new prompts"
+    """
+    from kp3.services.branches import BranchExistsError, BranchNotFoundError, fork_branch
+
+    source_parts = source.split("/")
+    name_parts = name.split("/")
+
+    if len(source_parts) != 2 or len(name_parts) != 2:
+        raise click.ClickException(
+            "Both source and name must be in format 'prefix/branch'"
+        )
+
+    source_prefix, source_branch = source_parts
+    name_prefix, new_branch_name = name_parts
+
+    if source_prefix != name_prefix:
+        raise click.ClickException(
+            f"Cannot fork across prefixes: {source_prefix} != {name_prefix}"
+        )
+
+    async def _fork() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                try:
+                    new_branch = await fork_branch(
+                        session,
+                        source_prefix,
+                        source_branch,
+                        new_branch_name,
+                        description=description,
+                    )
+                    Console().print(
+                        f"[green]Forked branch[/] {new_branch.name} "
+                        f"(from {source})"
+                    )
+                    Console().print(f"  human_ref:   {new_branch.human_ref}")
+                    Console().print(f"  persona_ref: {new_branch.persona_ref}")
+                    Console().print(f"  world_ref:   {new_branch.world_ref}")
+                    Console().print("  hooks:       disabled")
+
+                except BranchNotFoundError as e:
+                    raise click.ClickException(str(e)) from e
+                except BranchExistsError as e:
+                    raise click.ClickException(str(e)) from e
+
+    asyncio.run(_fork())
+
+
+@branch.command("list")
+@click.option("--prefix", "-p", help="Filter by prefix (e.g., 'corindel')")
+def branch_list(prefix: str | None) -> None:
+    """List world model branches."""
+    from kp3.services.branches import list_branches
+
+    async def _list() -> None:
+        async with async_session() as session:
+            branches = await list_branches(session, ref_prefix=prefix)
+
+            if not branches:
+                click.echo("No branches found.")
+                return
+
+            console = Console()
+            for b in branches:
+                is_main_str = "[bold cyan]MAIN[/]" if b.is_main else ""
+                hooks_str = "[green]hooks[/]" if b.hooks_enabled else "[dim]no-hooks[/]"
+                console.print(
+                    f"{b.name:<30} {hooks_str:<15} {is_main_str}  "
+                    f"{b.created_at:%Y-%m-%d %H:%M}"
+                )
+
+    asyncio.run(_list())
+
+
+@branch.command("show")
+@click.argument("name")
+def branch_show(name: str) -> None:
+    """Show details of a world model branch."""
+    from kp3.services.branches import get_branch_by_name
+    from kp3.services.refs import get_ref, get_ref_passage
+
+    async def _show() -> None:
+        async with async_session() as session:
+            branch_obj = await get_branch_by_name(session, name)
+
+            if not branch_obj:
+                raise click.ClickException(f"Branch '{name}' not found")
+
+            console = Console()
+            console.print(f"\n[bold]Branch:[/] {branch_obj.name}")
+            console.print(f"[bold]Prefix:[/] {branch_obj.ref_prefix}")
+            console.print(f"[bold]Branch Name:[/] {branch_obj.branch_name}")
+            console.print(f"[bold]Main:[/] {'Yes' if branch_obj.is_main else 'No'}")
+            console.print(f"[bold]Hooks Enabled:[/] {'Yes' if branch_obj.hooks_enabled else 'No'}")
+            if branch_obj.description:
+                console.print(f"[bold]Description:[/] {branch_obj.description}")
+            console.print(f"[bold]Created:[/] {branch_obj.created_at}")
+            console.print()
+
+            # Show ref status
+            console.print("[bold]Refs:[/]")
+            for ref_name, label in [
+                (branch_obj.human_ref, "human"),
+                (branch_obj.persona_ref, "persona"),
+                (branch_obj.world_ref, "world"),
+            ]:
+                passage_id = await get_ref(session, ref_name)
+                if passage_id:
+                    passage = await get_ref_passage(session, ref_name)
+                    if passage and len(passage.content) > 50:
+                        preview = passage.content[:50] + "..."
+                    elif passage:
+                        preview = passage.content
+                    else:
+                        preview = ""
+                    console.print(f"  {label:<8} {ref_name:<35} -> {passage_id}")
+                    if preview:
+                        console.print(f"           [dim]{preview}[/]")
+                else:
+                    console.print(f"  {label:<8} {ref_name:<35} -> [yellow](not set)[/]")
+
+    asyncio.run(_show())
+
+
+@branch.command("promote")
+@click.argument("source")
+@click.option("--to", "target", default="HEAD", help="Target branch (default: HEAD)")
+def branch_promote(source: str, target: str) -> None:
+    """Promote a branch to another branch (typically HEAD).
+
+    Copies the current passage IDs from source refs to target refs
+    and fires hooks on the target refs.
+
+    \b
+    Example:
+        kp3 world-model branch promote corindel/experiment-1
+        kp3 world-model branch promote corindel/experiment-1 --to stable
+    """
+    from kp3.services.branches import BranchNotFoundError, promote_branch
+
+    parts = source.split("/")
+    if len(parts) != 2:
+        raise click.ClickException("Source must be in format 'prefix/branch'")
+
+    ref_prefix, source_branch = parts
+
+    async def _promote() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                try:
+                    target_branch = await promote_branch(session, ref_prefix, source_branch, target)
+
+                    console = Console()
+                    console.print(f"[green]Promoted[/] {source} -> {target_branch.name}")
+                    if target_branch.hooks_enabled:
+                        console.print("[dim]Hooks fired on target refs[/]")
+
+                except BranchNotFoundError as e:
+                    raise click.ClickException(str(e)) from e
+
+    asyncio.run(_promote())
+
+
+@branch.command("delete")
+@click.argument("name")
+@click.option("--delete-refs", is_flag=True, help="Also delete the underlying refs")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+def branch_delete(name: str, delete_refs: bool, force: bool) -> None:
+    """Delete a world model branch.
+
+    By default, only deletes the branch record. Use --delete-refs to also
+    delete the underlying passage refs.
+    """
+    from kp3.services.branches import BranchError, delete_branch
+
+    parts = name.split("/")
+    if len(parts) != 2:
+        raise click.ClickException("Name must be in format 'prefix/branch'")
+
+    ref_prefix, branch_name = parts
+
+    if not force:
+        click.confirm(f"Delete branch '{name}'?", abort=True)
+
+    async def _delete() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                try:
+                    deleted = await delete_branch(
+                        session, ref_prefix, branch_name, delete_refs=delete_refs
+                    )
+
+                    if deleted:
+                        console = Console()
+                        console.print(f"[green]Deleted branch[/] {name}")
+                        if delete_refs:
+                            console.print("[dim]Underlying refs also deleted[/]")
+                    else:
+                        click.echo(f"Branch '{name}' not found.")
+
+                except BranchError as e:
+                    raise click.ClickException(str(e)) from e
+
+    asyncio.run(_delete())
 
 
 if __name__ == "__main__":

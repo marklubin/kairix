@@ -309,3 +309,171 @@ class ExtractionPrompt(Base):
         UniqueConstraint("name", "version", name="uq_extraction_prompts_name_version"),
         Index("idx_extraction_prompts_name", "name"),
     )
+
+
+# =============================================================================
+# World Model Shadow Tables
+# =============================================================================
+# These tables store normalized copies of world model entities for future use.
+# The canonical source remains the JSON blocks in passages, but these tables
+# enable efficient querying and future features like entity linking.
+#
+# Entity keys use canonical format:
+#   - Lowercase
+#   - Whitespace normalized (single spaces, trimmed)
+#   - Stored in `canonical_key` column for dedup
+#   - Original `name` preserved for display
+
+
+class WorldModelProject(Base):
+    """Shadow storage for project entities from world model."""
+
+    __tablename__ = "world_model_projects"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Letta agent ID
+    canonical_key: Mapped[str] = mapped_column(Text, nullable=False)  # Normalized for dedup
+    name: Mapped[str] = mapped_column(Text, nullable=False)  # Original display name
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    context: Mapped[str] = mapped_column(Text, nullable=False)
+    last_occurrence: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    occurrence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("agent_id", "canonical_key", name="uq_world_model_projects_agent_key"),
+        Index("idx_world_model_projects_agent", "agent_id"),
+        Index("idx_world_model_projects_last_occurrence", "last_occurrence"),
+    )
+
+
+class WorldModelEntity(Base):
+    """Shadow storage for durable entities from world model."""
+
+    __tablename__ = "world_model_entities"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Letta agent ID
+    canonical_key: Mapped[str] = mapped_column(Text, nullable=False)  # Normalized for dedup
+    name: Mapped[str] = mapped_column(Text, nullable=False)  # Original display name
+    relevance: Mapped[str] = mapped_column(Text, nullable=False)
+    last_occurrence: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    occurrence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("agent_id", "canonical_key", name="uq_world_model_entities_agent_key"),
+        Index("idx_world_model_entities_agent", "agent_id"),
+        Index("idx_world_model_entities_last_occurrence", "last_occurrence"),
+    )
+
+
+class WorldModelTheme(Base):
+    """Shadow storage for recurring themes from world model."""
+
+    __tablename__ = "world_model_themes"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Letta agent ID
+    canonical_key: Mapped[str] = mapped_column(Text, nullable=False)  # Normalized for dedup
+    name: Mapped[str] = mapped_column(Text, nullable=False)  # Original display name
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    last_occurrence: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    occurrence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("agent_id", "canonical_key", name="uq_world_model_themes_agent_key"),
+        Index("idx_world_model_themes_agent", "agent_id"),
+        Index("idx_world_model_themes_last_occurrence", "last_occurrence"),
+    )
+
+
+# =============================================================================
+# World Model Branches
+# =============================================================================
+# Branches group the 3 refs (human/persona/world) as a single unit.
+# They enable experimentation without firing hooks on production agents.
+
+
+class WorldModelBranch(Base):
+    """A branch grouping 3 world model refs (human, persona, world) as a unit.
+
+    Branches allow running fold operations without firing hooks on production agents.
+    The HEAD branch is the main/production branch with hooks enabled.
+    Experiment branches can be created, folded against, and promoted to HEAD when ready.
+    """
+
+    __tablename__ = "world_model_branches"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+
+    # Branch identity
+    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)  # e.g., "corindel/exp-1"
+    ref_prefix: Mapped[str] = mapped_column(Text, nullable=False)  # e.g., "corindel"
+    branch_name: Mapped[str] = mapped_column(Text, nullable=False)  # e.g., "exp-1" or "HEAD"
+
+    # The 3 ref names this branch manages
+    human_ref: Mapped[str] = mapped_column(Text, nullable=False)  # e.g., "corindel/human/exp-1"
+    persona_ref: Mapped[str] = mapped_column(Text, nullable=False)  # e.g., "corindel/persona/exp-1"
+    world_ref: Mapped[str] = mapped_column(Text, nullable=False)  # e.g., "corindel/world/exp-1"
+
+    # Lineage
+    parent_branch_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("world_model_branches.id"), nullable=True
+    )
+
+    # Config
+    is_main: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )  # True for HEAD branches
+    hooks_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )  # Only True for main branches
+
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    # Relationships
+    parent_branch: Mapped["WorldModelBranch | None"] = relationship(
+        "WorldModelBranch", remote_side=[id], back_populates="child_branches"
+    )
+    child_branches: Mapped[list["WorldModelBranch"]] = relationship(
+        "WorldModelBranch", back_populates="parent_branch"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("ref_prefix", "branch_name", name="uq_world_model_branches_prefix_name"),
+        Index("idx_world_model_branches_prefix", "ref_prefix"),
+    )
