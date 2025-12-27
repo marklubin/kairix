@@ -1,7 +1,7 @@
 """Refs service for managing mutable pointers to passages."""
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,6 +9,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kp3.db.models import Passage, PassageRef, PassageRefHistory, PassageRefHook
+
+if TYPE_CHECKING:
+    from kp3.db.models import WorldModelBranch
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +50,46 @@ async def get_ref_passage(session: AsyncSession, name: str) -> Passage | None:
     return result.scalar_one_or_none()
 
 
+async def get_branch_for_ref(session: AsyncSession, name: str) -> "WorldModelBranch | None":
+    """Get the branch that owns a specific ref.
+
+    Args:
+        session: Database session
+        name: Ref name (e.g., "corindel/human/experiment-1")
+
+    Returns:
+        WorldModelBranch if the ref belongs to a branch, None otherwise
+    """
+    from kp3.db.models import WorldModelBranch
+
+    stmt = select(WorldModelBranch).where(
+        (WorldModelBranch.human_ref == name)
+        | (WorldModelBranch.persona_ref == name)
+        | (WorldModelBranch.world_ref == name)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def should_fire_hooks_for_ref(session: AsyncSession, name: str) -> bool:
+    """Determine if hooks should fire for a ref based on its branch settings.
+
+    If the ref belongs to a branch with hooks_enabled=False, returns False.
+    Otherwise returns True (default behavior for refs without branches).
+
+    Args:
+        session: Database session
+        name: Ref name
+
+    Returns:
+        True if hooks should fire, False otherwise
+    """
+    branch = await get_branch_for_ref(session, name)
+    if branch is not None:
+        return branch.hooks_enabled
+    return True  # Default: fire hooks for refs not in branches
+
+
 async def set_ref(
     session: AsyncSession,
     name: str,
@@ -64,7 +107,9 @@ async def set_ref(
         name: Ref name (e.g., "world/human/HEAD")
         passage_id: UUID of the passage to point to
         metadata: Optional metadata to store with the ref
-        fire_hooks: Whether to fire DB-configured hooks (default True)
+        fire_hooks: Whether to fire DB-configured hooks (default True).
+            If True, also checks branch settings - refs belonging to branches
+            with hooks_enabled=False will not fire hooks.
 
     Returns:
         The created or updated PassageRef
@@ -104,7 +149,9 @@ async def set_ref(
     ref = result.scalar_one()
 
     # Fire DB-configured hooks
-    if fire_hooks:
+    # Check both explicit fire_hooks flag AND branch settings
+    should_fire = fire_hooks and await should_fire_hooks_for_ref(session, name)
+    if should_fire:
         passage = await session.get(Passage, passage_id)
         if passage:
             await _execute_db_hooks(session, name, passage)

@@ -1,5 +1,7 @@
 """World model schemas for structured state extraction."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -15,25 +17,59 @@ def _empty_list_entities() -> "list[EntityEntry]":
     return []
 
 
+def _empty_list_themes() -> "list[ThemeEntry]":
+    return []
+
+
 class ProjectEntry(BaseModel):
-    """An active project in the world model."""
+    """An active project in the world model.
+
+    Tracking fields (last_occurrence, occurrence_count) are managed by KP3,
+    not the LLM. The LLM should preserve existing values when updating.
+    """
 
     name: str = Field(description="Project name or identifier")
     status: str = Field(description="Current status (e.g., 'active', 'completed', 'blocked')")
     context: str = Field(description="Brief context about the project")
+    last_occurrence: datetime | None = Field(
+        default=None, description="KP3 processing timestamp when last seen (system-managed)"
+    )
+    occurrence_count: int = Field(
+        default=1, description="Number of times this project has been referenced (system-managed)"
+    )
 
 
 class EntityEntry(BaseModel):
     """A durable entity (person, tool, place) in the world model.
 
     These should be recurring, perennial entities - not temporary/immediate context.
-    Entities should be pruned when no longer relevant.
+    Tracking fields are managed by KP3 for pruning decisions.
     """
 
     name: str = Field(description="Entity name")
     relevance: str = Field(description="Why this entity is relevant to interactions")
-    last_mentioned: str = Field(
-        default="", description="When this entity was last relevant (for pruning decisions)"
+    last_occurrence: datetime | None = Field(
+        default=None, description="KP3 processing timestamp when last seen (system-managed)"
+    )
+    occurrence_count: int = Field(
+        default=1, description="Number of times this entity has been referenced (system-managed)"
+    )
+
+
+class ThemeEntry(BaseModel):
+    """A recurring theme or interest in the world model.
+
+    Themes are perennial topics that come up repeatedly across conversations.
+    Tracking fields are managed by KP3 for pruning decisions.
+    """
+
+    name: str = Field(description="Theme name or identifier")
+    description: str = Field(description="What this theme encompasses")
+    last_occurrence: datetime | None = Field(
+        default=None, description="KP3 processing timestamp when last seen (system-managed)"
+    )
+    occurrence_count: int = Field(
+        default=1, description="Number of times this theme has been referenced (system-managed)"
     )
 
 
@@ -138,8 +174,8 @@ class WorldBlock(BaseModel):
             "Not for immediate/temporary context."
         ),
     )
-    recurring_themes: list[str] = Field(
-        default_factory=_empty_list_str,
+    recurring_themes: list[ThemeEntry] = Field(
+        default_factory=_empty_list_themes,
         description="Perennial topics, interests, or concerns that come up repeatedly",
     )
     key_insights: list[str] = Field(

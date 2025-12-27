@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from letta import Letta  # type: ignore[import-untyped]
+from letta_client import Letta  # type: ignore[import-untyped]
 
 from kp3.config import get_settings
 
@@ -56,30 +56,21 @@ async def update_letta_block(
     client = _get_client()
 
     try:
-        # Get the agent's memory blocks to find the block ID
-        # The Letta SDK's agent.memory.blocks gives us access to blocks
-        agent = client.agents.retrieve(agent_id)
-        if not agent:
-            raise LettaSyncError(f"Agent {agent_id} not found")
+        # Use agents.blocks.update which takes label and agent_id directly
+        # This will raise an error if the block doesn't exist
+        client.agents.blocks.update(
+            block_label,
+            agent_id=agent_id,
+            value=content,
+        )
+        logger.info("Updated Letta block %s for agent %s", block_label, agent_id)
 
-        # Find the block with matching label
-        block_id = None
-        for block in agent.memory.blocks:
-            if block.label == block_label:
-                block_id = block.id
-                break
-
-        if block_id is None:
+    except Exception as e:
+        # Check if this is a "not found" error
+        error_msg = str(e).lower()
+        if "not found" in error_msg or "404" in error_msg:
             raise LettaSyncError(
                 f"Block '{block_label}' not found for agent {agent_id}. "
                 f"Blocks must be pre-provisioned before sync can occur."
-            )
-
-        # Update the block value
-        client.blocks.modify(block_id=block_id, value=content)
-        logger.info("Updated Letta block %s for agent %s", block_label, agent_id)
-
-    except LettaSyncError:
-        raise
-    except Exception as e:
+            ) from e
         raise LettaSyncError(f"Failed to update Letta block: {e}") from e
