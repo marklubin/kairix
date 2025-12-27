@@ -329,3 +329,33 @@ services:
       - kairix-net
     profiles:
       - cli
+
+  sessions-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kairix-server:latest
+    container_name: kairix-sessions-admin
+    # Override CMD with: docker compose run --rm sessions-admin sessions-admin <command>
+    # Examples:
+    #   docker compose run --rm sessions-admin sessions-admin status
+    #   docker compose run --rm sessions-admin sessions-admin list-failed
+    #   docker compose run --rm sessions-admin sessions-admin recover
+    #   docker compose run --rm sessions-admin sessions-admin recover --dry
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
+      - LETTA_URL=http://letta:8283
+      - REDIS_URL=redis://kairix-redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      letta:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - kairix-net
+    profiles:
+      - cli

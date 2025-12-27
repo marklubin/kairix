@@ -72,6 +72,14 @@ VOICE:
                       kx voice add            Add a new voice (interactive)
                       kx voice assign         Assign a voice to an agent
 
+SESSIONS:
+    sessions <cmd>  Manage session summarization
+                    Commands:
+                      kx sessions status      Show session status summary
+                      kx sessions list-failed List all failed sessions
+                      kx sessions recover     Recover failed sessions (re-chunk and re-summarize)
+                      kx sessions recover --dry  Preview recovery without making changes
+
 HEALTH:
     wait [svc]      Wait for services to be healthy (default: postgres redis)
                     Timeout: 30 seconds
@@ -202,6 +210,25 @@ cmd_voice() {
     fi
 
     $COMPOSE run --rm voice-admin voice-admin "$@"
+}
+
+# =============================================================================
+# Session Commands
+# =============================================================================
+
+cmd_sessions() {
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: kx sessions <command>"
+        echo
+        echo "Commands:"
+        echo "  status        Show session status summary"
+        echo "  list-failed   List all failed sessions"
+        echo "  recover       Recover failed sessions (re-chunk and re-summarize)"
+        echo "  recover --dry Preview recovery without making changes"
+        exit 1
+    fi
+
+    $COMPOSE run --rm sessions-admin sessions-admin "$@"
 }
 
 # =============================================================================
@@ -423,6 +450,11 @@ case "$command" in
     # Voice
     voice)
         cmd_voice "$@"
+        ;;
+
+    # Sessions
+    sessions)
+        cmd_sessions "$@"
         ;;
 
     # Health

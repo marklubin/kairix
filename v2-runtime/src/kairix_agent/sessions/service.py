@@ -14,18 +14,22 @@ _async_session = async_sessionmaker(_engine, class_=AsyncSession, expire_on_comm
 
 
 async def get_latest_session_end(agent_id: str) -> datetime | None:
-    """Get the period_end of the most recent session for an agent.
+    """Get the period_end of the most recent SUMMARIZED session for an agent.
+
+    Only considers successfully summarized sessions. Failed sessions are excluded
+    so their messages can be re-processed in a future summarization attempt.
 
     Args:
         agent_id: The Letta agent ID.
 
     Returns:
-        The period_end timestamp of the latest session, or None if no sessions exist.
+        The period_end timestamp of the latest summarized session, or None if none exist.
     """
     async with _async_session() as db:
         result = await db.execute(
             select(Session.period_end)
             .where(Session.agent_id == agent_id)
+            .where(Session.status == SessionStatus.SUMMARIZED.value)
             .order_by(Session.period_end.desc())
             .limit(1)
         )
