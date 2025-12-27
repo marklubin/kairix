@@ -80,11 +80,14 @@ async def get_message_timestamps(
     client = AsyncLetta(base_url=letta_url)
 
     message_id_set = set(message_ids)
+    seen_ids: set[str] = set()
     messages_with_dates: list[tuple[str, datetime]] = []
 
     async for msg in client.agents.messages.list(agent_id):
-        if msg.id in message_id_set and msg.date:
+        # Deduplicate - Letta API may return same message multiple times
+        if msg.id in message_id_set and msg.date and msg.id not in seen_ids:
             messages_with_dates.append((msg.id, msg.date))  # noqa: PERF401
+            seen_ids.add(msg.id)
 
     # Sort by date
     messages_with_dates.sort(key=lambda x: x[1])
@@ -190,7 +193,7 @@ async def list_failed() -> None:
     console.print(f"\n[yellow]Total: {len(failed)} failed session(s)[/yellow]")
 
 
-async def recover_sessions(*, dry_run: bool = False) -> None:  # noqa: PLR0915
+async def recover_sessions(*, dry_run: bool = False, auto_yes: bool = False) -> None:  # noqa: PLR0915
     """Recover failed sessions by re-chunking and re-running summarization."""
     letta_url = Config.LETTA_BASE_URL.value
     gap_minutes = Config.SESSION_GAP_MINUTES.value
@@ -292,8 +295,8 @@ async def recover_sessions(*, dry_run: bool = False) -> None:  # noqa: PLR0915
             console.print("\n  [yellow]DRY RUN - skipping actual changes[/yellow]")
             continue
 
-        # Confirm before proceeding
-        if not Confirm.ask("\n  Proceed with recovery?", default=True):
+        # Confirm before proceeding (skip if auto_yes)
+        if not auto_yes and not Confirm.ask("\n  Proceed with recovery?", default=True):
             console.print("  [yellow]Skipped[/yellow]")
             continue
 
@@ -389,6 +392,7 @@ async def main_async(args: list[str]) -> int:
         console.print("  list-failed     List all failed sessions")
         console.print("  recover         Recover failed sessions (re-chunk and re-summarize)")
         console.print("  recover --dry   Preview recovery without making changes")
+        console.print("  recover --yes   Skip confirmation prompts")
         return 1
 
     command = args[0]
@@ -399,7 +403,8 @@ async def main_async(args: list[str]) -> int:
         await list_failed()
     elif command == "recover":
         dry_run = "--dry" in args or "--dry-run" in args
-        await recover_sessions(dry_run=dry_run)
+        auto_yes = "--yes" in args or "-y" in args
+        await recover_sessions(dry_run=dry_run, auto_yes=auto_yes)
     else:
         console.print(f"[red]Unknown command: {command}[/red]")
         return 1
