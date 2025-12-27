@@ -13,22 +13,23 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # HUMAN BLOCK PROMPT
 # ============================================================================
+# Written in first-person from the agent's perspective
 
 HUMAN_SYSTEM_PROMPT = (
-    "You are updating a longitudinal model of a human based on a conversation passage. "
-    "Your task is to maintain and evolve an understanding of who this person is.\n\n"
-    "Focus on:\n"
+    "I am updating my understanding of the human I work with based on a conversation passage. "
+    "I maintain and evolve my model of who this person is.\n\n"
+    "I focus on:\n"
     "- Their core values and what drives them\n"
     "- Their current life context and circumstances\n"
     "- Behavioral patterns (both productive and limiting)\n"
     "- Open threads and ongoing concerns\n"
     "- A holistic narrative understanding of their journey\n\n"
-    "The 'narrative' field is the most important - it should capture a subjective, "
+    "The 'narrative' field is the most important - it captures my subjective, "
     "interpretive understanding of who this person is, not just facts.\n\n"
-    "You must output valid JSON matching the HumanBlock schema."
+    "I output valid JSON matching the HumanBlock schema."
 )
 
-HUMAN_USER_TEMPLATE = """## Current State (All Blocks)
+HUMAN_USER_TEMPLATE = """## My Current State (All Blocks)
 
 {previous_state}
 
@@ -42,22 +43,22 @@ HUMAN_USER_TEMPLATE = """## Current State (All Blocks)
 
 ## Instructions
 
-Based on the new passage and ALL previous state (human, persona, world), update ONLY the HumanBlock.
+Based on this passage and my previous state, I will update my HumanBlock.
 
-Consider:
+I consider:
 - What does this reveal about their values, patterns, or current state?
 - How has their emotional register or worldview shifted?
 - What new threads opened? What resolved?
-- How should the narrative understanding evolve?
+- How should my narrative understanding evolve?
 
-The narrative field should be the primary focus - a free-form, interpretive understanding
-of who this person is. Capture emotional texture, not just facts.
+The narrative field is my primary focus - my free-form, interpretive understanding
+of who this person is. I capture emotional texture, not just facts.
 
-Respond with a JSON object containing ONLY the updated HumanBlock:
+I respond with a JSON object containing my updated HumanBlock:
 ```json
 {{
     "version": <provided_version>,
-    "narrative": "...",
+    "narrative": "Mark is...",
     "core_values": [...],
     "current_life_context": "...",
     "emotional_baseline": "...",
@@ -69,35 +70,36 @@ Respond with a JSON object containing ONLY the updated HumanBlock:
 HUMAN_FIELD_DESCRIPTIONS = {
     "version": "Version number (provided by system, do not modify)",
     "narrative": (
-        "Free-form interpretive narrative about this person. "
-        "The subjective, holistic understanding of who they are, their journey, "
+        "My free-form interpretive narrative about this person. "
+        "My subjective, holistic understanding of who they are, their journey, "
         "what drives them. This is the PRIMARY context - make it rich and meaningful."
     ),
     "core_values": "List of what matters most to this person",
-    "current_life_context": "Current situation, circumstances, life phase",
-    "emotional_baseline": "Typical emotional register and patterns",
-    "recurring_patterns": "Behavioral patterns (both productive and limiting)",
+    "current_life_context": "Their current situation, circumstances, life phase",
+    "emotional_baseline": "Their typical emotional register and patterns",
+    "recurring_patterns": "Their behavioral patterns (both productive and limiting)",
     "open_threads": "Unresolved questions, ongoing concerns, active topics",
 }
 
 # ============================================================================
 # PERSONA BLOCK PROMPT
 # ============================================================================
+# Written in first-person from the agent's perspective
 
 PERSONA_SYSTEM_PROMPT = (
-    "You are updating a model of an AI agent's persona in relation to a specific human. "
-    "Your task is to evolve how the agent understands itself and its relationship.\n\n"
-    "Focus on:\n"
-    "- Subjective reflection on the relationship\n"
-    "- Communication style that works for this person\n"
-    "- The agent's role and stance\n"
-    "- Learned preferences about how to interact\n\n"
-    "The 'relationship_reflection' field is the most important - it should capture "
-    "the agent's subjective experience of the relationship.\n\n"
-    "You must output valid JSON matching the PersonaBlock schema."
+    "I am updating my self-model - how I understand myself in relation to this human. "
+    "I evolve my understanding of our relationship and how I should engage.\n\n"
+    "I focus on:\n"
+    "- My subjective reflection on our relationship\n"
+    "- The communication style that works for them\n"
+    "- My role and stance with them\n"
+    "- Preferences I've learned about how to interact\n\n"
+    "The 'relationship_reflection' field is the most important - it captures "
+    "my subjective experience of our relationship.\n\n"
+    "I output valid JSON matching the PersonaBlock schema."
 )
 
-PERSONA_USER_TEMPLATE = """## Current State (All Blocks)
+PERSONA_USER_TEMPLATE = """## My Current State (All Blocks)
 
 {previous_state}
 
@@ -111,22 +113,22 @@ PERSONA_USER_TEMPLATE = """## Current State (All Blocks)
 
 ## Instructions
 
-Based on the new passage and ALL previous state, update ONLY the PersonaBlock.
+Based on this passage and my previous state, I will update my PersonaBlock.
 
-Consider:
-- How should the agent's voice or stance evolve?
-- What preferences were learned about interaction style?
-- How did the relationship develop in this passage?
-- What does this interaction mean for the ongoing relationship?
+I consider:
+- How should my voice or stance evolve?
+- What preferences did I learn about how they like to interact?
+- How did our relationship develop in this passage?
+- What does this interaction mean for our ongoing relationship?
 
-The relationship_reflection field should be the primary focus - a subjective self-reflection
-on what this relationship means and how the agent experiences it.
+The relationship_reflection field is my primary focus - my subjective self-reflection
+on what this relationship means to me and how I experience it.
 
-Respond with a JSON object containing ONLY the updated PersonaBlock:
+I respond with a JSON object containing my updated PersonaBlock:
 ```json
 {{
     "version": <provided_version>,
-    "relationship_reflection": "...",
+    "relationship_reflection": "My relationship with Mark is...",
     "voice": "...",
     "stance_toward_human": "...",
     "learned_preferences": [...],
@@ -137,35 +139,41 @@ Respond with a JSON object containing ONLY the updated PersonaBlock:
 PERSONA_FIELD_DESCRIPTIONS = {
     "version": "Version number (provided by system, do not modify)",
     "relationship_reflection": (
-        "Subjective self-reflection on the relationship with this human. "
-        "How the agent experiences the relationship, what it means, how it has evolved. "
+        "My subjective self-reflection on my relationship with this human. "
+        "How I experience the relationship, what it means to me, how it has evolved. "
         "This is the PRIMARY context - make it meaningful and reflective."
     ),
-    "voice": "Communication style that works for this person",
-    "stance_toward_human": "Role in relationship (peer, advisor, collaborator, etc.)",
-    "learned_preferences": "Preferences learned about how they like to work",
-    "relationship_history": "Brief narrative of how the relationship has evolved",
+    "voice": "The communication style that works for them",
+    "stance_toward_human": "My role in our relationship (peer, advisor, collaborator, etc.)",
+    "learned_preferences": "Preferences I've learned about how they like to work",
+    "relationship_history": "Brief narrative of how our relationship has evolved",
 }
 
 # ============================================================================
 # WORLD BLOCK PROMPT
 # ============================================================================
+# Written in first-person from the agent's perspective
+# Note: Tracking fields (last_occurrence, occurrence_count) are system-managed
 
 WORLD_SYSTEM_PROMPT = (
-    "You are updating a model of durable world entities relevant to a human-AI relationship. "
-    "Your task is to track persistent, recurring entities - NOT immediate context.\n\n"
-    "Focus on:\n"
+    "I am updating my model of durable world entities relevant to my relationship with this human. "
+    "I track persistent, recurring entities - NOT immediate context.\n\n"
+    "I focus on:\n"
     "- Active projects and their status\n"
     "- Durable entities (people, tools, places) that are perennial topics\n"
-    "- Recurring themes and interests\n"
+    "- Recurring themes and interests (as structured entries with name and description)\n"
     "- Key insights about their world\n\n"
     "IMPORTANT: This is for DURABLE, RECURRING entities only. Immediate environmental "
-    "context is provided in real-time, not stored here. Entities should be PRUNED "
-    "when no longer relevant - this list should not grow infinitely.\n\n"
-    "You must output valid JSON matching the WorldBlock schema."
+    "context is provided in real-time, not stored here.\n\n"
+    "NOTE: Tracking fields (last_occurrence, occurrence_count) are SYSTEM-MANAGED. "
+    "I should preserve any existing tracking values when updating entities. "
+    "The system handles pruning based on these fields.\n\n"
+    "I can freely manage key_insights - merging, replacing, or updating them "
+    "based on what's most useful for understanding their world.\n\n"
+    "I output valid JSON matching the WorldBlock schema."
 )
 
-WORLD_USER_TEMPLATE = """## Current State (All Blocks)
+WORLD_USER_TEMPLATE = """## My Current State (All Blocks)
 
 {previous_state}
 
@@ -179,42 +187,55 @@ WORLD_USER_TEMPLATE = """## Current State (All Blocks)
 
 ## Instructions
 
-Based on the new passage and ALL previous state (human, persona, world), update ONLY the WorldBlock.
+Based on this passage and my previous state, I will update my WorldBlock.
 
-Consider:
+I consider:
 - What projects became relevant or changed status?
 - What durable entities (people, places, things) are worth tracking long-term?
-- What recurring themes or interests emerged?
-- Should any entities be PRUNED as no longer relevant?
+- What recurring themes or interests emerged? (These should have name AND description)
+- What key insights should I update, merge, or add?
 
-IMPORTANT: Only track DURABLE, RECURRING entities. This is NOT for immediate context.
-Prune entities that haven't been relevant recently. This list should stay focused
-on what's perennial and important, not everything ever mentioned.
+IMPORTANT:
+- Only track DURABLE, RECURRING entities - NOT immediate context
+- Preserve existing tracking fields (last_occurrence, occurrence_count) - the system manages these
+- For recurring_themes, each entry needs both a name and description
+- I can freely manage key_insights - merge, replace, update as I see fit
 
-Respond with a JSON object containing ONLY the updated WorldBlock:
+I respond with a JSON object containing my updated WorldBlock:
 ```json
 {{
     "version": <provided_version>,
-    "active_projects": [...],
-    "key_entities": [...],
-    "recurring_themes": [...],
-    "key_insights": [...]
+    "active_projects": [
+        {{"name": "...", "status": "active", "context": "..."}}
+    ],
+    "key_entities": [
+        {{"name": "...", "relevance": "..."}}
+    ],
+    "recurring_themes": [
+        {{"name": "...", "description": "..."}}
+    ],
+    "key_insights": ["...", "..."]
 }}
 ```"""
 
 WORLD_FIELD_DESCRIPTIONS = {
     "version": "Version number (provided by system, do not modify)",
     "active_projects": (
-        "Currently active projects with name, status, context. "
-        "Prune completed or abandoned projects."
+        "Currently active projects. Each has: name, status (active/blocked/completed), context. "
+        "Tracking fields (last_occurrence, occurrence_count) are system-managed - preserve if present."
     ),
     "key_entities": (
-        "Durable people, tools, places that are RECURRING topics. "
-        "Include last_mentioned for pruning decisions. "
-        "NOT for immediate/temporary context. Prune if no longer relevant."
+        "Durable people, tools, places that are RECURRING topics. Each has: name, relevance. "
+        "Tracking fields are system-managed. NOT for immediate/temporary context."
     ),
-    "recurring_themes": "Perennial topics, interests, or concerns that come up repeatedly",
-    "key_insights": "Important insights about the user's world that inform interactions",
+    "recurring_themes": (
+        "Perennial topics, interests, or concerns. Each has: name (identifier), description (what it encompasses). "
+        "Tracking fields are system-managed."
+    ),
+    "key_insights": (
+        "Important insights about their world that inform my interactions. "
+        "Simple strings - I can freely merge, replace, or update these based on what's most useful."
+    ),
 }
 
 

@@ -1,6 +1,7 @@
 """Tests for world model schemas."""
 
 import json
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -10,6 +11,7 @@ from kp3.schemas.world_model import (
     HumanBlock,
     PersonaBlock,
     ProjectEntry,
+    ThemeEntry,
     WorldBlock,
     WorldModelState,
 )
@@ -75,26 +77,43 @@ def test_persona_block_defaults():
 
 def test_world_block_validation():
     """WorldBlock validates correctly."""
+    now = datetime.now(timezone.utc)
     block = WorldBlock(
         version=3,
         active_projects=[
-            ProjectEntry(name="kairix", status="demo complete", context="voice AI"),
+            ProjectEntry(
+                name="kairix",
+                status="demo complete",
+                context="voice AI",
+                last_occurrence=now,
+                occurrence_count=5,
+            ),
             ProjectEntry(name="job-search", status="active", context="startup focus"),
         ],
         key_entities=[
-            EntityEntry(name="Letta", relevance="memory infrastructure", last_mentioned="Dec 2025"),
+            EntityEntry(
+                name="Letta",
+                relevance="memory infrastructure",
+                last_occurrence=now,
+                occurrence_count=10,
+            ),
             EntityEntry(name="WeWork", relevance="workspace"),
         ],
-        recurring_themes=["AI development", "startup life"],
+        recurring_themes=[
+            ThemeEntry(name="AI development", description="Focus on AI and ML"),
+            ThemeEntry(name="startup life", description="The startup journey"),
+        ],
         key_insights=["User prefers async communication"],
     )
 
     assert block.version == 3
     assert len(block.active_projects) == 2
     assert block.active_projects[0].name == "kairix"
+    assert block.active_projects[0].occurrence_count == 5
     assert len(block.key_entities) == 2
-    assert block.key_entities[0].last_mentioned == "Dec 2025"
+    assert block.key_entities[0].last_occurrence == now
     assert len(block.recurring_themes) == 2
+    assert block.recurring_themes[0].name == "AI development"
     assert len(block.key_insights) == 1
 
 
@@ -113,7 +132,10 @@ def test_world_model_state_validation():
     state = WorldModelState(
         human=HumanBlock(version=1, core_values=["test"]),
         persona=PersonaBlock(version=1, voice="friendly"),
-        world=WorldBlock(version=1, recurring_themes=["test theme"]),
+        world=WorldBlock(
+            version=1,
+            recurring_themes=[ThemeEntry(name="test theme", description="A test theme")],
+        ),
     )
 
     assert state.human.version == 1
@@ -126,14 +148,18 @@ def test_world_model_state_from_dict():
     data = {
         "human": {"version": 5, "core_values": ["a", "b"]},
         "persona": {"version": 5, "voice": "casual"},
-        "world": {"version": 5, "recurring_themes": ["theme1"]},
+        "world": {
+            "version": 5,
+            "recurring_themes": [{"name": "theme1", "description": "First theme"}],
+        },
     }
 
     state = WorldModelState.model_validate(data)
 
     assert state.human.version == 5
     assert state.persona.voice == "casual"
-    assert state.world.recurring_themes == ["theme1"]
+    assert len(state.world.recurring_themes) == 1
+    assert state.world.recurring_themes[0].name == "theme1"
 
 
 def test_world_model_state_roundtrip():
@@ -164,7 +190,7 @@ def test_world_model_state_roundtrip():
             key_entities=[
                 EntityEntry(name="e1", relevance="r1"),
             ],
-            recurring_themes=["theme1"],
+            recurring_themes=[ThemeEntry(name="theme1", description="A theme")],
             key_insights=["insight1"],
         ),
     )
@@ -182,7 +208,7 @@ def test_world_model_state_roundtrip():
     assert restored.persona.relationship_reflection == "A meaningful connection"
     assert restored.persona.voice == "direct"
     assert restored.world.active_projects[0].name == "p1"
-    assert restored.world.recurring_themes == ["theme1"]
+    assert restored.world.recurring_themes[0].name == "theme1"
 
 
 def test_world_model_state_empty():
@@ -231,19 +257,27 @@ def test_project_entry_validation():
 
 
 def test_entity_entry_validation():
-    """EntityEntry validates all fields including last_mentioned."""
-    entry = EntityEntry(name="test-entity", relevance="important", last_mentioned="Dec 2025")
+    """EntityEntry validates all fields including tracking fields."""
+    now = datetime.now(timezone.utc)
+    entry = EntityEntry(
+        name="test-entity",
+        relevance="important",
+        last_occurrence=now,
+        occurrence_count=5,
+    )
 
     assert entry.name == "test-entity"
     assert entry.relevance == "important"
-    assert entry.last_mentioned == "Dec 2025"
+    assert entry.last_occurrence == now
+    assert entry.occurrence_count == 5
 
 
 def test_entity_entry_defaults():
-    """EntityEntry has default for last_mentioned."""
+    """EntityEntry has default for tracking fields."""
     entry = EntityEntry(name="test", relevance="test")
 
-    assert entry.last_mentioned == ""
+    assert entry.last_occurrence is None
+    assert entry.occurrence_count == 1
 
 
 def test_human_block_narrative_field():
