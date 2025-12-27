@@ -346,7 +346,7 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
-      - LETTA_URL=http://letta:8283
+      - LETTA_BASE_URL=http://letta:8283
       - REDIS_URL=redis://kairix-redis:6379/0
     depends_on:
       postgres:
