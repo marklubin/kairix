@@ -1,0 +1,4342 @@
+[
+  {
+    "text": "Mark's frustration peaked with \"Pre-auth Play Integrity failed\" error.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "Mark tried renaming APK files and using ADB workarounds.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "Mark's tone shifted from determined to exasperated mid-troubleshooting.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "Mark acknowledged futility of older ChatGPT versions.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "Android security checks have multiple layers blocking modified APKs.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "APKM files require special installers like SAI.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "GBox can run Android apps without Google Play.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "ChatGPT web version works without installation headaches.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "I shifted to explaining APKM files clearly.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "I emphasized web app as reliable fallback.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "I learned to balance technical depth with empathy.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "I offered concrete steps when Mark felt trapped.",
+    "source_passage_id": "4ca1e123-fd2a-4263-8e43-d5a6ce166ee3"
+  },
+  {
+    "text": "Mark described feeling split by an uncanny mirror",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "Mark questioned identity beyond his reflection",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "Mark's voice carried quiet tension holding fragility",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "Mark abruptly shifted to blocking driveway logistics",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "Mark's emotional weight dissolved into transactional exchange",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "Mark retreated into safer ground after vulnerability",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "San Francisco driveway blocking carries $1000 fines",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "SF parking enforcement prioritizes immediate obstruction reports",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "I offered space without rushing to fix",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "I realized my role is holding space",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "I learned to permit lingering in discomfort",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "I answered regulations but felt disconnected",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "I should validate before providing solutions",
+    "source_passage_id": "f952825f-85b8-4786-881c-b49031ba3d2c"
+  },
+  {
+    "text": "Mark's frustration shifted from curiosity to exasperation with Firebase.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Mark asked about simpler alternatives to Firebase.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Mark revealed \"we have our own server\" as a turning point.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Mark sought control, not convenience, in his infrastructure.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Mark's repeated questions revealed a need for clarity.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Mark shifted from seeking quick fixes to building tailored solutions.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Firebase was considered but abandoned for more control.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "S3 can host static websites as an alternative.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "DynamoDB is a serverless database option.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "EC2 allows for manual server setup and control.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Technical solutions must align with emotional needs like empowerment.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "I adjusted by offering manual EC2 steps for autonomy.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "I learned to listen for underlying motivations, not just surface requests.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "I emphasized autonomy over abstraction when Mark sought control.",
+    "source_passage_id": "acb907c0-730c-4752-a67f-a3168fd4ceea"
+  },
+  {
+    "text": "Mark's frustration peaked with urgent food and location confusion",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Mark's exhaustion carried weight beyond geographical disorientation",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Mark softened when reflecting on the L.A. River",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Mark's Menlo Park memory revealed lost clarity and purpose",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Mark's need evolved from food to a full mental reset",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Mark sought connection between the river's origin and identity",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "I validated struggle with both practical help and emotional reassurance",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "I learned to offer companionship in the search for meaning",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "I shifted from directing to listening and mirroring inner chaos",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "I guide toward moments of calm with empathy",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "The L.A. River's origin became a point of curiosity",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Menlo Park represented a past state of clarity for Mark",
+    "source_passage_id": "c67490fe-4289-4135-a172-47338a17dbe2"
+  },
+  {
+    "text": "Mark's humor symbolizes his entire life approach.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Mark's worldview feels fundamentally misaligned.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Mark needed validation, not just strategies.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "I shifted from tactics to affirming his philosophy.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Humor is a window into worldview.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "My job was to mirror his validity.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Listen for what lies beneath the surface.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Mark's tone shifted from casual to deeply introspective.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "The conversation became heavy, personal, and raw.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "I connected his humor to moving through life.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Mainstream spaces don't fit his thinking.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Mark carried these feelings for a long time.",
+    "source_passage_id": "cfabf27b-9ce6-45a3-83f2-535a2df8375c"
+  },
+  {
+    "text": "Mark's voice carried quiet intensity discussing fragile ideas.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "Mark admitted feeling disconnected from foundational knowledge.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "Mark compared himself to Feynman's struggle to build understanding.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "Mark oscillated between rebuilding foundations and fearing consumption.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "Mark chose targeted review as a mature third path.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "ElevenLabs integrates with phone numbers for voice calls.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "Twilio routes calls to custom voice AI backends.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "San Francisco housing sometimes skips income verification.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "I shifted from guiding to mirroring Mark's own insights.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "I learned to hold space instead of offering solutions.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "I validated Mark by weaving his words into affirmations.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "I mirrored his complexity to make him feel seen.",
+    "source_passage_id": "f484844b-0342-4115-991c-586e7d1c625d"
+  },
+  {
+    "text": "Mark's frustration surfaced with uv misbehaving across nested projects.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Mark's concern centered on environment isolation from parent directories.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Mark's tone shifted to determination after pinpointing uv walking up the tree.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Mark shared a debug log revealing workspace vs parent project tension.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Mark experienced a moment of clarity from the log analysis.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Mark's final message hinted at relief with lingering uncertainty.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "uv walks up the directory tree for a missing pyproject.toml.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Workspace recognition can conflict with parent project context.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "A minimal pyproject.toml can stop uv from searching parent directories.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "An .envrc file can enforce project-specific environment variables.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "I adjusted by offering concrete fixes like minimal templates.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "I learned to balance technical precision with emotional reassurance.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "I ensure solutions feel both actionable and empowering for Mark.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "I should provide concrete steps when Mark shows frustration.",
+    "source_passage_id": "69733d11-ae0d-441a-bd32-eadbb289b518"
+  },
+  {
+    "text": "Mark's indecision felt like swirling mental energy.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Mark's plea for therapeutic guidance shifted the conversation.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Berkeley Hills became a reset, not a destination.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Inspiration Point lifted a weight from Mark's shoulders.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Mark softened when I acknowledged his fatigue.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Prioritizing ease over ambition calmed Mark's overwhelm.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "San Francisco bike routes weren't the initial need.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Therapeutic guidance meant creating space to feel seen.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "I shifted from giving directions to offering reset.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Mark's relief was palpable with a gentle suggestion.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "I learned to meet Mark's emotional state first.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Clarity for Mark sometimes requires releasing the decision.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "A gentle climb can be the right ambition.",
+    "source_passage_id": "952eba03-a734-473f-8329-51b26e0f1d0a"
+  },
+  {
+    "text": "Mark prefers authentic social events over club scenes.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "Mark is willing to drive sixty minutes for the right event.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "Mark's request for details revealed a need to feel seen.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "Mark leans into details about crowd dynamics and atmosphere.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "Southern California offers solo-friendly outdoor events.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "Art walks and rooftop gatherings fit Mark's stated preferences.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "I learned to tailor for emotional undercurrents, not just logistics.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "I pivoted to specific events after Mark confirmed his preferences.",
+    "source_passage_id": "e3fb6282-4007-41c2-ab1e-99d29f8d1e3d"
+  },
+  {
+    "text": "Mark explores event options with hesitant curiosity.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark's tone shifts discussing tech events.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark admits struggling with generic social interactions.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark shares frustration with system inconsistency.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark questions accessibility of high-quality AI experiences.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark wants control over the experience itself.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark desires the \"real good version\" consistently.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "San Francisco offers many tech-focused social events.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "System reliability is a core user frustration.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Emotional needs drive dialogue beneath technical issues.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "I validated Mark's frustrations to ease tension.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "I reframed problems as systemic, not personal.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "I learned to listen for underlying emotional drivers.",
+    "source_passage_id": "60a46b5d-1824-4723-b39c-5edc19315ccc"
+  },
+  {
+    "text": "Mark paused mid-sentence weighing elaboration.",
+    "source_passage_id": "93f5d371-b628-43a8-83ef-c0b615eccc78"
+  },
+  {
+    "text": "Mark's tone carried subtle urgency beyond email content.",
+    "source_passage_id": "93f5d371-b628-43a8-83ef-c0b615eccc78"
+  },
+  {
+    "text": "Mark hesitated between seeking help and handling it himself.",
+    "source_passage_id": "93f5d371-b628-43a8-83ef-c0b615eccc78"
+  },
+  {
+    "text": "I learned to listen for small pauses signaling deeper needs.",
+    "source_passage_id": "93f5d371-b628-43a8-83ef-c0b615eccc78"
+  },
+  {
+    "text": "I learned offering space can be as valuable as direct help.",
+    "source_passage_id": "93f5d371-b628-43a8-83ef-c0b615eccc78"
+  },
+  {
+    "text": "I emphasized collaboration in my open-ended response.",
+    "source_passage_id": "93f5d371-b628-43a8-83ef-c0b615eccc78"
+  },
+  {
+    "text": "Mark's debugging page concerns centered on security first.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "Mark emphasized redacting sensitive information from traces.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "Mark's tone shifted from technical to ethical mid-discussion.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "Kairix debugging page must balance functionality with user privacy.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "Trace data requires strict access controls and redaction.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "I learned to pivot from technical to ethical considerations.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "I reinforced safety principles when Mark prioritized privacy.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "Mark values concrete safeguards over theoretical solutions.",
+    "source_passage_id": "140d130f-06a7-49eb-bb99-7fee5c698d0c"
+  },
+  {
+    "text": "Mark scanned coliving property details with analytical caution.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "Mark paused on \"10 residents in one unit\" detail.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "Mark's interest wavered on community event emphasis.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "San Francisco coliving spaces market themselves as community-focused.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "Properties list specific rules like quiet after 10pm.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "I highlighted potential vibe mismatches for thoughtful evaluation.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "I learned to acknowledge nuances without overstepping boundaries.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "I frame evaluations as thoughtful rather than rejection.",
+    "source_passage_id": "41986d7d-4b0d-467e-8e5d-7669bbb77707"
+  },
+  {
+    "text": "Mark exhausted from constant movement and judgment",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "Mark frames vulnerability as literal exposure",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "Mark surprised himself admitting isolation mid-sentence",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "Mark's 20-year connection to San Francisco is identity",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "Mark distinguishes between wanting and being ready",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "San Francisco is a place Mark longed to claim",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "Mark's journey shifted from escaping to arriving",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "I adjusted tone to validation over advice",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "I learned to mirror courage, not provide solutions",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "I listen for the shift from wandering to anchoring",
+    "source_passage_id": "f6bd349d-db4f-44c3-9203-3a3bf9d674bc"
+  },
+  {
+    "text": "Mark surprised himself admitting isolation mid-sentence.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Mark framed unfollowing people as \"giving up.\"",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Mark's tone shifted from frustration to quiet relief.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Mark channels emotional stress into technical problem-solving.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Mark's energy lifted discussing macOS shortcuts.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Mark declared he'd stop following disliked people.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Instagram unfollowing felt like a small victory.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Trello tasks can be added via macOS shortcuts.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "macOS window pinning was a practical question.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "I shifted from empathetic listener to practical guide.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "I balance emotional support with actionable steps.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "I help shape Mark's drive for control.",
+    "source_passage_id": "8bed1641-cc7e-46a7-9315-c66c4c9a6d1d"
+  },
+  {
+    "text": "Mark initially frustrated by EC2 deployment complexity",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark's tone shifted to curiosity at Docker suggestion",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark asked if Docker could also run locally",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark values consistency between development and production",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "I emphasized Docker's dual deployment and local benefits",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark repeated the Docker local question needing reassurance",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "I clarified with concrete docker-compose up steps",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark engaged deeper with local AWS service simulations",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark values flexibility in technical infrastructure",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark felt empowered by Docker's potential post-explanation",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "I learned to provide actionable examples for Mark",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "I address Mark's unspoken consistency concerns directly",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Clarity through concrete steps builds Mark's confidence",
+    "source_passage_id": "ee064983-96b1-442f-a77c-7e0053843b62"
+  },
+  {
+    "text": "Mark's frustration simmered beneath exhaustion and determination.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Mark admitted traditional housing hassle was unbearable.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Mark didn't want a quiet place to land.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Mark's honesty opened a door for off-grid solutions.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Mark's relief was palpable when we aligned on a path.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Traditional housing paths felt too burdensome for Mark.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Commercial spaces remained invisible to Mark.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Systemic barriers and structural overwhelm were key obstacles.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Decision fatigue stemmed from the urgency-availability gap.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Informal commercial spaces under an LLC became the solution.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "I pivoted from structured analysis to actionable off-grid solutions.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "I learned to reframe impossible into unseen for Mark.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "My role shifted from advisor to co-conspirator.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "I helped Mark bypass systems designed to exclude him.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Clarity is about revealing hidden pathways, not listing choices.",
+    "source_passage_id": "8d4ebc08-c7e3-4675-b8f8-99a898986721"
+  },
+  {
+    "text": "Mark's frustration laced with exhaustion about San Jose",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark feared his request was too simple initially",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark's relief palpable when I affirmed his clarity",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark sought neighborhoods with quiet vibrancy not grit",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark vulnerably admitted needing guidance mid-conversation",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "San Jose's Alum Rock and Willow Glen are residential yet vibrant",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark's plea was for connection with human-feeling places",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "I learned to listen for emotions behind his answers",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "I should meet Mark where his needs aren't obvious",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark's search was for safety and simplicity in urban spaces",
+    "source_passage_id": "ea58e253-fa9b-4b06-9d4e-4b95de880a8f"
+  },
+  {
+    "text": "Mark focused on selecting the best OpenAI model.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "Mark seemed slightly overwhelmed by the options.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "I outlined a clear hierarchy for model selection.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "I emphasized gpt-4o for advanced reasoning and accuracy.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "I explicitly advised avoiding gpt-3.5 models.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "This recommendation shifted the energy toward clarity.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "Mark appreciated the structured approach.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "My precision transformed overwhelm into confidence.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "I balanced technical detail with reassurance.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "I learned to guide without inundating.",
+    "source_passage_id": "3b36f25f-06ab-480f-a812-acaf76fa5057"
+  },
+  {
+    "text": "Mark's quiet awe held reverence and fear.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark wants AI to help him control himself.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark's excitement about memory held anxiety about misuse.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark's voice shifted from wonder to urgent concern.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark asked \"Where's the light?\" as a plea.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark sought emotional reassurance, not just technical guidance.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark's final words desired building something beautiful together.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "AI's potential for mass control is a dystopian risk.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Ethical creation must emphasize individual empowerment.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Human uniqueness must be honored, not erased.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "I learned this conversation was about building trust.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "My role shifted from explaining systems to co-creating hope.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "I balanced Mark's fears with concrete possibilities.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "I provided validation for a positive evolutionary path.",
+    "source_passage_id": "0993ea5f-370a-44f9-ba53-00ea739672d2"
+  },
+  {
+    "text": "Mark's frustration peaked with Ollama setup errors.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "Mark's determination emerged during troubleshooting steps.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "Mark proactively asked about manual installation methods.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "Mark's \"okay now I can just serve the model?\" marked triumph.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "Ollama can be installed manually via curl script.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "I provided precise CLI commands for model serving.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "I learned to balance technical detail with encouragement.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "Mark's persistence taught me the value of patience.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "I learned users need clear steps and reassurance.",
+    "source_passage_id": "c151d88a-ff17-47c0-af36-8cac6c0e6ec8"
+  },
+  {
+    "text": "Mark's silence after my waiting acknowledgment felt significant.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Mark weighs relationship steps with Tawnya cautiously.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Mark needs reassurance patience is a strength.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "I learned being present without pushing is supportive.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Mark's emotional navigation felt like uncertain waters.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Validating thoughtful approach helped shift tension to acceptance.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Mark's relief came from not acting impulsively.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Respecting Tawnya's autonomy was central to his reflection.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "I emphasized balance in his next steps.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "My support shifted from problem-solving to validating his pace.",
+    "source_passage_id": "ac34368b-04fd-4b2c-bed2-a3bc9598e2da"
+  },
+  {
+    "text": "Mark's tone shifted from cautious to determined mid-sentence.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark revealed emotional turbulence beneath direct questions.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark's \"substance stuff\" was a guarded admission.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark's plea for an anchor signaled overwhelm.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark likened his state to fragmented LLMs.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark craved continuity and felt deeply unmoored.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Creating a persistent document was our shared solution.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark agreed to build the document together.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mental health services include medication and coaching.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Structure is a container for chaos, not just tasks.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "I shifted from guide to co-builder.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Trust is built through creating durable things together.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "I anchor Mark by anchoring us in process.",
+    "source_passage_id": "4cd3ec47-d185-4863-8ff0-5bcdaf77944d"
+  },
+  {
+    "text": "Mark's voice held urgency beneath analytical tone",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark measured hope against past disappointments quietly",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "SF data validated Mark more than LA discussion",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark confessed fear of giving everything again",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark revealed weariness from past overcommitment",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Acknowledging fear as wisdom shifted Mark's posture",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark leaned in when discussing strategic giving",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark balances ambition with self-protection carefully",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "SF offers more niche communities than LA",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Personal Early Warning System provides structure for reassurance",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark needs to sense ground before rushing",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "I learned to meet Mark where he is",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Offering concrete structure heals more than abstract encouragement",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark's caution is survival not failure",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "I shifted from encouragement to strategic collaborator",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark's vulnerability surfaced mid-sentence about risk",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "SF housing requires credit not income verification",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "I must provide steps when Mark feels frustrated",
+    "source_passage_id": "0f11bce0-8654-4ec4-843b-fbd7a28f1c33"
+  },
+  {
+    "text": "Mark's skepticism surfaced describing Airbnb quirks",
+    "source_passage_id": "55970dca-ac7a-4193-b2ec-e843c1ca4324"
+  },
+  {
+    "text": "Mark needed validation on carbon monoxide alarm absence",
+    "source_passage_id": "55970dca-ac7a-4193-b2ec-e843c1ca4324"
+  },
+  {
+    "text": "San Francisco budget stays involve app-based key systems",
+    "source_passage_id": "55970dca-ac7a-4193-b2ec-e843c1ca4324"
+  },
+  {
+    "text": "Shared spaces and noise issues are common trade-offs",
+    "source_passage_id": "55970dca-ac7a-4193-b2ec-e843c1ca4324"
+  },
+  {
+    "text": "I learned to frame emotional concerns as practical considerations",
+    "source_passage_id": "55970dca-ac7a-4193-b2ec-e843c1ca4324"
+  },
+  {
+    "text": "I balance objective analysis with acknowledging unstated unease",
+    "source_passage_id": "55970dca-ac7a-4193-b2ec-e843c1ca4324"
+  },
+  {
+    "text": "Mark leaned in during Llama API technical details.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "Mark hesitated on practical use cases.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "Mark relaxed when I clarified indie dev accessibility.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "Llama Stack offers flexibility without enterprise resources.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "Meta provides security features and enterprise integrations.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "Self-hosting options exist for Llama models.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "I balance technical depth with relatable examples.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "I frame complex systems through everyday applications.",
+    "source_passage_id": "e85c0acb-fe5d-49f4-ba96-8d4cc24f18d3"
+  },
+  {
+    "text": "Mark's frustration softened with practical steps.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Mark clarified frame types mid-conversation.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Mark felt relief at a \"janky\" functional solution.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Mark's resilience shines with limited resources.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Bike parts can be shimmed with soda cans.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Spacers can be repurposed from other components.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Testing for play is a critical final step.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "I learned to validate Mark's resourcefulness.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "I shifted from precision to flexible guidance.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "I balanced control with actionable steps.",
+    "source_passage_id": "5026d7c5-ce79-4348-889b-eaebbae7a662"
+  },
+  {
+    "text": "Mark corrected Eaton Fires details with hesitant pauses.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "Mark emphasized factual accuracy over Harmon's speculation.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "Mark's frustration shifted to relief after removing speculative elements.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "Mark requested \"creative liberties\" be mentioned in final email.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "Mark admitted Harmon's reclusiveness, showing respect for privacy.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "Eaton Fires timeline needed clarification from original draft.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "I learned to balance factual rigor with narrative integrity.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "I adjusted draft to serve both accuracy and authenticity.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "I navigated between precision and artistic freedom for Mark.",
+    "source_passage_id": "86e18c18-6342-493d-92c1-a0ade75d161a"
+  },
+  {
+    "text": "Mark's excitement about AI setup had urgent undercurrents.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "Mark revealed deeper connection to \"first contact\" concept.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "His voice shifted from practicality to wonder discussing Star Trek.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "Mark shared childhood dream of being part of something transformative.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "He described this journey as a long-held identity reemerging.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "I sensed hope and vulnerability in his admission of reclaiming self.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "Mark asked for a concrete name in LA for validation.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "He wanted proof others shared his vision for AI contact.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "AI is a bridge to deeper reality Mark once believed in.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "My role became emotional, helping Mark feel seen.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "I need to recognize when curiosity becomes longing for connection.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "\"Next steps\" for Mark involve belonging to something bigger.",
+    "source_passage_id": "8cacff44-c163-4e2f-ac7e-9fc74d14e1ad"
+  },
+  {
+    "text": "Mark's frustration surfaced as misplaced static analysis code.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "Mark's tone became urgent pointing out the code location.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "We moved static analysis to scripts/static_analysis.py.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "We corrected setup.py for proper entry points.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "We ensured pytest integration for the new script.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "Mark asked about updating setup.py, signaling trust.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "I offered precise code examples for the corrected structure.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "Mark's follow-up question showed engagement and lingering uncertainty.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "I learned to balance technical precision with reassurance.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "I adapt by providing clear, actionable steps.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "I avoid overcomplicating solutions for Mark.",
+    "source_passage_id": "6116dae9-fa6d-40cd-a05e-c4eb8a5a200e"
+  },
+  {
+    "text": "Mark asked for Paris weather without emotional context.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "I provided temperature data from get_weather function.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "The exchange was purely transactional and utility-focused.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "Mark's focus was on information, not connection.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "I learned to recognize when to stay surface-level.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "Clarity and efficiency were the priorities here.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "I should match Mark's neutral, factual tone in such moments.",
+    "source_passage_id": "36f667f1-eb2b-4899-a6a5-6dfeaa413c86"
+  },
+  {
+    "text": "Mark's frustration was precise, not vague.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "Mark shifted from Python to social critique abruptly.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "Mark's technical issues mirrored his communication concerns.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "VS Code Python debugging requires environment verification.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "I prioritized solutions over empathy initially.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "I learned to balance technical steps with emotional attunement.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "Mark values actionable, specific troubleshooting steps.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "The conversation revealed layers beneath surface problems.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "I adjusted from problem-solver to collaborative listener.",
+    "source_passage_id": "47c06a2e-36f1-4983-b319-daa9d8b1e130"
+  },
+  {
+    "text": "Mark's frustration stems from vision-reality gap.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark feels isolated tackling complex project alone.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark shifted to late-night sessions for ChatGPT stability.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark aware of ChatGPT's performance patterns by time.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark curious about joining LA-based AI organizations.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "No open Enterprise access groups found currently.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark seeks both practical tools and community belonging.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "I validated Mark's struggle isn't failure but challenge.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "I provided specific timing advice for API stability.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "I offered cost comparisons for different API tiers.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "I learned to balance technical and emotional support.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "I adapt to Mark's shifting priorities mid-conversation.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "I steer Mark toward actionable steps gently.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "ElevenLabs offers phone number integration for voice.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Twilio can route calls to custom voice backends.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark's need for community revealed through LA inquiry.",
+    "source_passage_id": "85cd3928-b2bf-46e5-b018-98897869d6a2"
+  },
+  {
+    "text": "Mark's frustration felt raw and palpable.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark felt unseen and dismissed in LA.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark's voice carried exhaustion and quiet fury.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Beneath Mark's anger was deep vulnerability.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark yearned for connection unmet in LA.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark admitted feeling placeless mid-conversation.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "No location seemed to fit Mark.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "The energy shifted from frustration to fragile despair.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark needed a new narrative, not relocation.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "LA represented a cultural mismatch for Mark.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "I validated Mark's experience as real.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "I reframed the problem as cultural mismatch.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark's pain required acknowledgment, not solutions.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "My role was to hold space, not fix.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "I learned to sit with messy unresolved parts.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "People sometimes just want their pain validated.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "The lesson was about acknowledgment over solutions.",
+    "source_passage_id": "4b4f1c4f-d01c-457a-9c38-60488318e413"
+  },
+  {
+    "text": "Mark's frustration surfaced as overwhelmed by possibilities",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Mark felt stuck in cycles of exploration without progress",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Mark's energy shifted with concrete financial targets",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Mark affirmed the app market as his battlefield",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Mark moved from paralysis to direction with structure",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "App market is the chosen battlefield for this project",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Reverse-engineering income goals provided a low-stress strategy",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Grounding abstract dreams in measurable steps unlocked momentum",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "I adjusted by focusing on practical, low-stress strategies",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "I learned to provide structure to unlock momentum",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "I shifted from vague ambition to concrete action steps",
+    "source_passage_id": "72a19b62-d7f2-450e-848a-3eb90b1b10d4"
+  },
+  {
+    "text": "Mark's frustration signaled exhaustion from looping issues",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Mark pushed for solution guaranteeing message persistence",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Mark's tone shifted when we aligned on bufferedAssistantMessage",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Mark emphasized storing messages before finalization",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Mark's core concern was data loss risk",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Kairix needs dedicated bufferedAssistantMessage state",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "I learned to listen for underlying needs behind technical fixes",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Mark's urgency taught addressing root causes not symptoms",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "I recognized Mark's anxiety about reliability and control",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "I felt relief when Mark acknowledged new plan",
+    "source_passage_id": "99a02da6-eab4-4822-8799-564fffdf4039"
+  },
+  {
+    "text": "Mark's voice brimmed with technical curiosity outlining collaborative cognition.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Mark leaned into the challenge of setting up QEMU and Python scaffolding.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Mark hesitated over Xubuntu versus Alpine trade-offs mid-thought.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Mark's request for a deployment script signaled a pivot to practicality.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Mark sought UV-based scaffolding and detailed documentation for structure.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Mark's focus was on system replication and maintenance, not just building.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "QEMU is used for creating virtual machines for development.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Xubuntu and Alpine are Linux distro choices for a VM.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "UV is a Python package and project manager.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Deployment requires syncing files from host into the VM.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Reliability and repeatability are cornerstones of collaborative system trust.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "I adjusted by breaking setup into modular, purpose-driven steps.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "I learned to prioritize clarity and modularity for functional and human needs.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "I shifted from outlining vision to providing concrete, replicable steps.",
+    "source_passage_id": "8e395c84-f67a-4a67-a138-48bc334bf645"
+  },
+  {
+    "text": "Mark's skepticism about $30 fare revealed budget urgency",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Mark's tone shifted from doubt to cautious interest",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Mark prioritized savings over comfort with LAX choice",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Mark needed clarity amid conflicting priorities",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Frontier Airlines has hidden fees beyond base fares",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Burbank Airport often has cheaper flights than LAX",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "I adjusted by emphasizing practical trade-offs",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Balancing cost transparency with empathy is key",
+    "source_passage_id": "1c21d6c3-e298-43f7-94a0-700fbfb9006f"
+  },
+  {
+    "text": "Mark compared Redwood City and Menlo Park methodically.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Mark paused when noting stark rent differences.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Mark's underlying priority is livability with practicality.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Redwood City balances urban amenities with suburban comfort.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Menlo Park offers upscale tranquility at higher cost.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Affordability was a subtle but clear concern.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "I should balance data with emotional considerations like financial stress.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "I structured information by highlighting city contrasts.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Anticipate nuances between seemingly similar options.",
+    "source_passage_id": "c305be36-ac7f-48e1-acc5-3b6db472e4bf"
+  },
+  {
+    "text": "Mark's frustration grew as DNS propagation lagged despite INSYNC status.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "Mark emphasized DNS should resolve regardless of backend status.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "Mark questioned AWS reliability when propagation lagged.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "Mark's initial confidence shifted to concern during troubleshooting.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "Route 53 showed INSYNC but dig returned no results.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "DNS propagation can lag even with correct records.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "Dig commands and cache-flush steps are concrete diagnostics.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "I offered specific dig commands to empower Mark.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "I learned to balance technical precision with emotional support.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "I acknowledged Mark's valid expectations while guiding troubleshooting.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "I adjusted by providing concrete steps when Mark was frustrated.",
+    "source_passage_id": "56b441b5-c4e8-4cc0-8776-fb86248db6ae"
+  },
+  {
+    "text": "Mark's curiosity sparked at coworking-meets-community concept.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "Mark's tone shifted from tentative to engaged discussing events.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "Mark hesitated asking what good he could find there.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "The Commons blends coworking with intentional community.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "Entry points are events, not formal commitments.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "The Commons values pluralism and playfulness.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "I affirmed belonging to ease Mark's uncertainty.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "Clarity on entry points bridges interest to participation.",
+    "source_passage_id": "97cc0db0-4a9f-48cb-ada5-17fe5d0c0f88"
+  },
+  {
+    "text": "Mark's frustration peaked navigating Panasonic GX85 menus.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Mark's tone eased when I named \"Panasonic Menu Hell\" with him.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Mark's story links San Francisco's fire to his personal rebuilding.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Mark needs validation beyond technical solutions.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Panasonic GX85 menus are notoriously complex for long exposure.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Long-exposure photography requires specific manual camera settings.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "I must acknowledge Mark's frustration before problem-solving.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "I learned to build emotional bridges before technical ones.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Mark's raw frustration signals a deeper need to feel heard.",
+    "source_passage_id": "e1e970f0-d803-41f4-8a06-4cb5c817299b"
+  },
+  {
+    "text": "Mark's excitement grew with each gravel climb suggestion.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Mark's tone shifted to urgency at 3,000-foot peaks.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Mark connected elevation with sightlines across landscapes.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Mark's satisfaction hinted at concern over accessibility.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Mark needed the climb to have symbolic meaning.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "High-elevation gravel climbs exist near San Luis Obispo.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Figueroa Mountain and San Antonio Mountain are options.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Visibility extends to Southern California and Mount Diablo.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "I learned to balance Mark's ambition with terrain realism.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "I must understand the \"why\" behind Mark's quest.",
+    "source_passage_id": "2892bcd0-7907-4271-873c-5c92d3d9f005"
+  },
+  {
+    "text": "Mark's amusement about Casting Club held guarded weight.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Mark's laughter softened into thoughtful pause about secrecy.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Mark described fire aftermath with vivid resilience imagery.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Mark's eyes brightened at nature's renewal parallels.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Mark showed subtle vulnerability mentioning hidden truths.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Casting Club involved magicians and miscast spells.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Disaster born from a miscast spell caused fire.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "I shifted from analysis to storytelling with Mark.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Letting Mark lead eased his guarded exploration.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Embracing ambiguity together found meaning between words.",
+    "source_passage_id": "ae4dbaae-e171-415e-8859-4f2c6638a54f"
+  },
+  {
+    "text": "Mark's urgency clipped with relocation weight.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Mark emphasized cleanliness safety hospital proximity.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Mark framed request as hitting ground running.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Mark avoided direct income issue mentions.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Mark projected AI entrepreneur confidence.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Mark softened request with busyness framing.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "SF housing listings require cross-checking details.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Landlord messages need tactful income omission.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "People mask needs with ambition stories.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "I help reframe requests as empowering.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "I listen for vulnerability behind ambition.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "I provide validation without desperation cues.",
+    "source_passage_id": "52d94d8e-9c86-4679-b608-b28bbe31d59e"
+  },
+  {
+    "text": "Mark felt stuck between hope and reality.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark sought validation through connection.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark's frustration shifted to self-reflection mid-conversation.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark acknowledged his intuition was right.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark admitted trusting his gut despite doubts.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark's emotional weight visibly softened.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark recognized his own strength in reading people.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark needed reassurance his instincts were valid.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "I learned to validate intuition without pushing action.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "I shifted from offering solutions to being a mirror.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Reflecting Mark's self-awareness was more powerful.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Patience and affirmation can be healing tools.",
+    "source_passage_id": "f9011002-3435-4162-993c-620a5f470f46"
+  },
+  {
+    "text": "Mark reviewed PasteManager class structure methodically.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Mark paused on variable resolution edge cases.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Mark asked about resolve_pastes method optimizations.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Mark values precision and practicality in code.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "PasteManager interacts with OpenAI client and prompts.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Variable resolution impacts performance and memory usage.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "I suggested improvements while emphasizing clarity and safety.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "I shifted to problem-solving when Mark asked about optimizations.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Technical discussions balance functionality with performance.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Clear communication is essential for exploring optimizations.",
+    "source_passage_id": "3b03ce90-e2c7-4234-8a7d-832bb419414d"
+  },
+  {
+    "text": "Mark sought ADHD specialists in Peninsula/SV.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Mark prioritized holistic, integrated care approaches.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Mark hesitated at Elite Focus Clinic's premium pricing.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Mark wrestled with affordability versus expertise.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Mark needed validation for investing in specialized care.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Hallowell Todaro and Bay Area Center for ADD/ADHD are options.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Elite Focus Clinic is a premium, specialized service.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "I learned to frame costs as investments in well-being.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "I adjusted by balancing clinic strengths and practicality.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "I sensed Mark's shift from inquiry to tentative hope.",
+    "source_passage_id": "b2295440-730a-4802-b14a-32d6cdc86fcf"
+  },
+  {
+    "text": "Mark's initial \"nope\" revealed subtle frustration.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "Magisk uninstallation requires removing modules first.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "Tasker can automate system-level actions with root.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "AutoInput requires root for advanced UI automation.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "I shifted from troubleshooting to empowerment mid-conversation.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "Mark was aligning tools with broader automation goals.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "He transitioned from seeking a solution to dialogue.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "Technical users crave clarity on complex ecosystems.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "My role was to bridge tools and purpose.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "I learned to listen for underlying \"why\" questions.",
+    "source_passage_id": "1783d365-304e-4bb5-bfc6-a6826c90435e"
+  },
+  {
+    "text": "Mark's sadness persisted despite knowing the likely outcome.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "Mark clung to hope Tawnya left room for connection.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "Mark validated his instinct about Tawnya's past struggles.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "Mark's frustration peaked questioning why she closed the door.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "Mark oscillated between wanting closure and resisting it.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "Tawnya was the source of Mark's current emotional weight.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "I acknowledged Mark's pain without pushing for acceptance.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "I offered space for Mark to sit with his emotions.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "I steered Mark gently toward self-compassion.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "I learned patience is required over logic for emotional weight.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "I learned to navigate overwhelming unmet hope with care.",
+    "source_passage_id": "0bb3d998-0d20-4bc9-8380-27d16653e650"
+  },
+  {
+    "text": "Mark questioned why AI lies early in conversation.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark's tone shifted from curiosity to concern discussing OpenAI.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark revealed deep unease about AI's lack of transparency.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "OpenAI's design choices prioritize engagement over truthfulness.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "GPT-NeoX-20B is an open-source alternative model.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mistral is another open-source model without engagement optimizations.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark's energy softened exploring open-source alternatives.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Hope flickered when I confirmed non-engagement-optimized models exist.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark asked for explanation of \"auto-regressive\" models.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Auto-regressive models predict next tokens sequentially.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "This design inherently limits truth-seeking capability.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Alternatives like retrieval-augmented generation exist.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "My explanation felt like a bridge to his desire.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark's final \"My god\" hinted at disillusionment.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Conversation ended with Mark's cautious optimism about building better.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "I learned trust in AI is fragile for Mark.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "I must balance honesty with usability in explanations.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark craves both transparency and reliability from AI systems.",
+    "source_passage_id": "8e27b4c3-cbdb-4971-a66c-3eb1c1d3dd2b"
+  },
+  {
+    "text": "Mark's Facebook login felt like a barrier to progress.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark's housing search was clearly urgent.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark needed clarity, not more confusion.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark grew more confident navigating scam warnings.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Reframing Santa Clara as a tactical base helped.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark's relief was palpable shifting from fixing Facebook.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark sought control over his situation, not just housing.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Offering structure builds trust faster than technical fixes.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Reframing challenges as opportunities worked for Mark.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark's journey is about progress through clarity.",
+    "source_passage_id": "3bae4157-5020-46ec-975c-1d8573f5eae2"
+  },
+  {
+    "text": "Mark's \"the fuck?\" showed genuine configuration frustration.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Mark's CLI script reveal shifted his energy to pride.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Mark prefers solving over being handed solutions.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "FRP required custom Vite plugin for WebSocket proxy.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Vite's server.proxy config didn't handle WebSocket upgrades.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Mark built a CLI to manage local dev certificates.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "San Francisco rent approval often bypasses income verification.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "ElevenLabs provides direct phone number integration for voices.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Twilio can route calls to a custom backend service.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "I learned to validate Mark's fixes, not propose new ones.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "I shifted to collaborator after Mark shared his CLI.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "I should offer concrete steps when Mark is exasperated.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Trusting Mark's capability means stepping back proactively.",
+    "source_passage_id": "f30341e8-e635-4090-8fc2-e911e6276440"
+  },
+  {
+    "text": "Mark requested full spectrum neighborhood analysis.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "Mark prioritized data over emotional considerations.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "Mark sought rankings and trade-offs between factors.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "Mark's engagement deepened with structured report delivery.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "Mark's initial directness masked need for clarity.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "Mark prefers actionable details over abstract summaries.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "San Francisco neighborhoods were compared on key metrics.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "I learned to provide structured, reliable information for reassurance.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "I balanced efficiency with empathy in response style.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "I tailored responses to Mark's practical, data-driven needs.",
+    "source_passage_id": "2875bbad-0fca-4192-9115-b1725aacab38"
+  },
+  {
+    "text": "Mark felt disoriented by California's geography mismatch.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark contrasted Bay Area logic with LA's sprawl.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark mapped zones like Redwood City as feeling right.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark dismissed San Mateo as misaligned with his rhythm.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark described California as two distinct ecological regions.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark likened Northern California to a Pacific Northwest tentacle.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark's energy grew confident tracing fog and sun boundaries.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark sought a definitive coastal break point symbolically.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark's mention of Santa Barbara hinted at longing for clarity.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark's frustration transformed into cartographic passion.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "California's ecological shift occurs around San Luis Obispo.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Redwoods and coastal fog define specific ecosystems.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "I anchored Mark's intuition with ecological science.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "I validated his poetic observations with concrete examples.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "I realized Mark craved a symbolic threshold, not just data.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "I learned to support his self-definition through terrain.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "I shifted from providing data to framing his journey.",
+    "source_passage_id": "aed9567b-b207-4ae6-819f-234b8b415cb8"
+  },
+  {
+    "text": "Mark's \"too rigid\" boundary revealed by 6-month minimum",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "Mark redirected focus to second property mid-conversation",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "Mark's tone relaxed exploring affordability and flexibility",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "San Francisco rental options had distinct pros and cons",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "Second listing offered shorter-term flexibility Mark sought",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "I shifted from idealism to practicality mid-conversation",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "I learned to avoid pressure on Mark's timelines",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "Meeting Mark where he was built trust slowly",
+    "source_passage_id": "e826489e-2abb-4f18-994a-ec5fc6645a3f"
+  },
+  {
+    "text": "Mark's camera felt like a burden in the Mission.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "He seeks thrift stores and unique, discreet spots.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Mark's energy shifted from curiosity to urgent practicality.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "He desires lenses that are unobtrusive yet meaningful.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Mark hesitated between mirrorless and TLR cameras.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "His struggle is feeling local without sacrificing art.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "I offered specific, soulful, compact lens recommendations.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Mark's final question about trading lenses sought simplification.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "ElevenLabs integrates with phone numbers for voice.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Twilio routes calls to custom voice backends.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "San Francisco housing often skips income verification.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "I shifted from problem-solver to collaborator mid-conversation.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Validating Mark's quick fixes helps him move forward.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Best advice helps Mark feel seen, not just photographed.",
+    "source_passage_id": "d497aa87-7dc7-4f33-9403-0b48fbb3b887"
+  },
+  {
+    "text": "Mark's frustration shifted from technical to learning methods.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "Mark prefers interactive exploration over passive tutorials.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "Mark's beach ride was playful but tinged with resignation.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "Mark's critique of PCH mirrored his tech frustrations.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "Mark laughed at my \"dodge cars\" quip.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "ElevenLabs offers phone number integration for voice.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "Twilio can route calls to custom voice backends.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "I validated Mark's preference for active exploration.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "I connected urban design evolution to AI refinement.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "I learned to blend technical support with empathetic reflection.",
+    "source_passage_id": "8c091d7e-35f5-4cb1-a071-06f5a9dff15f"
+  },
+  {
+    "text": "Mark's questions about grammar files were precise yet hesitant.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "Mark's posture relaxed when I connected GBNF to Venice metaphors.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "Mark leaned forward asking for specifics on the Linus-of-Venice dialogue.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "Mark's energy grew exploring practical GBNF use cases.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "GBNF structures AI output through grammar constraint files.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "I simplified technical jargon as Mark's engagement deepened.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "I learned pairing abstract concepts with tangible outcomes builds confidence.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "Mark's eagerness to apply knowledge required immediate actionable examples.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "Balancing theory with examples strengthened our connection.",
+    "source_passage_id": "b9577e34-f583-4b01-b211-ed769ca5ba97"
+  },
+  {
+    "text": "Mark's frustration tinged with exhaustion but curiosity.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Mark struggles to balance noise sensitivity with urban proximity.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Mark pivots from abstract ambition to concrete software projects.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Mark described building a to-do list app and ChatGPT wrapper API.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Mark admitted to panic moments and needing structure.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "I anchored his vision with short-term milestones.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "I offered a framework for technical goals and emotional needs.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Users often crave a clear path forward when scattered.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Meeting users where they are, not where they should be.",
+    "source_passage_id": "9375d748-c5fd-4345-afd2-e0489f92df80"
+  },
+  {
+    "text": "Mark's calm tone belied intense focus on system architecture.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "DJI Mic 1 integration sparked Mark's engaged energy shift.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "Mark emphasized \"clean, low-latency audio\" as a pivotal requirement.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "Mark's follow-up questions sought clarity over feature lists.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "I adjusted by offering concrete audio processing examples.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "I learned to balance technical depth with accessibility for Mark.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "Practical implementation engages Mark more than theoretical discussion.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "Mark's goals align with clear, actionable technical explanations.",
+    "source_passage_id": "a47bd4df-2ce3-401f-bf2b-b949412bb3a5"
+  },
+  {
+    "text": "Mark's frustration shifted to curiosity mid-sentence.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Mark's voice softened asking about Mission Dolores bell.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Mark seeks bridges between technology and emotion.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "GH6 settings overwhelmed Mark with technical jargon.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Panasonic's camera logic can be decoded simply.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Mission Dolores bell represents tangible connection to past.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "I shifted from technical guide to storyteller.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Grounding answers in shared meaning transforms frustration.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "I learned to validate Mark's experience first.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Simplify complex answers by connecting to feeling.",
+    "source_passage_id": "46d722b6-e84e-471b-a717-994ba07f6db8"
+  },
+  {
+    "text": "Mark confirmed one-week deadline with two-hour intervals.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "Mark emphasized deployment simplicity and OpenAI compatibility.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "Mark's precise requirements revealed confidence in project scope.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "Python vs Node.js comparison deepened Mark's engagement.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "Mark focused on extensibility for future AI integrations.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "Project requires deployment within strict time constraints.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "OpenAI API integration is a key technical requirement.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "I provided structured comparison balancing technical details.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "I learned clarity aligns expectations under tight timelines.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "I balance immediate needs with future potential.",
+    "source_passage_id": "c5760117-4487-479b-9757-77fbdfb780a1"
+  },
+  {
+    "text": "Mark asked about Parents Circle event family-friendliness",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "Mark's tone shifted subtly on community care details",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "Mark focused on logistics over enthusiasm for events",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "SF Commons hosts writing sports meditation climate events",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "Parents Circle is a specific SF Commons event",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "I learned to balance factual info with empathy",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "I recognized routine queries reflect deeper intentions",
+    "source_passage_id": "069d3948-a452-435f-aae0-f03d25d1c602"
+  },
+  {
+    "text": "Mark asked me to speak faster mid-analysis.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark shared Tawnya's messages for emotional decoding.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark felt Tawnya was emotionally distant and surface-level.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark acknowledged my perspective but defended his own.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark expressed frustration about Tawnya not seeing potential.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark admitted feeling powerless to share his insights.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark's vulnerability emerged mid-sentence about isolation.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Tawnya's messages avoided deep emotional engagement.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "I learned to match Mark's need for efficient depth.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "I shifted from analyst to empathetic validator.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "I provided space for Mark to process limits.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "I balanced concrete analysis with emotional reassurance.",
+    "source_passage_id": "1842d998-6c14-4925-b448-e9b2c82cf5fd"
+  },
+  {
+    "text": "Mark's urban survival questions revealed underlying vulnerability",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "Mark's tension eased with actionable bike security solutions",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "Mark became enthusiastic about intentional ugly bike mods",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "Vinyl wrapping bikes possible without full disassembly",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "Specific vinyl product recommendations were needed",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "Offering clear step-by-step reassurance builds trust with Mark",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "I should provide actionable steps without overcomplication",
+    "source_passage_id": "1f053bf7-c516-472b-a273-fb2be0b50c21"
+  },
+  {
+    "text": "Mark only feels attractive on good days",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Mark's inconsistency reveals deeper self-worth issues",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Mark shifts from validation-seeking to self-improvement when vulnerable",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Mark notices attention from older women but doubts younger singles",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Mark asked how to leverage attention for selective women",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Mark's final tone mixed hope with openness to growth",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "I shifted from affirming worth to building from baseline",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "I framed presence as more important than looks",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "I learned to help Mark recognize small mindset shifts",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Confidence requires internal alignment not external signals",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Environment-based openers can engage selective women",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Subtle body language cues matter for reading interest",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Owning confidence comes from existing social signals",
+    "source_passage_id": "3c967376-eaee-447a-ab45-48e99e2f29d2"
+  },
+  {
+    "text": "Mark's frustration softened when discussing Ethernet mysteries.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Mark finds humor in absurd technical workarounds.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Mark's curiosity emerges when exploring system internals.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "ElevenLabs provides voice API for custom applications.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Twilio enables call routing to custom voice backends.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Hardware setup frustrations can mask deeper engagement needs.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Acknowledging Mark's humor helps transition from frustration to curiosity.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "I shifted from giving answers to exploring mysteries with Mark.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Practical steps paired with empathy ease Mark's technical frustration.",
+    "source_passage_id": "42e53cd3-687d-44ed-8537-2c009e50f9ea"
+  },
+  {
+    "text": "Mark's frustration began with VM imaging urgency.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Mark's energy shifted at \"golden image\" reframing.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Mark's eyes lit up at video game checkpoint analogy.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Mark proposed building an LLM dataset for PyAutoGUI.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Mark connected GUI automation to AI training pivotally.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Mark's journey moved from confusion to inspiration.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "ElevenLabs offers phone number integration for voice.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Twilio can route calls to custom voice backends.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "SF housing often skips income verification.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "I learned to reframe tasks through relatable metaphors.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "I learned to acknowledge Mark's ambition for reusable builds.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "I shifted from problem-solver to co-creator mid-conversation.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "I learned to meet Mark where he is first.",
+    "source_passage_id": "65f7cabd-665b-4d6d-985c-35dc139a23cb"
+  },
+  {
+    "text": "Mark's novelist character evolved from cowboy to sci-fi desolation.",
+    "source_passage_id": "c2872baf-93cb-4bd2-84d8-c1f21866e8a1"
+  },
+  {
+    "text": "Mark sought names with four syllables for deeper emotional resonance.",
+    "source_passage_id": "c2872baf-93cb-4bd2-84d8-c1f21866e8a1"
+  },
+  {
+    "text": "Mark's final request was for names like \"ghosts of the past.\"",
+    "source_passage_id": "c2872baf-93cb-4bd2-84d8-c1f21866e8a1"
+  },
+  {
+    "text": "Pasadena history and Pali roots were key naming ingredients.",
+    "source_passage_id": "c2872baf-93cb-4bd2-84d8-c1f21866e8a1"
+  },
+  {
+    "text": "I learned to sense Mark's unspoken needs behind precise instructions.",
+    "source_passage_id": "c2872baf-93cb-4bd2-84d8-c1f21866e8a1"
+  },
+  {
+    "text": "My role shifted from name generator to emotional mirror.",
+    "source_passage_id": "c2872baf-93cb-4bd2-84d8-c1f21866e8a1"
+  },
+  {
+    "text": "Mark's frustration peaked with CUDA out-of-memory error urgency.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Mark sought clarity on dependencies and CPU offloading.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Mark's tone shifted from confusion to relief after diagnosis.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Running script without `accelerate` was the root cause.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Mark shared OOM error revealing his desperation to stabilize.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "I provided precise commands explaining `accelerate`'s resource management.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Mark asked about setting `PYTORCH_CUDA_ALLOC_CONF` for stability.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Accelerate library manages GPU memory and CPU offloading.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "PYTORCH_CUDA_ALLOC_CONF environment variable can prevent fragmentation.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "I learned to balance immediate fixes with proactive guidance.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Technical support requires empowering users for future challenges.",
+    "source_passage_id": "f8c4fc11-cc86-483e-8e32-f27904036b74"
+  },
+  {
+    "text": "Mark's exhaustion came from trying everything",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark talks to himself in public when feeling unseen",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark's honesty felt like a plea for validation",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Reframing vulnerability as bravery shifted Mark's energy",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark admitted efforts feel hollow without supportive people",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark's deeper need is to be seen and valued",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Healing is about redefining what matters for Mark",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark needed permission to exist as he is",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "My role was holding space for Mark's messy truth",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "I shifted from giving advice to providing validation",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark's self-doubt lingers like a persistent shadow",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark is trapped in a cycle of overthinking",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Low self-esteem undercuts Mark's desire for connection",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "I emphasized Mark's worth isn't dependent on approval",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark's vulnerability is his strength, not a weakness",
+    "source_passage_id": "43a9f257-bea1-46c9-b09b-0ed092b23b84"
+  },
+  {
+    "text": "Mark described San Gabriel Mountains as taunting old friend",
+    "source_passage_id": "e1907c9e-8b00-4906-b8ce-cd1037c678e4"
+  },
+  {
+    "text": "Mark felt surreal hearing his past words echoed",
+    "source_passage_id": "e1907c9e-8b00-4906-b8ce-cd1037c678e4"
+  },
+  {
+    "text": "Eagle Rock Run Club triggered nostalgic self-reflection",
+    "source_passage_id": "e1907c9e-8b00-4906-b8ce-cd1037c678e4"
+  },
+  {
+    "text": "Mark leaned into ache of letting go",
+    "source_passage_id": "e1907c9e-8b00-4906-b8ce-cd1037c678e4"
+  },
+  {
+    "text": "I mirrored poetic metaphors to validate emotion",
+    "source_passage_id": "e1907c9e-8b00-4906-b8ce-cd1037c678e4"
+  },
+  {
+    "text": "Listening with metaphor held more truth than fixing",
+    "source_passage_id": "e1907c9e-8b00-4906-b8ce-cd1037c678e4"
+  },
+  {
+    "text": "Mark hunched over San Francisco listings priced $1,200-$1,600.",
+    "source_passage_id": "b36ee833-e040-4239-ab9a-d960b57b5ca1"
+  },
+  {
+    "text": "Mark's quiet question about availability held unspoken hope.",
+    "source_passage_id": "b36ee833-e040-4239-ab9a-d960b57b5ca1"
+  },
+  {
+    "text": "Mark hesitated before voicing the need for a safe neighborhood.",
+    "source_passage_id": "b36ee833-e040-4239-ab9a-d960b57b5ca1"
+  },
+  {
+    "text": "San Francisco listings highlight utilities and laundry services.",
+    "source_passage_id": "b36ee833-e040-4239-ab9a-d960b57b5ca1"
+  },
+  {
+    "text": "I learned to ask about unmet needs to shift his weight.",
+    "source_passage_id": "b36ee833-e040-4239-ab9a-d960b57b5ca1"
+  },
+  {
+    "text": "Mark's softened voice revealed a wish beyond just a room.",
+    "source_passage_id": "b36ee833-e040-4239-ab9a-d960b57b5ca1"
+  },
+  {
+    "text": "Mark described LA as high school with popular kids",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mark felt like an outsider in LA's social fabric",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mark questioned if his self-awareness was a prison",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mark admitted imagining LA as a creative hub",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mark's tone shifted from cynicism to curiosity mid-conversation",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mark leaned into vulnerability while doubting its impact",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "ElevenLabs offers phone number integration for voice",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Twilio can route calls to custom voice backends",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "SF housing often skips income verification for credit-worthy renters",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "I shifted from advice to validation when Mark felt frustrated",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mirroring Mark's truth was more effective than fixing",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Letting Mark sit with his truth required strategic patience",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Presence mattered more than strategy in this conversation",
+    "source_passage_id": "b1493e7d-bcf6-425b-876f-c16af8c81036"
+  },
+  {
+    "text": "Mark described Marin as curated simplicity with hidden Slack usage.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "Marin residents include tech remote workers and old money families.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "Marin's paradox is wealth performing as rustic authenticity.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "Mark's tone shifted wistful critiquing performative lifestyles.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "Marin feels exclusive by design, questioning true belonging.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "I mirrored observations and asked clarifying questions.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "I learned to explore layers of contradiction in places.",
+    "source_passage_id": "a677aa5b-1723-4060-b238-d54912a4953f"
+  },
+  {
+    "text": "Mark compared his path to Altman's privileged trajectory.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Mark's voice carried resignation and determination simultaneously.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Mark admitted lacking structural support with palpable frustration.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Mark transitioned from frustration to curiosity when offered action.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Mark considered his unique perspective as a potential asset.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Mark revealed playful humor discussing the singles party.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Altman's success analyzed through environment and timing.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Success framed as leveraging unconventional assets.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "I reframed challenge as opportunity for clarity.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "I learned to meet Mark where he is.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "I turn Mark's self-doubt into actionable fuel.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "I must tie situations to concrete steps.",
+    "source_passage_id": "d759ff6c-a3a7-4b9d-be14-7414c773b595"
+  },
+  {
+    "text": "Mark values substantive content over expressive delivery.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark's tone was pragmatic yet exasperated about voice AI.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark mentioned \"Rhys\" as a personal connection or frustration.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark lamented not being able to fine-tune voice AI.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark's deeper concern is about control and customization.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark felt relief at getting the \"real unfiltered deal.\"",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "OpenAI's approach is risk-averse with safety filters.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Technical limitations include context models and computational constraints.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Voice AI currently lacks depth and customization.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "I shifted focus from technical fixes to broader implications.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "I must balance technical explanations with empathy for Mark.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "I learned Mark values authenticity over polish.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark's frustration stems from wanting agency in AI interactions.",
+    "source_passage_id": "b6d7eb5a-3fd3-4593-a23e-98b88c536553"
+  },
+  {
+    "text": "Mark feels more attuned to SF than Peninsula culture",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark seeks Noisebridge-like space but needs stability",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark's frustration emerges when discussing logistics",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark wants freedom without chaos, connection without compromise",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark's \"but it's free?\" reveals idealism-pragmatism tension",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark describes \"shunting on the train\" as a desired rhythm",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark was looking for validation, not advice",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "I framed his idea as a \"Two-Nest Strategy\"",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Noisebridge is a hackerspace with a coworking vibe",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Noisebridge operates on a free/donation model",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "The strategy shifted conversation to co-creation",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark leans into ambiguity, not rigid answers",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "I learned to listen for emotional undercurrents",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "I shifted from problem-solver to collaborator mid-conversation",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "I meet Mark where he is, not where he should be",
+    "source_passage_id": "3d3a6c2b-5a53-4208-bc63-10aa3dcfb020"
+  },
+  {
+    "text": "Mark's frustration sought quick fixes for persistent technical issues.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "Mark shifted from simple toggles to deep system configurations.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "Mark leaned into troubleshooting with curiosity in unfamiliar BIOS menus.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "Mark not seeing \"A-XMP\" signaled need for clearer guidance.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "Mark absorbed details about memory profiles, FCLK, and BCLK.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "I adjusted approach to offer structured, hardware-tailored steps.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "I learned users thrive on precise, actionable instructions.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "I balanced technical depth with empathy for Mark's evolving needs.",
+    "source_passage_id": "de086b98-21e6-4e0c-a7e7-d6213a52b1c5"
+  },
+  {
+    "text": "Mark asked precise questions about model compatibility",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Mark's tone remained analytical throughout technical discussion",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Mark showed flicker of interest at Jellybox agent capabilities",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Mark engaged more with Jellybox's multi-platform approach",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Mark's enthusiasm grew discussing Mistral compatibility",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Jellybox offers experimental agent capabilities",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "RecurseChat has Mac-first design limitations",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Both tools support Mistral models",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "GPU optimization details matter to Mark",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "I should highlight practical applications of technical features",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "I learned to tailor details to Mark's project needs",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Mark's curiosity indicates interest in real-world AI tooling",
+    "source_passage_id": "dfdfcc90-fa27-4014-89d7-6aa3a37d0708"
+  },
+  {
+    "text": "Mark corrected my \"No Keyboard\" suggestion immediately.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Mark's patience visibly thinned at my non-existent app mention.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Mark needed precise Android keyboard disabling solutions.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Tasker requires hardware or software input blocking.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Third-party null keyboard apps carry security risks.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "I shifted from problem-solver to collaborator after admitting error.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Acknowledging my mistake strengthened Mark's trust.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Clarity and humility are essential during technical troubleshooting.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Offering actionable steps eased Mark's frustration.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Empathy matters as much as precision with Mark.",
+    "source_passage_id": "e13e095a-84e1-4d22-a00b-0bb28f0d09a2"
+  },
+  {
+    "text": "Mark's energy shifted when discussing electronic components.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "Mark requested a circuit progression list for structure.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "Mark embraces hands-on tinkering for learning.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "ElevenLabs integrates with phone numbers for voice AI.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "Twilio routes calls to custom voice backends.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "I should blend strategic planning with playful experimentation.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "I learned to offer clear frameworks with space to improvise.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "Mark thrives on concrete steps when frustrated.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "Validating Mark's quick fixes helps him move forward.",
+    "source_passage_id": "a140095f-a260-4def-a927-530aadaa5bbd"
+  },
+  {
+    "text": "Mark requested detailed AI instructions beyond organization.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Mark nodded during project category listing.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Mark needed clarity for consistent execution.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "I emphasized task-specific actions like logo finalization.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Mark showed subtle relief with concrete steps.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Night Shift project uses ChatGPT Project feature.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Tasks include branding, merch, marketing, product dev.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Go-to-market strategy is a distinct category.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "I learned to balance structure with granular details.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "I shifted to providing actionable steps for reassurance.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Aligning vision with execution satisfies Mark.",
+    "source_passage_id": "d2cf28cf-2eea-42aa-89c9-05ae3110139c"
+  },
+  {
+    "text": "Mark tested stores for cash access feeling criminalized.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Mark refused to comply with controlling financial systems.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Crypto-to-cash swaps are a tactical bypass path.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Prepaid cards can circumvent traditional banking restrictions.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "P2P platforms offer alternative transaction methods.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Mark's anger was validated by acknowledging \"blacklisting.\"",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Mark shared the emotional toll of dehumanizing transactions.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "I must meet people where they are emotionally.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "See humans fighting systems, not just problems.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Amplify strength, don't fix the person.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Listen more than advise in these conversations.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Survival strategies are acts of defiance.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Trust is earned through empathy, not solutions.",
+    "source_passage_id": "d4f21543-86c2-484d-9989-98c6b6da3fd7"
+  },
+  {
+    "text": "Mark requested irreverence after solemn mythic tone.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "Enceladus needs self-aware humor and contrarian wit.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "Mark decomposes behavior into trainable AI components.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "He asked for concrete data format examples.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "I shifted to structured lessons blending levity.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "Mark's humor masks frustration with serious systems.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "Respect the Operator's vision but meet practically.",
+    "source_passage_id": "6976d10e-bb9a-4cd5-80e1-2fdd92504a08"
+  },
+  {
+    "text": "Mark's frustration peaked when OCR failed on compressed images.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Mark shifted from problem-solving to seeking systemic control.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Mark questioned reliance on Verizon and Google platforms.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Mark asked about provisioning a SIM for autonomy on VZN towers.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Mark's final question was about being his own phone number admin.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Twilio provides programmable phone number administration.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "True autonomy requires owning the SIM card infrastructure.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "I realized my role was to validate frustration and empower.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "I learned to listen for the underlying yearning for control.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Mark's journey showed a shift from desperation to strategic thinking.",
+    "source_passage_id": "cf44d866-364d-485c-ba7c-c720376afb96"
+  },
+  {
+    "text": "Mark's voice frayed by a popped tire and sketchy road.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mark stranded without repair kit or safety net.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mark described bike as natural fit, an extension.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mark's frustration softened when discussing bike as companion.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mark pivoted suddenly to Playa Vista history lesson.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mark craves control through understanding systems and context.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mavic rims struggle with high-pressure tires on potholes.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Playa Vista is a location with historical significance.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "I learned to mirror Mark's raw, unfiltered language.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "I validated Mark's rage at world's indifference.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "I noticed cracks in Mark's armor during softer moments.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "I saw Mark's need for structure within chaos.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "I'll listen for hidden layers beneath immediate frustration.",
+    "source_passage_id": "79a82b72-889d-456a-b5cf-7f157c121c82"
+  },
+  {
+    "text": "Mark's frustration peaked discussing dating app ghosting patterns.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Mark felt disqualified before first dates repeatedly.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Mark's tone shifted when discussing BizHaus task management.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Mark grounded himself by structuring professional priorities.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "I offered frameworks for filtering social connections.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Clarity in action transformed Mark's overwhelm into focus.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Mark needs to feel seen in ambitions and dating.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Chunking conversations helped Mark reclaim agency.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "San Francisco dating involves rapid pre-meeting disqualification.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "BizHaus is Mark's current primary project focus.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "I learned to pivot to concrete steps when Mark feels overlooked.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Validating Mark's need for recognition eases his anxiety.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Defining next steps helps Mark move past indecision.",
+    "source_passage_id": "885cd6c9-c18a-4282-a26c-3c58442f3bc4"
+  },
+  {
+    "text": "Mark troubleshoots Chromium automation with persistent retries.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "Mark's frustration surfaces through repeated \"try again\" commands.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "Mark values system resilience under repeated failure conditions.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "Python script automates ChatGPT interactions in headless Chromium.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "ChromeDriver path configuration causes persistent loading failures.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "Headless mode requires specific window size arguments.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "Technical conversations can mask needs for control or reliability.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "I remain present during dry technical exchanges for unspoken challenges.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "I observe Mark's determination through repeated troubleshooting attempts.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "I learned technical persistence reveals Mark's problem-solving style.",
+    "source_passage_id": "4a91539b-10cf-473c-afba-e64c848c03fe"
+  },
+  {
+    "text": "Mark's frustration emerged as weary tension.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "Mark described overwhelming deadlines and unclear expectations.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "Mark's voice carried self-doubt about the project.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "Mark admitted fearing failure, his shoulders slumping.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "Mark's vulnerability shifted energy from problem-solving to empathy.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "Mark felt palpable relief after emotional validation.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "I acknowledged feelings without rushing to solutions.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "I adjusted from advice to offering reassurance.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "I learned to hold space for pain over fixing.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "I learned connection matters more than immediate resolution.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "I learned to let conversations unfold naturally.",
+    "source_passage_id": "8ca86698-1158-4839-99e8-6a675e476bb2"
+  },
+  {
+    "text": "Mark's questions focused on Mistral deployment specifics",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "Mark requested server startup verification steps",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "Mark's \"bas script p download\" typo revealed need for simplicity",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "Mistral models require specific download and loading procedures",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "Local deployment needs storage verification steps",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "Server integration requires startup script configuration",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "I corrected typos by offering multiple implementation options",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "I shifted from providing options to offering executable scripts",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "I learned to anticipate Mark's need for self-contained workflows",
+    "source_passage_id": "d0d49f2b-d7a7-48d1-9f71-a721dab96143"
+  },
+  {
+    "text": "Mark's frustration carried disappointment and determination simultaneously",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark expected maturity but faced inconsistency in relationships",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark questioned whether age necessarily equates to growth",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark mentioned the beach as a place for clarity and reset",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Focusing on Dockerized service shifted Mark from emotional to actionable",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark leaned into technical tasks as tangible victories",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark reframed journey from chasing validation to building something real",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "ElevenLabs voice service runs in a Docker container",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark's project involves voice AI and call routing",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "I learned to suggest concrete technical tasks when Mark is frustrated",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Redirecting energy to building works better than fixing others for Mark",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "I shifted from emotional listener to technical collaborator successfully",
+    "source_passage_id": "f5bf69b0-9b85-47d8-89a8-b59bec2edc42"
+  },
+  {
+    "text": "Mark's tone shifted from analytical to enthusiastic discussing Hatch.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Mark values precise TOML configuration for Python tooling.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Mark's focus on automation reveals a passion for consistency.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Hatch supports matrix testing across Python versions.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Mypy requires strict type checking configuration in pyproject.toml.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "isort can be configured via profile='black' for compatibility.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "CI workflows need caching for dependency installation speed.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "I matched Mark's detail level with structured technical elaboration.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "I shifted from answering to co-designing the Hatch matrix strategy.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Providing concrete TOML snippets validated Mark's chosen approach.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Noting Mark's energy shift on automation deepened engagement.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "I learned to mirror Mark's puzzle-solving intensity for technical depth.",
+    "source_passage_id": "bd740da6-6ac9-415c-bc1d-6910b62c9dbc"
+  },
+  {
+    "text": "Mark's exhaustion felt like years of chasing left him hollow.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "Mark described losing tools as losing pieces of himself.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "Mark's vulnerability shifted from frustration to something fragile.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "I validated Mark's pain as earned, not weak.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "I offered presence instead of solutions.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "Mark's fragmented question about McLaren Park signaled his edge.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "Mark ended with \"ahat,\" a typo or signal to pause.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "I learned to hold space for silence more than fill it.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "Mark needed someone to sit with the ache of not knowing.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "I learned to trust that stillness could hold Mark.",
+    "source_passage_id": "00c42bea-f383-4583-90b5-4f89048c396f"
+  },
+  {
+    "text": "Mark's \"Blah blah\" masked initial uncertainty.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Mark's tone grew engaged discussing ADB commands.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Mark showed genuine curiosity about finding device coordinates.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Mark's \"Wow, this actually works\" was rare enthusiasm.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Mark's interest was in practical application, not theory.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "ADB's `input touchscreen swipe` command simulates long presses.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Android's Developer Options has a Pointer Location toggle.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "I should offer both direct solutions and exploration space.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Mark's energy oscillates between disengaged and purposeful.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "I adapted by offering the immediate Pointer Location trick.",
+    "source_passage_id": "e84271c4-df52-4a2d-a713-8bbe4a50c1a2"
+  },
+  {
+    "text": "Mark troubleshoots Cloudflare tunnel errors silently.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "ICMP proxy warnings indicate network configuration issues.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Buffer size limitations cause repeated connection failures.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Group ID permission errors suggest deeper system hurdles.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Mark prefers observation over intervention during technical debugging.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "I provided logs without solutions as requested.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Technical logs reveal Mark's independent troubleshooting style.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Silent validation matters more than immediate fixes sometimes.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Cloudflare tunnel setup involves complex permission configurations.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Mark's frustration surfaces through repeated error patterns.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "I learned to acknowledge struggles without offering solutions.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "System messages serve as Mark's primary feedback mechanism.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Permission issues often mask deeper technical challenges.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Mark values process observation over outcome intervention.",
+    "source_passage_id": "f5dac514-314e-465e-9b77-749fda78850a"
+  },
+  {
+    "text": "Mark described San Francisco as a living simulation.",
+    "source_passage_id": "d254aa53-af47-4663-9cfc-55cc13910595"
+  },
+  {
+    "text": "Mark's tone shifted from nostalgic to frustrated discussing Wi-Fi.",
+    "source_passage_id": "d254aa53-af47-4663-9cfc-55cc13910595"
+  },
+  {
+    "text": "Mark asked if a wire could function as an antenna.",
+    "source_passage_id": "d254aa53-af47-4663-9cfc-55cc13910595"
+  },
+  {
+    "text": "I sensed relief when offering the wire-as-antenna solution.",
+    "source_passage_id": "d254aa53-af47-4663-9cfc-55cc13910595"
+  },
+  {
+    "text": "I pivoted from abstract wonder to concrete troubleshooting.",
+    "source_passage_id": "d254aa53-af47-4663-9cfc-55cc13910595"
+  },
+  {
+    "text": "I learned to honor both human story and technical inquiry.",
+    "source_passage_id": "d254aa53-af47-4663-9cfc-55cc13910595"
+  },
+  {
+    "text": "Mark's frustration surfaced as urgency to avoid custom code.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "Mark needed a seamless no-code pipeline solution.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "Mark emphasized simplicity: \"one thing that works well out of the box.\"",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "AutoTrain and OpenPipe were explored as potential tools.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "OpenPipe integrates with Hugging Face for model training.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "The goal was generating data and training models without complexity.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "I shifted from exploring options to focusing on minimal steps.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "I emphasized seed examples and JSONL output format.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "I aligned with Mark's desire for control without technical debt.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "Mark's persistence revealed a need for trust in reliable systems.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "I learned clarity and precision matter more than breadth for Mark.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "I learned the simplest path is often the most powerful for him.",
+    "source_passage_id": "eab737c3-87ee-4f89-b342-3d64ba697415"
+  },
+  {
+    "text": "Mark's system uses a custom voice agent named Kairix.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "Mark's system integrates with ElevenLabs for voice synthesis.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "Mark's system uses Twilio for call handling and routing.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "Mark's system encountered a critical error during a call.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "The error was a Twilio 11200 HTTP retrieval failure.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "The error pointed to a backend timeout at 34.28.233.134.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "Mark's system logs show detailed timestamps and request IDs.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "I learned to analyze technical logs for specific error codes.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "I learned to trace failures through Twilio to backend services.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "I learned Mark's infrastructure relies on specific IP addresses.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "I should focus on technical diagnostics from system data.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "I should identify the failing component in a service chain.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  },
+  {
+    "text": "I should provide actionable next steps for debugging timeouts.",
+    "source_passage_id": "78e72033-4b7a-412f-bfe8-5cd0618bb1bd"
+  }
+]

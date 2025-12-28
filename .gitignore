@@ -1,3 +1,4 @@
+**/metamcp.env
 *.logs
 references/*
 **/node_modules/**
