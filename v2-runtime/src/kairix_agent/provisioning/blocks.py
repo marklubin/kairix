@@ -49,8 +49,15 @@ What's their name? Where are they from? What do they do? Who are they?
 I should update this memory over time as I interact with the human and learn more about them.""",
     )
 
+    WORLD = BlockDefinition(
+        label="world",
+        description="Durable world context: active projects, key entities, recurring themes, and insights. This block is managed by KP3 and updated via world model extraction. Contains structured information about the user's persistent context that informs conversations.",
+        initial_value="No world context loaded yet.",
+        limit=20000,  # Larger limit for structured world data
+    )
+
     # All shared blocks that define the entity's identity
-    ALL: ClassVar[list[BlockDefinition]] = [PERSONA, HUMAN]
+    ALL: ClassVar[list[BlockDefinition]] = [PERSONA, HUMAN, WORLD]
 
 
 class AgentSpecificBlocks:

@@ -39,9 +39,19 @@ async def find_or_create_block(
     client: AsyncLetta,
     block_def: BlockDefinition,
     existing_blocks: dict[str, BlockResponse],
+    force_create: bool = False,
 ) -> str:
-    """Find existing block by label or create new one. Returns block ID."""
-    if block_def.label in existing_blocks:
+    """Find existing block by label or create new one. Returns block ID.
+
+    Args:
+        client: Letta client.
+        block_def: Block definition to create or find.
+        existing_blocks: Dict of label -> BlockResponse for existing blocks.
+        force_create: If True, always create a new block even if one exists with
+            the same label. Use this for new conversational agents to ensure they
+            get their own unique blocks rather than sharing with other agents.
+    """
+    if not force_create and block_def.label in existing_blocks:
         block = existing_blocks[block_def.label]
         logger.info("  Using existing block: %s (%s)", block_def.label, block.id)
         return block.id
@@ -93,6 +103,7 @@ async def provision_agent(
     existing_blocks: dict[str, BlockResponse],
     archive_id: str | None = None,
     universal_block_ids: dict[str, str] | None = None,
+    is_conversational: bool = False,
 ) -> str:
     """Provision an agent based on its spec. Returns agent ID.
 
@@ -106,6 +117,8 @@ async def provision_agent(
         archive_id: Optional archive ID to attach.
         universal_block_ids: Optional dict of label -> block_id for universal blocks.
             Used by subagents to attach the same blocks as the conversational agent.
+        is_conversational: If True, this is a new conversational agent that should
+            create fresh blocks rather than reusing blocks from other agents.
     """
     # Check if agent already exists
     existing = await find_agent_by_name(client, spec.name)
@@ -125,7 +138,9 @@ async def provision_agent(
         )
 
     # Agent doesn't exist - create new
-    return await _create_new_agent(client, spec, existing_blocks, archive_id, universal_block_ids)
+    return await _create_new_agent(
+        client, spec, existing_blocks, archive_id, universal_block_ids, is_conversational
+    )
 
 
 async def _remediate_existing_agent(
@@ -170,7 +185,9 @@ async def _remediate_existing_agent(
         current_block_id = existing_agent_blocks.get(label)
 
         # Determine the correct block ID for this label
-        # Priority: convo agent's block > current block > system block > create new
+        # Priority: convo agent's block > current block > create new
+        # NOTE: We do NOT reuse system-wide blocks for conversational agents
+        # to avoid accidentally sharing blocks between different agent entities
         correct_block_id: str | None = None
         if universal_block_ids and label in universal_block_ids:
             # Use the exact ID from conversational agent (for both universal and subagent blocks)
@@ -178,11 +195,9 @@ async def _remediate_existing_agent(
         elif current_block_id:
             # Block exists and no convo agent ID to match - keep it
             continue
-        elif label in existing_blocks:
-            # Use existing block from system
-            correct_block_id = existing_blocks[label].id
         else:
-            # Need to create new block
+            # Block missing - create a new one for this agent
+            # (Don't reuse system-wide blocks - they may belong to other agents)
             block = await client.blocks.create(
                 label=block_def.label,
                 value=block_def.initial_value,
@@ -258,12 +273,27 @@ async def _create_new_agent(
     existing_blocks: dict[str, BlockResponse],
     archive_id: str | None,
     universal_block_ids: dict[str, str] | None = None,
+    is_conversational: bool = False,
 ) -> str:
-    """Create a new agent from scratch."""
+    """Create a new agent from scratch.
+
+    Args:
+        client: Letta client.
+        spec: Agent specification.
+        existing_blocks: Dict of label -> BlockResponse for all existing blocks.
+        archive_id: Optional archive ID to attach.
+        universal_block_ids: Optional dict of label -> block_id for universal blocks.
+        is_conversational: If True, this is a new conversational agent and should
+            create fresh blocks rather than reusing existing ones from other agents.
+    """
     logger.info("Provisioning new agent: %s", spec.name)
 
     # Collect block IDs
     block_ids: list[str] = []
+
+    # For new conversational agents, always create fresh blocks to avoid
+    # sharing blocks with other agents (each agent gets its own identity)
+    force_create = is_conversational
 
     # Universal blocks - use explicit IDs if provided, otherwise reuse existing or create
     logger.info("Setting up universal blocks...")
@@ -273,7 +303,7 @@ async def _create_new_agent(
             block_id = universal_block_ids[block_def.label]
             logger.info("  Using universal block: %s (%s)", block_def.label, block_id)
         else:
-            block_id = await find_or_create_block(client, block_def, existing_blocks)
+            block_id = await find_or_create_block(client, block_def, existing_blocks, force_create)
         block_ids.append(block_id)
 
     # Subagent blocks - reuse from convo agent if exists, otherwise create
@@ -286,7 +316,7 @@ async def _create_new_agent(
             logger.info("  Using existing subagent block: %s (%s)", block_def.label, block_id)
         else:
             # Check system-wide existing blocks, or create new
-            block_id = await find_or_create_block(client, block_def, existing_blocks)
+            block_id = await find_or_create_block(client, block_def, existing_blocks, force_create)
         block_ids.append(block_id)
 
     # Create the agent
@@ -537,7 +567,12 @@ async def _run_provisioning(
             return 1
 
     agent_id = await provision_agent(
-        client, spec, existing_blocks, archive_id, universal_block_ids
+        client,
+        spec,
+        existing_blocks,
+        archive_id,
+        universal_block_ids,
+        is_conversational=(agent_type == "conversational"),
     )
 
     # For subagents: attach their subagent_blocks to the conversational agent

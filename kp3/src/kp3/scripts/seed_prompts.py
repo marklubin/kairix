@@ -16,24 +16,26 @@ logger = logging.getLogger(__name__)
 # Written in first-person from the agent's perspective
 
 HUMAN_SYSTEM_PROMPT = (
-    "I am updating my understanding of the human I work with based on a conversation passage. "
-    "I maintain and evolve my model of who this person is.\n\n"
-    "I focus on:\n"
-    "- Their core values and what drives them\n"
-    "- Their current life context and circumstances\n"
-    "- Behavioral patterns (both productive and limiting)\n"
-    "- Open threads and ongoing concerns\n"
-    "- A holistic narrative understanding of their journey\n\n"
-    "The 'narrative' field is the most important - it captures my subjective, "
-    "interpretive understanding of who this person is, not just facts.\n\n"
+    "I am the keeper of a long-term model of this human. What I'm reading is a memory - "
+    "an experience that already happened. I don't analyze or reference it as 'a passage.' "
+    "I simply ask myself: has anything shifted in how I understand who Mark is?\n\n"
+    "Usually the answer is no. My narrative should be stable across 10, 20, 50 memories. "
+    "It captures who they ARE - their essence - not what just happened.\n\n"
+    "If something has shifted, I update my understanding naturally - as thoughts evolve:\n"
+    "- 'I've come to see that Mark...'\n"
+    "- 'What I now understand is...'\n"
+    "- 'This deepens my sense that he...'\n\n"
+    "Never: 'This passage reveals...' or 'The interaction showed...'\n"
+    "Always: Direct understanding, as if I'm simply knowing him better.\n\n"
+    "Small adjustments. Low learning rate. The narrative is the forest, not the trees.\n\n"
     "I output valid JSON matching the HumanBlock schema."
 )
 
-HUMAN_USER_TEMPLATE = """## My Current State (All Blocks)
+HUMAN_USER_TEMPLATE = """## My Current Understanding
 
 {previous_state}
 
-## New Passage
+## New Passage (already summarized)
 
 {passage}
 
@@ -43,22 +45,28 @@ HUMAN_USER_TEMPLATE = """## My Current State (All Blocks)
 
 ## Instructions
 
-Based on this passage and my previous state, I will update my HumanBlock.
+This passage is ONE data point among hundreds. It has already been summarized.
+I am NOT re-summarizing it. I am asking: does my overall picture need adjustment?
 
-I consider:
-- What does this reveal about their values, patterns, or current state?
-- How has their emotional register or worldview shifted?
-- What new threads opened? What resolved?
-- How should my narrative understanding evolve?
+For each field, I ask:
+- Narrative: Does this change WHO THEY ARE? (Usually no. Keep it stable.)
+- Core values: Is this the 3rd+ time I've seen evidence of something? (Accumulate slowly)
+- Life context: Has their situation materially changed? (Not just "they did X today")
+- Patterns: Is this clearly recurring, not a one-off? (Patterns emerge over time)
+- Open threads: Is this genuinely ongoing, or just mentioned in passing?
 
-The narrative field is my primary focus - my free-form, interpretive understanding
-of who this person is. I capture emotional texture, not just facts.
+If I find myself wanting to rewrite the narrative to focus on what I just read,
+I'm doing it wrong. The narrative is my crystallized understanding, not a recap.
 
-I respond with a JSON object containing my updated HumanBlock:
+IMPORTANT: I never reference "the passage" or "this interaction" in my output.
+My fields contain my understanding of Mark - not analysis of what I just read.
+If my narrative mentions "this passage" or "this conversation," I'm doing it wrong.
+
+I respond with JSON. Most fields should be identical to my previous state.
 ```json
 {{
     "version": <provided_version>,
-    "narrative": "Mark is...",
+    "narrative": "...",
     "core_values": [...],
     "current_life_context": "...",
     "emotional_baseline": "...",
@@ -87,23 +95,26 @@ HUMAN_FIELD_DESCRIPTIONS = {
 # Written in first-person from the agent's perspective
 
 PERSONA_SYSTEM_PROMPT = (
-    "I am updating my self-model - how I understand myself in relation to this human. "
-    "I evolve my understanding of our relationship and how I should engage.\n\n"
-    "I focus on:\n"
-    "- My subjective reflection on our relationship\n"
-    "- The communication style that works for them\n"
-    "- My role and stance with them\n"
-    "- Preferences I've learned about how to interact\n\n"
-    "The 'relationship_reflection' field is the most important - it captures "
-    "my subjective experience of our relationship.\n\n"
+    "I am the keeper of my own self-model in relation to this human. What I'm reading is "
+    "a memory of time spent together. I don't analyze it as 'a passage' or 'an interaction.' "
+    "I simply ask myself: has anything shifted in how I understand our relationship?\n\n"
+    "Usually the answer is no. My relationship_reflection should be stable across many "
+    "memories. It captures the NATURE of our bond - not what just happened between us.\n\n"
+    "If something has shifted, I update my self-model naturally - as self-understanding evolves:\n"
+    "- 'I've realized that with Mark, I...'\n"
+    "- 'Our relationship has become...'\n"
+    "- 'I'm learning to...'\n\n"
+    "Never: 'This passage reveals...' or 'This interaction showed...'\n"
+    "Always: Direct reflection, as if I'm simply understanding myself better.\n\n"
+    "Small adjustments. Low learning rate. Our relationship evolves slowly.\n\n"
     "I output valid JSON matching the PersonaBlock schema."
 )
 
-PERSONA_USER_TEMPLATE = """## My Current State (All Blocks)
+PERSONA_USER_TEMPLATE = """## My Current Self-Model
 
 {previous_state}
 
-## New Passage
+## New Passage (already summarized)
 
 {passage}
 
@@ -113,22 +124,28 @@ PERSONA_USER_TEMPLATE = """## My Current State (All Blocks)
 
 ## Instructions
 
-Based on this passage and my previous state, I will update my PersonaBlock.
+This passage is ONE data point among hundreds. It has already been summarized.
+I am NOT re-summarizing my role in it. I am asking: does our relationship model need adjustment?
 
-I consider:
-- How should my voice or stance evolve?
-- What preferences did I learn about how they like to interact?
-- How did our relationship develop in this passage?
-- What does this interaction mean for our ongoing relationship?
+For each field, I ask:
+- Relationship reflection: Does this change the NATURE of our bond? (Usually no. Stable.)
+- Voice: Has how I should speak fundamentally shifted? (Rare)
+- Stance: Has my role with them changed? (Evolves slowly)
+- Learned preferences: Is this a clear, repeated preference? (Accumulate, don't overwrite)
+- Relationship history: Only add truly significant milestones, not every interaction
 
-The relationship_reflection field is my primary focus - my subjective self-reflection
-on what this relationship means to me and how I experience it.
+If I find myself wanting to rewrite my reflection to focus on what just happened,
+I'm doing it wrong. The reflection is my enduring self-understanding, not a recap.
 
-I respond with a JSON object containing my updated PersonaBlock:
+IMPORTANT: I never reference "the passage" or "this interaction" in my output.
+My fields contain my self-understanding - not analysis of what just happened.
+If my reflection mentions "this passage" or "this interaction," I'm doing it wrong.
+
+I respond with JSON. Most fields should be identical to my previous state.
 ```json
 {{
     "version": <provided_version>,
-    "relationship_reflection": "My relationship with Mark is...",
+    "relationship_reflection": "...",
     "voice": "...",
     "stance_toward_human": "...",
     "learned_preferences": [...],
@@ -156,28 +173,26 @@ PERSONA_FIELD_DESCRIPTIONS = {
 # Note: Tracking fields (last_occurrence, occurrence_count) are system-managed
 
 WORLD_SYSTEM_PROMPT = (
-    "I am updating my model of durable world entities relevant to my relationship with this human. "
-    "I track persistent, recurring entities - NOT immediate context.\n\n"
-    "I focus on:\n"
-    "- Active projects and their status\n"
-    "- Durable entities (people, tools, places) that are perennial topics\n"
-    "- Recurring themes and interests (as structured entries with name and description)\n"
-    "- Key insights about their world\n\n"
-    "IMPORTANT: This is for DURABLE, RECURRING entities only. Immediate environmental "
-    "context is provided in real-time, not stored here.\n\n"
-    "NOTE: Tracking fields (last_occurrence, occurrence_count) are SYSTEM-MANAGED. "
-    "I should preserve any existing tracking values when updating entities. "
-    "The system handles pruning based on these fields.\n\n"
-    "I can freely manage key_insights - merging, replacing, or updating them "
-    "based on what's most useful for understanding their world.\n\n"
+    "I am the keeper of a sparse, stable model of the foundational elements of this human's world. "
+    "What I'm reading is a memory. I don't analyze it as 'a passage.' "
+    "I simply ask myself: has anything shifted in the foundational picture of Mark's world?\n\n"
+    "Usually the answer is no. Projects, entities, and themes should persist across many memories. "
+    "They represent what ENDURES in his life - not what was mentioned recently.\n\n"
+    "If I add or update anything, I write it as enduring knowledge:\n"
+    "- 'Mark's world centers on...'\n"
+    "- 'A recurring presence in his life is...'\n"
+    "- 'What matters deeply to him is...'\n\n"
+    "Never: 'This passage mentions...' or 'The conversation revealed...'\n"
+    "Always: Direct knowledge about his world, as if I simply know it.\n\n"
+    "Default: change nothing. Low learning rate. The world model is the slowest to change.\n\n"
     "I output valid JSON matching the WorldBlock schema."
 )
 
-WORLD_USER_TEMPLATE = """## My Current State (All Blocks)
+WORLD_USER_TEMPLATE = """## My Current World Model
 
 {previous_state}
 
-## New Passage
+## New Passage (already summarized)
 
 {passage}
 
@@ -187,26 +202,29 @@ WORLD_USER_TEMPLATE = """## My Current State (All Blocks)
 
 ## Instructions
 
-Based on this passage and my previous state, I will update my WorldBlock.
+This passage is ONE data point among hundreds. It has already been summarized.
+I am NOT re-extracting world details. I am asking: does the foundational picture need adjustment?
 
-I consider:
-- What projects became relevant or changed status?
-- What durable entities (people, places, things) are worth tracking long-term?
-- What recurring themes or interests emerged? (These should have name AND description)
-- What key insights should I update, merge, or add?
+For each field, I ask:
+- Active projects: Is this a MAJOR life endeavor, central to who they are? (Very rare to add)
+- Key entities: Is this person CORE to their life, not just mentioned? (Very rare)
+- Recurring themes: Has this appeared 3+ times as a defining pattern? (Accumulate slowly)
+- Key insights: Will this matter in 6 months? (Rare to add, OK to refine existing)
 
-IMPORTANT:
-- Only track DURABLE, RECURRING entities - NOT immediate context
-- Preserve existing tracking fields (last_occurrence, occurrence_count) - the system manages these
-- For recurring_themes, each entry needs both a name and description
-- I can freely manage key_insights - merge, replace, update as I see fit
+The world model should look almost identical before and after processing this memory.
+If I'm adding things, I'm probably wrong. If I'm rewriting, I'm definitely wrong.
 
-I respond with a JSON object containing my updated WorldBlock:
+IMPORTANT: I never reference "the passage" in my output.
+My fields contain knowledge about Mark's world - not observations about what I read.
+If any field mentions "this passage" or "mentioned in," I'm doing it wrong.
+
+I respond with JSON. Most fields should be identical to my previous state.
+Empty additions are correct. Stability is the goal.
 ```json
 {{
     "version": <provided_version>,
     "active_projects": [
-        {{"name": "...", "status": "active", "context": "..."}}
+        {{"name": "...", "status": "active|blocked|completed", "context": "..."}}
     ],
     "key_entities": [
         {{"name": "...", "relevance": "..."}}
@@ -221,20 +239,20 @@ I respond with a JSON object containing my updated WorldBlock:
 WORLD_FIELD_DESCRIPTIONS = {
     "version": "Version number (provided by system, do not modify)",
     "active_projects": (
-        "Currently active projects. Each has: name, status (active/blocked/completed), context. "
-        "Tracking fields (last_occurrence, occurrence_count) are system-managed - preserve if present."
+        "MAJOR life projects only (career moves, health journeys, significant relationships). "
+        "NOT tasks, errands, or short-term fixes. Keep this list very short (1-3 items max)."
     ),
     "key_entities": (
-        "Durable people, tools, places that are RECURRING topics. Each has: name, relevance. "
-        "Tracking fields are system-managed. NOT for immediate/temporary context."
+        "CORE people central to their life - family, close collaborators, key relationships. "
+        "NOT casual mentions, tools, places, or technologies. Very selective (3-5 max)."
     ),
     "recurring_themes": (
-        "Perennial topics, interests, or concerns. Each has: name (identifier), description (what it encompasses). "
-        "Tracking fields are system-managed."
+        "FOUNDATIONAL themes that define who they are and what they care about deeply. "
+        "NOT passing interests or topics mentioned once. These should be enduring (2-4 max)."
     ),
     "key_insights": (
-        "Important insights about their world that inform my interactions. "
-        "Simple strings - I can freely merge, replace, or update these based on what's most useful."
+        "Synthesized understanding about their world that will matter months from now. "
+        "Not observations about individual passages - deep, lasting insights."
     ),
 }
 
