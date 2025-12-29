@@ -229,7 +229,7 @@ services:
       letta:
         condition: service_started
     healthcheck:
-      test: ["CMD", "python", "-c", "import os; exit(0 if any('saq' in open(f'/proc/{p}/cmdline').read() for p in os.listdir('/proc') if p.isdigit()) else 1)"]
+      test: ["CMD-SHELL", "cat /proc/1/cmdline | tr '\\0' ' ' | grep -q saq"]
       interval: 30s
       timeout: 10s
       retries: 3
