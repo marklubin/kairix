@@ -1,8 +1,7 @@
 """CLI for provisioning Kairix agents.
 
 Usage:
-    uv run provision-agent --type conversational --name Corindel
-    uv run provision-agent --type reflector --name Corindel
+    uv run provision-agent --name Corindel
     uv run provision-agent --list-blocks
     uv run provision-agent --list-archives
 """
@@ -20,9 +19,7 @@ from letta_client import AsyncLetta, ConflictError
 from kairix_agent.config import Config
 from kairix_agent.provisioning.agents import (
     AgentSpec,
-    create_background_insights_agent,
     create_conversational_agent,
-    create_reflector_agent,
 )
 from kairix_agent.provisioning.blocks import BlockDefinition  # noqa: TC001
 from kairix_agent.provisioning.prompts import get_agent_definition
@@ -404,87 +401,23 @@ async def find_or_create_archive(
     return archive.id
 
 
-async def find_conversational_agent_archive(
-    client: AsyncLetta,
-    base_name: str,
-) -> str | None:
-    """Find the archive attached to the conversational agent.
-
-    Args:
-        client: Letta client.
-        base_name: The base agent name (e.g., "Corindel").
-
-    Returns:
-        Archive ID if found, None otherwise.
-    """
-    # Find the conversational agent by name
-    async for agent in client.agents.list(name=base_name):
-        # Get archives attached to this agent
-        async for archive in client.archives.list(agent_id=agent.id):
-            logger.info(
-                "  Found archive %s (%s) from conversational agent %s",
-                archive.name,
-                archive.id,
-                agent.name,
-            )
-            return archive.id
-    return None
-
-
-async def get_conversational_agent_blocks(
-    client: AsyncLetta,
-    base_name: str,
-    block_labels: set[str],
-) -> dict[str, str]:
-    """Get block IDs from the conversational agent.
-
-    For subagents, we need to attach the SAME blocks (by ID) that the
-    conversational agent uses, not just blocks with the same label.
-
-    Args:
-        client: Letta client.
-        base_name: The base agent name (e.g., "Corindel").
-        block_labels: Set of labels to look for (e.g., {"persona", "human"}).
-
-    Returns:
-        Dict mapping label -> block_id for the requested blocks.
-    """
-    # Find the conversational agent by name
-    async for agent in client.agents.list(name=base_name):
-        if agent.name == base_name:
-            found_blocks: dict[str, str] = {}
-            # order='asc' required: SDK pagination assumes asc, but server defaults to desc
-            async for block in client.agents.blocks.list(agent_id=agent.id, order="asc"):
-                if block.label in block_labels:
-                    found_blocks[block.label] = block.id
-                    logger.info(
-                        "  Found block %s (%s) from conversational agent",
-                        block.label,
-                        block.id,
-                    )
-            return found_blocks
-    return {}
-
-
 async def _run_provisioning(
     client: AsyncLetta,
-    agent_type: str,
     base_name: str,
 ) -> int:
     """Run agent provisioning logic.
 
     Args:
         client: Letta client.
-        agent_type: Type of agent ("conversational", "reflector", or "insights").
         base_name: Base name for the agent.
 
     Returns:
         Exit code (0 for success, 1 for failure).
     """
     # Load agent definition from database
-    logger.info("Loading agent definition for %s from database...", agent_type)
+    logger.info("Loading agent definition for conversational from database...")
     try:
-        definition = await get_agent_definition(agent_type)
+        definition = await get_agent_definition("conversational")
         logger.info(
             "  Loaded definition (prompt: %d chars, universal: %s, subagent: %s)",
             len(definition.system_prompt),
@@ -507,162 +440,39 @@ async def _run_provisioning(
         if archive.name:
             existing_archives[archive.name] = archive
 
-    # Create spec using factory methods with DB-loaded config
-    if agent_type == "conversational":
-        spec = create_conversational_agent(
-            base_name,
-            definition.system_prompt,
-            definition.universal_block_labels,
-            definition.subagent_block_labels,
-        )
-    elif agent_type == "insights":
-        spec = create_background_insights_agent(
-            base_name,
-            definition.system_prompt,
-            definition.universal_block_labels,
-            definition.subagent_block_labels,
-        )
-    else:
-        spec = create_reflector_agent(
-            base_name,
-            definition.system_prompt,
-            definition.universal_block_labels,
-            definition.subagent_block_labels,
-        )
+    # Create spec using factory method with DB-loaded config
+    spec = create_conversational_agent(
+        base_name,
+        definition.system_prompt,
+        definition.universal_block_labels,
+        definition.subagent_block_labels,
+    )
 
-    # Handle archive and block IDs based on agent type
-    archive_id: str | None = None
-    universal_block_ids: dict[str, str] | None = None
-
-    if agent_type == "conversational":
-        # For conversational agent: create a new archive with the agent's name
-        logger.info("Setting up archive...")
-        archive_id = await find_or_create_archive(client, base_name, existing_archives)
-    else:
-        # For subagents: find and attach the conversational agent's archive and blocks
-        logger.info("Looking for conversational agent's archive...")
-        archive_id = await find_conversational_agent_archive(client, base_name)
-        if not archive_id:
-            logger.error(
-                "Cannot provision %s agent: conversational agent '%s' not found "
-                "or has no archive. Provision the conversational agent first.",
-                agent_type,
-                base_name,
-            )
-            return 1
-
-        # Get the universal block IDs from the conversational agent
-        # Also get any subagent blocks that should already be on the convo agent
-        logger.info("Looking for conversational agent's blocks...")
-        all_labels = set(definition.universal_block_labels) | set(definition.subagent_block_labels)
-        universal_block_ids = await get_conversational_agent_blocks(
-            client, base_name, all_labels
-        )
-        if not universal_block_ids:
-            logger.error(
-                "Cannot provision %s agent: conversational agent '%s' has no blocks.",
-                agent_type,
-                base_name,
-            )
-            return 1
+    # Create a new archive with the agent's name
+    logger.info("Setting up archive...")
+    archive_id = await find_or_create_archive(client, base_name, existing_archives)
 
     agent_id = await provision_agent(
         client,
         spec,
         existing_blocks,
         archive_id,
-        universal_block_ids,
-        is_conversational=(agent_type == "conversational"),
+        universal_block_ids=None,
+        is_conversational=True,
     )
-
-    # For subagents: attach their subagent_blocks to the conversational agent
-    if agent_type != "conversational" and spec.subagent_blocks:
-        logger.info("Attaching subagent blocks to conversational agent...")
-        for block_def in spec.subagent_blocks:
-            await _attach_block_to_conversational_agent(
-                client, base_name, agent_id, block_def.label
-            )
 
     logger.info("Done! Agent ID: %s", agent_id)
 
     return 0
 
 
-async def _attach_block_to_conversational_agent(
-    client: AsyncLetta,
-    base_name: str,
-    source_agent_id: str,
-    block_label: str,
-) -> None:
-    """Attach a block from a subsidiary agent to the conversational agent.
-
-    This enables the conversational agent to see blocks managed by other agents.
-    If the conversational agent has a different block with the same label,
-    it will be detached and replaced with the correct one.
-
-    Args:
-        client: Letta client.
-        base_name: The base agent name (e.g., "Corindel").
-        source_agent_id: Agent ID that owns the block.
-        block_label: Label of the block to attach.
-    """
-    # Find the block on the source agent
-    block_id: str | None = None
-    # order='asc' required: SDK pagination assumes asc, but server defaults to desc
-    async for block in client.agents.blocks.list(agent_id=source_agent_id, order="asc"):
-        if block.label == block_label:
-            block_id = block.id
-            break
-
-    if not block_id:
-        logger.warning("  Block '%s' not found on agent %s", block_label, source_agent_id)
-        return
-
-    # Find the conversational agent and check for existing block with same label
-    conv_agent_id: str | None = None
-    existing_block_id: str | None = None
-    async for agent in client.agents.list(name=base_name):
-        if agent.name == base_name:
-            conv_agent_id = agent.id
-            # Check if conversational agent already has a block with this label
-            # order='asc' required: SDK pagination assumes asc, but server defaults to desc
-            async for existing_block in client.agents.blocks.list(agent_id=agent.id, order="asc"):
-                if existing_block.label == block_label:
-                    existing_block_id = existing_block.id
-                    break
-            break
-
-    if not conv_agent_id:
-        logger.warning("  Conversational agent '%s' not found", base_name)
-        return
-
-    # Check if the correct block is already attached
-    if existing_block_id == block_id:
-        logger.info("  Block '%s' (%s) already correctly attached to conversational agent", block_label, block_id)
-        return
-
-    # If a different block with the same label exists, detach it first
-    if existing_block_id:
-        logger.info("  Detaching incorrect block '%s' (%s) from conversational agent", block_label, existing_block_id)
-        await client.agents.blocks.detach(agent_id=conv_agent_id, block_id=existing_block_id)
-
-    # Attach the correct block
-    await client.agents.blocks.attach(agent_id=conv_agent_id, block_id=block_id)
-    logger.info("  Attached block '%s' (%s) to conversational agent", block_label, block_id)
-
-
 async def main() -> int:
     """Main entry point for provisioning CLI."""
     parser = argparse.ArgumentParser(description="Provision Kairix agents")
     parser.add_argument(
-        "--type",
-        choices=["conversational", "reflector", "insights"],
-        help="Type of agent to provision",
-    )
-    parser.add_argument(
         "--name",
         required=False,
-        help="Base agent name (required when provisioning)",
+        help="Agent name (required when provisioning)",
     )
     parser.add_argument(
         "--list-blocks",
@@ -701,13 +511,10 @@ async def main() -> int:
         await list_archives(client)
         return 0
 
-    if not args.type:
-        parser.error("--type is required when provisioning an agent")
-
     if not args.name:
         parser.error("--name is required when provisioning an agent")
 
-    return await _run_provisioning(client, args.type, args.name)
+    return await _run_provisioning(client, args.name)
 
 
 def cli() -> None:

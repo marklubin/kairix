@@ -162,6 +162,7 @@ services:
       - REDIS_URL=redis://kairix-redis:6379
       - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
       - LETTA_BASE_URL=http://letta:8283
+      - KP3_URL=http://kp3-service:8080
       - LOG_LEVEL=INFO
     depends_on:
       postgres:
@@ -201,6 +202,7 @@ services:
       - REDIS_URL=redis://kairix-redis:6379
       - DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kairix
       - LETTA_BASE_URL=http://letta:8283
+      - KP3_URL=http://kp3-service:8080
       - LOG_LEVEL=INFO
     depends_on:
       postgres:

@@ -24,8 +24,6 @@ class AgentConfig:
     agent_name: str
     letta_url: str
     archive_id: str | None
-    reflector_agent_id: str | None
-    insights_agent_id: str | None
 
 
 # Module-level cache keyed by agent_id
@@ -67,49 +65,19 @@ async def get_agent_config(*, agent_id: str, letta_url: str) -> AgentConfig:
             logger.info("  Found archive: %s (%s)", archive.name, archive.id)
             break  # Just need the first one
 
-        # Find reflector agent (name pattern: "{agent_name}-Reflector")
-        reflector_name = f"{agent_name}-Reflector"
-        reflector_agent_id: str | None = None
-        async for reflector in client.agents.list(name=reflector_name):
-            if reflector.name == reflector_name:
-                reflector_agent_id = reflector.id
-                logger.info(
-                    "  Found reflector agent: %s (%s)",
-                    reflector.name,
-                    reflector.id,
-                )
-                break
-
-        # Find insights agent (name pattern: "{agent_name}-BackgroundInsights")
-        insights_name = f"{agent_name}-BackgroundInsights"
-        insights_agent_id: str | None = None
-        async for insights_agent in client.agents.list(name=insights_name):
-            if insights_agent.name == insights_name:
-                insights_agent_id = insights_agent.id
-                logger.info(
-                    "  Found insights agent: %s (%s)",
-                    insights_agent.name,
-                    insights_agent.id,
-                )
-                break
-
         config = AgentConfig(
             agent_id=agent_id,
             agent_name=agent_name,
             letta_url=letta_url,
             archive_id=archive_id,
-            reflector_agent_id=reflector_agent_id,
-            insights_agent_id=insights_agent_id,
         )
 
         _agent_configs[agent_id] = config
 
         logger.info(
-            "Agent config loaded: name=%s, archive=%s, reflector=%s, insights=%s",
+            "Agent config loaded: name=%s, archive=%s",
             config.agent_name,
             config.archive_id,
-            config.reflector_agent_id,
-            config.insights_agent_id,
         )
 
         return config

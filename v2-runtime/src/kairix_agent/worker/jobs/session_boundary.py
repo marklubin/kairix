@@ -215,7 +215,6 @@ async def _check_agent_session_locked(
         agent_id=agent_config.agent_id,
         letta_url=letta_url,
         archive_id=agent_config.archive_id,
-        reflector_agent_id=agent_config.reflector_agent_id,
         timeout=300,  # 5 minutes for summarization
     )
 

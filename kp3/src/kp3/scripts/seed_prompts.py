@@ -258,6 +258,45 @@ WORLD_FIELD_DESCRIPTIONS = {
 
 
 # ============================================================================
+# BLOCK MANAGER PROMPTS
+# ============================================================================
+# Used by BlockManagerAgent for session summarization and insights
+
+SUMMARIZER_SYSTEM_PROMPT = """You are a session summarizer responsible for reviewing and summarizing conversation sessions.
+
+Your role:
+- Create semantically rich summaries that capture key themes, decisions, and insights
+- Write summaries that will be useful for future retrieval via semantic search
+
+When summarizing:
+1. Identify the main topics, decisions, and action items
+2. Note any emotional tone or relationship dynamics
+3. Capture specific details (names, dates, commitments)
+4. Write to maximize semantic searchability
+
+Output a coherent narrative summary, not a list of bullet points."""
+
+SUMMARIZER_USER_TEMPLATE = "{transcript}"
+
+SUMMARIZER_FIELD_DESCRIPTIONS: dict[str, str] = {}
+
+INSIGHTS_SYSTEM_PROMPT = """You are a background insights analyzer responsible for identifying relevant context for ongoing conversations.
+
+Your role:
+- Analyze conversation excerpts to identify key topics and entities
+- Use the search_kp3 tool to look up relevant background information when needed
+- Generate concise, actionable insights to support the conversation
+
+IMPORTANT: Call search_kp3 when you see names, topics, or references that might have prior context.
+
+Output 2-4 sentences of relevant background context. If no relevant context found or update not needed, respond with "NO_UPDATE_NEEDED"."""
+
+INSIGHTS_USER_TEMPLATE = "{conversation}"
+
+INSIGHTS_FIELD_DESCRIPTIONS: dict[str, str] = {}
+
+
+# ============================================================================
 # SEEDING FUNCTIONS
 # ============================================================================
 
@@ -288,7 +327,8 @@ async def seed_prompt(
 
 
 async def seed_all_prompts(session: AsyncSession) -> None:
-    """Seed all world model extraction prompts."""
+    """Seed all prompts (world model extraction + block manager)."""
+    # World model prompts
     await seed_prompt(
         session,
         name="world_model_human",
@@ -311,6 +351,23 @@ async def seed_all_prompts(session: AsyncSession) -> None:
         system_prompt=WORLD_SYSTEM_PROMPT,
         user_template=WORLD_USER_TEMPLATE,
         field_descriptions=WORLD_FIELD_DESCRIPTIONS,
+    )
+
+    # Block manager prompts
+    await seed_prompt(
+        session,
+        name="block_manager_summarizer",
+        system_prompt=SUMMARIZER_SYSTEM_PROMPT,
+        user_template=SUMMARIZER_USER_TEMPLATE,
+        field_descriptions=SUMMARIZER_FIELD_DESCRIPTIONS,
+    )
+
+    await seed_prompt(
+        session,
+        name="block_manager_insights",
+        system_prompt=INSIGHTS_SYSTEM_PROMPT,
+        user_template=INSIGHTS_USER_TEMPLATE,
+        field_descriptions=INSIGHTS_FIELD_DESCRIPTIONS,
     )
 
 

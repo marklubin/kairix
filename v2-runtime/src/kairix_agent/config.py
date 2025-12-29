@@ -39,3 +39,11 @@ class Config(Enum):
     # External API keys (for voice pipeline)
     DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "")
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
+    # DeepSeek configuration (for BlockManagerAgent)
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+    DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+
+    # KP3 service configuration
+    KP3_URL = os.getenv("KP3_URL", "http://localhost:8080")

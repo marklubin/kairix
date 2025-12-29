@@ -1,7 +1,7 @@
 """Background insights job.
 
-Periodically checks if an active conversation is happening and sends recent
-messages to the background insights agent to evaluate/update the insights block.
+Periodically checks if an active conversation is happening and uses
+BlockManagerAgent (with DeepSeek + KP3 search tool) to update the insights block.
 """
 
 from __future__ import annotations
@@ -11,11 +11,12 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from letta_client import AsyncLetta
-from letta_client.types.agents import AssistantMessage
 
-from kairix_agent.agent_config import get_agent_config
 from kairix_agent.config import Config
 from kairix_agent.events import EventType, emit_context_state, publish_event
+from kairix_agent.llm import BlockManagerAgent
+from kairix_agent.llm.configs import INSIGHTS_CONFIG
+from kairix_agent.llm.tools import handle_search_kp3
 from kairix_agent.worker.jobs.transcript import format_transcript
 
 if TYPE_CHECKING:
@@ -32,15 +33,15 @@ RECENT_MESSAGE_COUNT = 10
 async def _check_agent_insights(
         client: AsyncLetta,
         agent_id: str,
-        insights_agent_id: str,
         letta_url: str,
 ) -> dict[str, object]:
     """Check and potentially update insights for a single agent.
 
+    Uses BlockManagerAgent with DeepSeek + KP3 search tool.
+
     Args:
         client: Letta client.
         agent_id: Conversational agent ID.
-        insights_agent_id: Background insights agent ID.
         letta_url: Letta server URL (for context state emission).
 
     Returns:
@@ -104,53 +105,37 @@ async def _check_agent_insights(
             "gap_seconds": gap.total_seconds(),
         }
 
-    # Active conversation - messages already in chronological order
+    # Active conversation - format transcript
     conversation_text = format_transcript(messages)
 
-    prompt = f"""Review the current conversation and determine if your background_insights block needs updating.
-
-<recent_conversation>
-{conversation_text}
-</recent_conversation>
-
-Your background_insights block is visible in your memory. Evaluate whether it supports this conversation:
-1. If relevant: respond briefly acknowledging no update needed
-2. If stale/irrelevant:
-   - Search archival memory for relevant context
-   - Optionally search the web for current information
-   - Update the background_insights block using core_memory_replace
-
-Remember: only update if truly necessary. Irrelevant updates add noise."""
-
     logger.info(
-        "Sending %d messages to insights agent %s for evaluation", len(messages), insights_agent_id
+        "Running BlockManagerAgent insights for agent %s (%d messages)",
+        agent_id,
+        len(messages),
     )
 
-    response = await client.agents.messages.create(
-        agent_id=insights_agent_id,
-        input=prompt,
+    # Create insights agent with search tool
+    insights_agent = BlockManagerAgent(INSIGHTS_CONFIG)
+    insights_agent.register_tool_handler("search_kp3", handle_search_kp3)
+
+    # Run - agent will call search_kp3 tool if it decides context is needed
+    response_text = await insights_agent.run(
+        input_text=conversation_text,
+        agent_id=agent_id,
+        letta_client=client,
+        template_vars={"conversation": conversation_text},
     )
 
-    # Extract response text
-    response_text = ""
-    for msg in response.messages:
-        if isinstance(msg, AssistantMessage) and msg.content:
-            if isinstance(msg.content, str):
-                response_text += msg.content
-            else:
-                for item in msg.content:
-                    if hasattr(item, "text"):
-                        response_text += item.text
-
     logger.info(
-        "Insights agent response (%d chars): %s...",
+        "Insights response (%d chars): %s...",
         len(response_text),
         response_text[:100] if response_text else "(empty)",
     )
 
-    # Reset insights agent to prevent context buildup
-    await client.agents.messages.reset(agent_id=insights_agent_id)
-    logger.debug("Reset insights agent %s message history", insights_agent_id)
+    # Check if update was needed
+    no_update = "NO_UPDATE_NEEDED" in response_text.upper()
+    if no_update:
+        logger.info("Insights agent determined no update needed for agent %s", agent_id)
 
     # Publish event for connected clients
     await publish_event(
@@ -159,6 +144,7 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
         payload={
             "triggered": True,
             "response": response_text,
+            "updated": not no_update,
         },
     )
     logger.info("Published INSIGHTS_COMPLETE event for agent %s", agent_id)
@@ -170,6 +156,7 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
         "status": "ok",
         "messages_checked": len(messages),
         "response_length": len(response_text),
+        "updated": not no_update,
     }
 
 
@@ -183,8 +170,7 @@ async def check_insights_relevance(
     This job runs every minute. For each agent:
     1. Pull last 10 messages
     2. If last message is older than SESSION_GAP_MINUTES, skip (no active conversation)
-    3. Otherwise, send messages to insights agent for evaluation
-    4. Reset insights agent after each run
+    3. Otherwise, send messages to BlockManagerAgent for evaluation
 
     Args:
         _ctx: SAQ job context.
@@ -204,19 +190,10 @@ async def check_insights_relevance(
         letta_url = agent_cfg["letta_url"]
 
         try:
-            # Load agent config to get insights_agent_id
-            config = await get_agent_config(agent_id=agent_id, letta_url=letta_url)
-
-            if not config.insights_agent_id:
-                logger.debug("No insights agent configured for %s, skipping", agent_id)
-                results[agent_id] = {"status": "skipped", "reason": "no_insights_agent"}
-                continue
-
             client = AsyncLetta(base_url=letta_url)
             result = await _check_agent_insights(
                 client=client,
                 agent_id=agent_id,
-                insights_agent_id=config.insights_agent_id,
                 letta_url=letta_url,
             )
             results[agent_id] = result
@@ -242,6 +219,8 @@ async def trigger_insights(
     Unlike check_insights_relevance (cron), this skips the session gap check
     since we know there's an active conversation.
 
+    Uses BlockManagerAgent with DeepSeek + KP3 search tool.
+
     Args:
         _ctx: SAQ job context.
         agent_id: The conversational agent ID.
@@ -251,16 +230,9 @@ async def trigger_insights(
         Status dict with results.
     """
     try:
-        config = await get_agent_config(agent_id=agent_id, letta_url=letta_url)
-
-        if not config.insights_agent_id:
-            logger.debug("No insights agent configured for %s, skipping", agent_id)
-            return {"status": "skipped", "reason": "no_insights_agent"}
-
         client = AsyncLetta(base_url=letta_url)
 
-        # Use the internal helper but we'll inline a simplified version
-        # that skips the session gap check (we know conversation is active)
+        # Fetch recent messages (skip session gap check - we know conversation is active)
         all_messages: list[Any] = [
             msg
             async for msg in client.agents.messages.list(
@@ -280,44 +252,25 @@ async def trigger_insights(
             logger.info("No messages for agent %s, skipping triggered insights", agent_id)
             return {"status": "skipped", "reason": "no_messages"}
 
-        # Format and send to insights agent (skip session gap check)
+        # Format transcript
         conversation_text = format_transcript(messages)
 
-        prompt = f"""Review the current conversation and determine if your background_insights block needs updating.
-
-<recent_conversation>
-{conversation_text}
-</recent_conversation>
-
-Your background_insights block is visible in your memory. Evaluate whether it supports this conversation:
-1. If relevant: respond briefly acknowledging no update needed
-2. If stale/irrelevant:
-   - Search archival memory for relevant context
-   - Optionally search the web for current information
-   - Update the background_insights block using core_memory_replace
-
-Remember: only update if truly necessary. Irrelevant updates add noise."""
-
         logger.info(
-            "Triggered insights: sending %d messages to insights agent %s",
+            "Triggered insights: sending %d messages to BlockManagerAgent",
             len(messages),
-            config.insights_agent_id,
         )
 
-        response = await client.agents.messages.create(
-            agent_id=config.insights_agent_id,
-            input=prompt,
-        )
+        # Create insights agent with search tool
+        insights_agent = BlockManagerAgent(INSIGHTS_CONFIG)
+        insights_agent.register_tool_handler("search_kp3", handle_search_kp3)
 
-        response_text = ""
-        for msg in response.messages:
-            if isinstance(msg, AssistantMessage) and msg.content:
-                if isinstance(msg.content, str):
-                    response_text += msg.content
-                else:
-                    for item in msg.content:
-                        if hasattr(item, "text"):
-                            response_text += item.text
+        # Run - agent will call search_kp3 tool if it decides context is needed
+        response_text = await insights_agent.run(
+            input_text=conversation_text,
+            agent_id=agent_id,
+            letta_client=client,
+            template_vars={"conversation": conversation_text},
+        )
 
         logger.info(
             "Triggered insights response (%d chars): %s...",
@@ -325,8 +278,10 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
             response_text[:100] if response_text else "(empty)",
         )
 
-        # Reset insights agent
-        await client.agents.messages.reset(agent_id=config.insights_agent_id)
+        # Check if update was needed
+        no_update = "NO_UPDATE_NEEDED" in response_text.upper()
+        if no_update:
+            logger.info("Triggered insights determined no update needed for agent %s", agent_id)
 
         # Publish event
         await publish_event(
@@ -335,6 +290,7 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
             payload={
                 "triggered": True,
                 "response": response_text,
+                "updated": not no_update,
             },
         )
 
@@ -345,6 +301,7 @@ Remember: only update if truly necessary. Irrelevant updates add noise."""
             "status": "ok",
             "messages_checked": len(messages),
             "response_length": len(response_text),
+            "updated": not no_update,
         }
 
     except Exception:
