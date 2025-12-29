@@ -1,4 +1,7 @@
-"""DeepSeek API client with tool calling support."""
+"""OpenAI-compatible API client with tool calling support.
+
+Works with any OpenAI-compatible API (OpenAI, DeepSeek, Groq, etc.).
+"""
 
 from __future__ import annotations
 
@@ -14,8 +17,8 @@ from kairix_agent.config import Config
 logger = logging.getLogger(__name__)
 
 
-class DeepSeekClient:
-    """Async client for DeepSeek API with tool calling support."""
+class OpenAICompatibleClient:
+    """Async client for OpenAI-compatible APIs with tool calling support."""
 
     def __init__(
         self,
@@ -23,12 +26,13 @@ class DeepSeekClient:
         base_url: str | None = None,
         model: str | None = None,
     ) -> None:
-        self.api_key = api_key or Config.DEEPSEEK_API_KEY.value
-        self.base_url = base_url or Config.DEEPSEEK_BASE_URL.value
-        self.model = model or Config.DEEPSEEK_MODEL.value
+        self.api_key = api_key or Config.LLM_API_KEY.value
+        self.base_url = base_url or Config.LLM_BASE_URL.value
+        self.model = model or Config.LLM_MODEL.value
 
         if not self.api_key:
-            raise ValueError("DEEPSEEK_API_KEY is required")
+            msg = "LLM_API_KEY is required"
+            raise ValueError(msg)
 
         self._client = AsyncOpenAI(
             api_key=self.api_key,
@@ -70,7 +74,7 @@ class DeepSeekClient:
 
         for iteration in range(max_iterations):
             logger.debug(
-                "DeepSeek iteration %d/%d, messages=%d",
+                "LLM iteration %d/%d, messages=%d",
                 iteration + 1,
                 max_iterations,
                 len(messages),
@@ -94,7 +98,7 @@ class DeepSeekClient:
 
             # Process tool calls
             logger.info(
-                "DeepSeek requested %d tool call(s)",
+                "LLM requested %d tool call(s)",
                 len(assistant_message.tool_calls),
             )
 
@@ -144,7 +148,7 @@ class DeepSeekClient:
                 )
 
         # If we hit max iterations, return whatever we have
-        logger.warning("DeepSeek hit max iterations (%d)", max_iterations)
+        logger.warning("LLM hit max iterations (%d)", max_iterations)
         last_content = messages[-1].get("content", "")
         if isinstance(last_content, str):
             return last_content

@@ -14,7 +14,6 @@ SUMMARIZER_CONFIG = BlockManagerConfig(
     timeout=180.0,  # Longer timeout for large sessions
     tools=[],  # No tools for summarizer
     kp3_storage=KP3StorageConfig(
-        enabled=True,
         passage_type="session_summary",
         include_input_in_metadata=False,  # Input is full transcript - too large
     ),
@@ -28,7 +27,7 @@ INSIGHTS_CONFIG = BlockManagerConfig(
     target_block="background_insights",
     max_tokens=1024,
     temperature=0.7,
-    timeout=60.0,
+    timeout=10.0,  # Short timeout for near-realtime context injection
     tools=[SEARCH_KP3_TOOL],  # Give insights agent the search tool
-    kp3_storage=KP3StorageConfig(enabled=False),  # Don't store insights
+    kp3_storage=None,  # Don't store insights
 )

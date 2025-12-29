@@ -1,16 +1,16 @@
-"""BlockManagerAgent - Generic agent that manages Letta blocks via DeepSeek."""
+"""BlockManagerAgent - Generic agent that manages Letta blocks via LLM."""
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import httpx
 
 from kairix_agent.config import Config
-from kairix_agent.llm.deepseek import DeepSeekClient
+from kairix_agent.llm.openai_client import OpenAICompatibleClient
 
 if TYPE_CHECKING:
     from letta_client import AsyncLetta
@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 class KP3StorageConfig:
     """Configuration for storing output to KP3."""
 
-    enabled: bool = False
     passage_type: str = "agent_output"
     include_input_in_metadata: bool = True
 
@@ -46,6 +45,7 @@ class BlockManagerConfig:
     name: str  # e.g., "summarizer", "insights"
     prompt_name: str  # KP3 ExtractionPrompt name (loaded at runtime)
     target_block: str  # Block label to update (e.g., "last_session_summary")
+    model: str | None = None  # LLM model to use (defaults to Config.LLM_MODEL)
     max_tokens: int = 4096
     temperature: float = 0.7
     timeout: float = 120.0
@@ -53,18 +53,17 @@ class BlockManagerConfig:
     # Tool use configuration
     tools: list[dict[str, Any]] = field(default_factory=list)
 
-    # KP3 output storage
-    kp3_storage: KP3StorageConfig = field(default_factory=KP3StorageConfig)
+    # KP3 output storage (None = disabled)
+    kp3_storage: KP3StorageConfig | None = None
 
 
 class BlockManagerAgent:
-    """Generic agent that processes input and updates a Letta block via DeepSeek."""
+    """Generic agent that processes input and updates a Letta block via LLM."""
 
     def __init__(self, config: BlockManagerConfig) -> None:
         self.config = config
-        self.deepseek = DeepSeekClient()
+        self._llm_client = OpenAICompatibleClient(model=config.model)
         self._tool_handlers: dict[str, Callable[..., Awaitable[str]]] = {}
-        self._prompt: PromptData | None = None  # Loaded lazily
 
     def register_tool_handler(
         self, name: str, handler: Callable[..., Awaitable[str]]
@@ -73,30 +72,27 @@ class BlockManagerAgent:
         self._tool_handlers[name] = handler
 
     async def _load_prompt(self) -> PromptData:
-        """Load prompt from KP3 database (cached after first load)."""
-        if self._prompt is None:
-            kp3_url = Config.KP3_URL.value
-            logger.info("Loading prompt: %s", self.config.prompt_name)
+        """Load prompt from KP3 database (always loads fresh)."""
+        kp3_url = Config.KP3_URL.value
+        logger.info("Loading prompt: %s", self.config.prompt_name)
 
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(
-                    f"{kp3_url}/prompts/{self.config.prompt_name}"
-                )
-                response.raise_for_status()
-                data = response.json()
-                self._prompt = PromptData(
-                    id=data["id"],
-                    name=data["name"],
-                    version=data["version"],
-                    system_prompt=data["system_prompt"],
-                    user_prompt_template=data["user_prompt_template"],
-                    field_descriptions=data.get("field_descriptions", {}),
-                )
-                logger.info(
-                    "Loaded prompt: %s v%d", self._prompt.name, self._prompt.version
-                )
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{kp3_url}/prompts/{self.config.prompt_name}"
+            )
+            response.raise_for_status()
+            data = response.json()
+            prompt = PromptData(
+                id=data["id"],
+                name=data["name"],
+                version=data["version"],
+                system_prompt=data["system_prompt"],
+                user_prompt_template=data["user_prompt_template"],
+                field_descriptions=data.get("field_descriptions", {}),
+            )
+            logger.info("Loaded prompt: %s v%d", prompt.name, prompt.version)
 
-        return self._prompt
+        return prompt
 
     async def run(
         self,
@@ -119,7 +115,7 @@ class BlockManagerAgent:
         Returns:
             The generated text that was written to the block.
         """
-        # Load prompt from KP3
+        # Load prompt from KP3 (always fresh)
         prompt = await self._load_prompt()
 
         # Format user prompt with template variables
@@ -133,8 +129,8 @@ class BlockManagerAgent:
             self.config.target_block,
         )
 
-        # Call DeepSeek with tools (handles tool call loop internally)
-        result = await self.deepseek.generate(
+        # Call LLM with tools (handles tool call loop internally)
+        result = await self._llm_client.generate(
             system_prompt=prompt.system_prompt,
             user_prompt=user_prompt,
             max_tokens=self.config.max_tokens,
@@ -157,7 +153,7 @@ class BlockManagerAgent:
         logger.info("Updated block %s on agent %s", self.config.target_block, agent_id)
 
         # Optionally store output to KP3
-        if self.config.kp3_storage.enabled:
+        if self.config.kp3_storage is not None:
             await self._store_to_kp3(result, input_text, agent_id, metadata)
 
         return result
@@ -170,6 +166,9 @@ class BlockManagerAgent:
         extra_metadata: dict[str, Any] | None,
     ) -> None:
         """Store output to KP3 as a passage."""
+        if self.config.kp3_storage is None:
+            return
+
         kp3_url = Config.KP3_URL.value
 
         meta: dict[str, Any] = {
