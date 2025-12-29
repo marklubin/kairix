@@ -112,7 +112,9 @@ EOF
 
 cmd_up() {
     print_header "Starting Kairix Services"
-    $COMPOSE up -d --force-recreate "$@"
+    # Stop and remove existing containers to avoid podman-compose "name in use" errors
+    $COMPOSE down --remove-orphans 2>/dev/null || true
+    $COMPOSE up -d "$@"
     echo
     $COMPOSE ps
 }
@@ -150,7 +152,9 @@ cmd_build() {
 
 cmd_dev() {
     print_header "Starting Development Dependencies"
-    COMPOSE_PROFILES= $COMPOSE up -d --force-recreate "$@"
+    # Stop and remove existing containers to avoid podman-compose "name in use" errors
+    COMPOSE_PROFILES= $COMPOSE down --remove-orphans 2>/dev/null || true
+    COMPOSE_PROFILES= $COMPOSE up -d "$@"
     echo
     $COMPOSE ps
 }
