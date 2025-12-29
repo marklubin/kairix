@@ -10,17 +10,20 @@ ENV UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Copy dependency files first (changes here invalidate cache)
-COPY uv.lock pyproject.toml ./
+# Copy kairix-common first (it's a local dependency)
+COPY kairix-common/ /kairix-common/
+
+# Copy dependency files (changes here invalidate cache)
+COPY v2-runtime/uv.lock v2-runtime/pyproject.toml ./
 
 # Install dependencies (cached unless uv.lock/pyproject.toml change)
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-install-project --no-dev
 
 # Copy source and install project
-COPY src/ ./src/
-COPY alembic/ ./alembic/
-COPY alembic.ini ./
+COPY v2-runtime/src/ ./src/
+COPY v2-runtime/alembic/ ./alembic/
+COPY v2-runtime/alembic.ini ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev

@@ -160,8 +160,8 @@ services:
 
   kairix-server:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: v2-runtime/Dockerfile
     image: kairix-server:latest
     container_name: kairix-server
     command: >
@@ -208,8 +208,8 @@ services:
 
   kairix-worker:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: v2-runtime/Dockerfile
     image: kairix-worker:latest
     container_name: kairix-worker
     command: python -m saq kairix_agent.worker.settings --verbose
@@ -248,8 +248,8 @@ services:
 
   kp3-service:
     build:
-      context: ../kp3
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: kp3/Dockerfile
     image: kp3-service:latest
     container_name: kp3-service
     command: kp3-service
@@ -284,8 +284,8 @@ services:
 
   migrate:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: v2-runtime/Dockerfile
     image: kairix-server:latest
     container_name: kairix-migrate
     command: python -m alembic upgrade head
@@ -303,8 +303,8 @@ services:
 
   kp3:
     build:
-      context: ../kp3
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: kp3/Dockerfile
     image: kp3-service:latest
     container_name: kp3-cli
     # Override CMD with: docker compose run --rm kp3 kp3 <command>
@@ -328,8 +328,8 @@ services:
 
   voice-admin:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: v2-runtime/Dockerfile
     image: kairix-server:latest
     container_name: kairix-voice-admin
     # Override CMD with: docker compose run --rm voice-admin voice-admin <command>
@@ -351,8 +351,8 @@ services:
 
   sessions-admin:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: v2-runtime/Dockerfile
     image: kairix-server:latest
     container_name: kairix-sessions-admin
     # Override CMD with: docker compose run --rm sessions-admin sessions-admin <command>
