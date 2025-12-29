@@ -100,6 +100,19 @@ services:
     networks:
       - kairix-net
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
   # ===========================================================================
   # MCP Gateway & Proxies
   # ===========================================================================
@@ -164,12 +177,16 @@ services:
       - LETTA_BASE_URL=http://letta:8283
       - KP3_URL=http://kp3-service:8080
       - LOG_LEVEL=INFO
+      - ENABLE_TRACING=${ENABLE_TRACING:-true}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       letta:
+        condition: service_started
+      jaeger:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/hello"]
