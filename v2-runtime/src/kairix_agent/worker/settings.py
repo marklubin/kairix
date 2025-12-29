@@ -63,6 +63,11 @@ settings = {
             kwargs={"agents": MONITORED_AGENTS},
             timeout=JOB_TIMEOUTS["check_session_boundaries"],
         ),
-        # check_insights_relevance removed from cron - runs on-demand via trigger_insights
+        CronJob(
+            check_insights_relevance,
+            cron="* * * * *",  # Every minute (skips if no message in last INSIGHTS_ACTIVITY_MINUTES)
+            kwargs={"agents": MONITORED_AGENTS},
+            timeout=JOB_TIMEOUTS["check_insights_relevance"],
+        ),
     ],
 }

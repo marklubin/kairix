@@ -29,6 +29,9 @@ class Config(Enum):
     # Session detection settings
     SESSION_GAP_MINUTES = int(os.getenv("SESSION_GAP_MINUTES", "5"))
 
+    # Insights job settings - only trigger if message in last N minutes
+    INSIGHTS_ACTIVITY_MINUTES = int(os.getenv("INSIGHTS_ACTIVITY_MINUTES", "1"))
+
     # Letta configuration (for voice server and provisioning CLI)
     LETTA_BASE_URL = os.getenv("LETTA_BASE_URL", "http://localhost:9000")
     LETTA_AGENT_ID = os.getenv("LETTA_AGENT_ID", "")

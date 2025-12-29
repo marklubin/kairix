@@ -75,20 +75,20 @@ async def _check_agent_insights(
     for i, m in enumerate(messages[-5:]):
         logger.info("  [%d] %s | %s | %s", i, m.id, m.date, m.message_type)
 
-    # Check if newest message is recent enough (within session gap)
+    # Check if newest message is recent enough (within insights activity window)
     # messages[-1] is newest since we're in chronological order
     last_message = messages[-1]
     last_message_time = last_message.date
     now = datetime.now(tz=UTC)
     gap = now - last_message_time
-    session_gap_minutes = Config.SESSION_GAP_MINUTES.value
+    activity_minutes = Config.INSIGHTS_ACTIVITY_MINUTES.value
 
-    if gap >= timedelta(minutes=session_gap_minutes):
+    if gap >= timedelta(minutes=activity_minutes):
         logger.debug(
-            "No active conversation for agent %s (gap: %s >= %s minutes), skipping",
+            "No recent activity for agent %s (gap: %s >= %s minutes), skipping insights",
             agent_id,
             gap,
-            session_gap_minutes,
+            activity_minutes,
         )
         # Publish event with triggered=False (no active conversation)
         await publish_event(
