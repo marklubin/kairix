@@ -307,11 +307,12 @@ services:
       dockerfile: kp3/Dockerfile
     image: kp3-service:latest
     container_name: kp3-cli
-    # Override CMD with: docker compose run --rm kp3 kp3 <command>
+    # Usage: docker compose run --rm kp3 kp3 <command>
     # Examples:
     #   docker compose run --rm kp3 kp3 passage search "query"
     #   docker compose run --rm kp3 kp3 passage ls
     #   docker compose run --rm kp3 kp3 run ls
+    command: ["echo", "Usage: docker compose run --rm kp3 kp3 <command>"]
     environment:
       - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kp3
       - KP3_OLLAMA_HOST=http://host.containers.internal:11434
@@ -332,11 +333,12 @@ services:
       dockerfile: v2-runtime/Dockerfile
     image: kairix-server:latest
     container_name: kairix-voice-admin
-    # Override CMD with: docker compose run --rm voice-admin voice-admin <command>
+    # Usage: docker compose run --rm voice-admin voice-admin <command>
     # Examples:
     #   docker compose run --rm voice-admin voice-admin list
     #   docker compose run --rm voice-admin voice-admin add
     #   docker compose run --rm voice-admin voice-admin assign
+    command: ["echo", "Usage: docker compose run --rm voice-admin voice-admin <command>"]
     env_file:
       - .env
     environment:
@@ -355,12 +357,13 @@ services:
       dockerfile: v2-runtime/Dockerfile
     image: kairix-server:latest
     container_name: kairix-sessions-admin
-    # Override CMD with: docker compose run --rm sessions-admin sessions-admin <command>
+    # Usage: docker compose run --rm sessions-admin sessions-admin <command>
     # Examples:
     #   docker compose run --rm sessions-admin sessions-admin status
     #   docker compose run --rm sessions-admin sessions-admin list-failed
     #   docker compose run --rm sessions-admin sessions-admin recover
     #   docker compose run --rm sessions-admin sessions-admin recover --dry
+    command: ["echo", "Usage: docker compose run --rm sessions-admin sessions-admin <command>"]
     env_file:
       - .env
     environment:
