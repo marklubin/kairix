@@ -43,6 +43,8 @@ RUN groupadd --system --gid 999 kairix \
 
 # Copy the application from builder
 COPY --from=builder --chown=kairix:kairix /app /app
+# Also copy kairix-common for runtime imports
+COPY --from=builder --chown=kairix:kairix /kairix-common /kairix-common
 
 # Add venv to PATH
 ENV PATH="/app/.venv/bin:$PATH"
