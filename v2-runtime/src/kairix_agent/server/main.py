@@ -11,6 +11,7 @@ import aiohttp
 import uvicorn
 from deepgram import LiveOptions
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.pipeline.pipeline import Pipeline
@@ -19,13 +20,20 @@ from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.serializers.protobuf import ProtobufFrameSerializer
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.stt import DeepgramSTTService
-from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
+from pipecat.utils.tracing.setup import setup_tracing
 from pipecat_whisker import WhiskerObserver
 from saq import Queue
+
+try:
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+    HAS_OTLP = True
+except ImportError:
+    HAS_OTLP = False
 
 from kairix_agent.config import Config
 from kairix_agent.events import emit_context_state
@@ -74,6 +82,22 @@ def get_or_die(env_var: str) -> str:
 # Config from environment
 deepgram_api_key = get_or_die("DEEPGRAM_API_KEY")
 cartesia_api_key = get_or_die("CARTESIA_API_KEY")
+
+# Initialize OpenTelemetry tracing if configured
+TRACING_ENABLED = os.environ.get("ENABLE_TRACING", "").lower() in ("1", "true", "yes")
+if TRACING_ENABLED and HAS_OTLP:
+    otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
+    otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
+    setup_tracing(
+        service_name="kairix-voice",
+        exporter=otlp_exporter,
+        console_export=os.environ.get("OTEL_CONSOLE_EXPORT", "").lower() in ("1", "true"),
+    )
+    logger.info("OpenTelemetry tracing enabled, exporting to %s", otlp_endpoint)
+elif TRACING_ENABLED:
+    # Console-only tracing for debugging without OTLP collector
+    setup_tracing(service_name="kairix-voice", console_export=True)
+    logger.info("OpenTelemetry tracing enabled (console only)")
 
 
 @app.get("/hello")
@@ -186,15 +210,18 @@ async def voice_endpoint(
 
     # Create transport for this WebSocket connection
     # ProtobufFrameSerializer defines the wire format for audio/text frames
-    # VAD config: quick to start, patient on pauses
+    # VAD config: stop_secs=0.2 required for smart turn detection to work properly
     vad = SileroVADAnalyzer(
         sample_rate=16000,
         params=VADParams(
-            start_secs=0.2,  # Quick to detect speech start (default 0.2)
-            # Wait 1.5s of silence before "done speaking" (default 0.8)
-            stop_secs=1.5,
+            start_secs=0.2,  # Quick to detect speech start
+            stop_secs=0.2,  # Low value required for smart turn model analysis
         ),
     )
+
+    # Smart turn detection uses ML to determine when user is done speaking
+    # (vs just pausing mid-thought), enabling more natural conversation flow
+    turn_analyzer = LocalSmartTurnAnalyzerV3()
 
     transport = FastAPIWebsocketTransport(
         websocket=websocket,
@@ -202,6 +229,7 @@ async def voice_endpoint(
             audio_in_enabled=True,
             audio_out_enabled=True,
             vad_analyzer=vad,
+            turn_analyzer=turn_analyzer,
             serializer=ProtobufFrameSerializer(),
         ),
     )
@@ -216,13 +244,11 @@ async def voice_endpoint(
             punctuate=True,
             interim_results=True,
             # Wait 2s of silence before finalizing (default ~1s)
-            utterance_end_ms="2000",
+            utterance_end_ms="1000",
             vad_events=True,
             profanity_filter=False,
         ),
     )
-
-    # tts = DeepgramTTSService(api_key=deepgram_api_key, voice="aura-2-phoebe-en")
 
     tts = CartesiaTTSService(
         api_key=cartesia_api_key,
@@ -258,8 +284,15 @@ async def voice_endpoint(
 
             task = PipelineTask(
                 pipeline,
-                params=PipelineParams(allow_interruptions=True),
+                params=PipelineParams(
+                    allow_interruptions=True,
+                    enable_metrics=True,
+                    enable_usage_metrics=True,
+                ),
                 observers=[whisker],
+                enable_tracing=TRACING_ENABLED,
+                enable_turn_tracking=True,
+                conversation_id=f"voice-{agent_id}",
             )
 
             runner = PipelineRunner()
