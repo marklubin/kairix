@@ -2,9 +2,7 @@
 
 from kairix_agent.provisioning.agents import (
     AgentSpec,
-    create_background_insights_agent,
     create_conversational_agent,
-    create_reflector_agent,
 )
 from kairix_agent.provisioning.blocks import BlockDefinition, SharedBlocks
 from kairix_agent.provisioning.models import AgentDefinition
@@ -15,8 +13,6 @@ __all__ = [
     "AgentSpec",
     "BlockDefinition",
     "SharedBlocks",
-    "create_background_insights_agent",
     "create_conversational_agent",
-    "create_reflector_agent",
     "get_system_prompt",
 ]

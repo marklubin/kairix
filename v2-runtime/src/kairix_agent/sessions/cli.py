@@ -240,10 +240,6 @@ async def recover_sessions(*, dry_run: bool = False, auto_yes: bool = False) -> 
             console.print("  [red]ERROR: Agent has no archive attached, skipping[/red]")
             continue
 
-        if not agent_config.reflector_agent_id:
-            console.print("  [red]ERROR: Agent has no reflector configured, skipping[/red]")
-            continue
-
         # Get message IDs from our database
         message_ids = await get_session_message_ids(session.id)
         console.print(f"  Retrieved {len(message_ids)} message IDs from database")
@@ -328,7 +324,6 @@ async def recover_sessions(*, dry_run: bool = False, auto_yes: bool = False) -> 
                     agent_id=session.agent_id,
                     letta_url=letta_url,
                     archive_id=agent_config.archive_id,
-                    reflector_agent_id=agent_config.reflector_agent_id,
                 )
 
                 if result.get("status") == "ok":

@@ -8,6 +8,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "dotenv>=0.9.9",
     "fastapi>=0.115.6,<0.122.0",
+    "kairix-common",
     "letta-client>=1.6.1",
     "pipecat-ai-tail>=0.0.2",
     "pipecat-ai-whisker>=0.0.10",
@@ -35,6 +36,9 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "kairix_agent"
+
+[tool.uv.sources]
+kairix-common = { path = "../kairix-common", editable = true }
 
 [dependency-groups]
 dev = [

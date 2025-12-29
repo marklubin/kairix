@@ -1,51 +1,20 @@
 """REST API router for passage search and management."""
 
-from datetime import datetime
-from typing import Any
-from uuid import UUID
-
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from kairix_common.kp3_client import (
+    PassageCreate,
+    PassageCreateResponse,
+    PassageResult,
+    PromptResponse,
+    SearchResponse,
+)
 
 from kp3.db.engine import async_session
-from kp3.query_service.models import PassageResult, SearchResponse
 from kp3.services.passages import create_passage
 from kp3.services.prompts import get_active_prompt
 from kp3.services.search import SearchMode, search_passages
 
 router = APIRouter(tags=["passages"])
-
-
-# --- Request/Response Models ---
-
-
-class PassageCreate(BaseModel):
-    """Request body for creating a passage."""
-
-    content: str = Field(min_length=1, description="Passage content")
-    passage_type: str = Field(default="manual_input", description="Type of passage")
-    metadata: dict[str, Any] | None = Field(default=None, description="Optional metadata")
-    period_start: datetime | None = Field(default=None, description="Period start time")
-    period_end: datetime | None = Field(default=None, description="Period end time")
-
-
-class PassageCreateResponse(BaseModel):
-    """Response after creating a passage."""
-
-    id: UUID
-    content: str
-    passage_type: str
-
-
-class PromptResponse(BaseModel):
-    """Response for prompt retrieval."""
-
-    id: str
-    name: str
-    version: int
-    system_prompt: str
-    user_prompt_template: str
-    field_descriptions: dict[str, Any]
 
 
 @router.get("/passages/search", response_model=SearchResponse)

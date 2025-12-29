@@ -1,4 +1,4 @@
-"""Pydantic models for query service API - re-exported from kairix-common."""
+"""Kairix Common - shared types and utilities."""
 
 from kairix_common.kp3_client import (
     PassageCreate,
@@ -8,12 +8,17 @@ from kairix_common.kp3_client import (
     SearchMode,
     SearchResponse,
 )
+from kairix_common.llm import LLMConfig, OpenAICompatibleClient
 
 __all__ = [
+    # KP3 client types
     "PassageCreate",
     "PassageCreateResponse",
     "PassageResult",
     "PromptResponse",
     "SearchMode",
     "SearchResponse",
+    # LLM
+    "LLMConfig",
+    "OpenAICompatibleClient",
 ]

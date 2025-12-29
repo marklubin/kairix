@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import httpx
+from kairix_common.kp3_client import PromptResponse
 
 from kairix_agent.config import Config
 from kairix_agent.llm.openai_client import OpenAICompatibleClient
@@ -24,18 +25,6 @@ class KP3StorageConfig:
 
     passage_type: str = "agent_output"
     include_input_in_metadata: bool = True
-
-
-@dataclass
-class PromptData:
-    """Prompt data loaded from KP3."""
-
-    id: str
-    name: str
-    version: int
-    system_prompt: str
-    user_prompt_template: str
-    field_descriptions: dict[str, Any]
 
 
 @dataclass
@@ -71,7 +60,7 @@ class BlockManagerAgent:
         """Register a handler for a tool call."""
         self._tool_handlers[name] = handler
 
-    async def _load_prompt(self) -> PromptData:
+    async def _load_prompt(self) -> PromptResponse:
         """Load prompt from KP3 database (always loads fresh)."""
         kp3_url = Config.KP3_URL.value
         logger.info("Loading prompt: %s", self.config.prompt_name)
@@ -81,15 +70,7 @@ class BlockManagerAgent:
                 f"{kp3_url}/prompts/{self.config.prompt_name}"
             )
             response.raise_for_status()
-            data = response.json()
-            prompt = PromptData(
-                id=data["id"],
-                name=data["name"],
-                version=data["version"],
-                system_prompt=data["system_prompt"],
-                user_prompt_template=data["user_prompt_template"],
-                field_descriptions=data.get("field_descriptions", {}),
-            )
+            prompt = PromptResponse.model_validate(response.json())
             logger.info("Loaded prompt: %s v%d", prompt.name, prompt.version)
 
         return prompt
