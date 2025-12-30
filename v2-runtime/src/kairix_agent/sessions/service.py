@@ -37,21 +37,22 @@ async def get_latest_session_end(agent_id: str) -> datetime | None:
 
 
 async def get_pending_session_for_agent(agent_id: str) -> Session | None:
-    """Check if there's a pending (not yet summarized) session for an agent.
+    """Check if there's a pending or failed session for an agent.
 
     Used to prevent duplicate session creation during race conditions.
+    Also blocks re-creation when a session failed (manual intervention needed).
 
     Args:
         agent_id: The Letta agent ID.
 
     Returns:
-        The pending Session if one exists, None otherwise.
+        The pending/failed Session if one exists, None otherwise.
     """
     async with _async_session() as db:
         result = await db.execute(
             select(Session)
             .where(Session.agent_id == agent_id)
-            .where(Session.status == SessionStatus.PENDING.value)
+            .where(Session.status.in_([SessionStatus.PENDING.value, SessionStatus.FAILED.value]))
             .order_by(Session.created_at.desc())
             .limit(1)
         )
