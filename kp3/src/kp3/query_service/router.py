@@ -1,5 +1,7 @@
 """REST API router for passage search and management."""
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from kairix_common.kp3_client import (
     PassageCreate,
@@ -10,11 +12,17 @@ from kairix_common.kp3_client import (
 )
 
 from kp3.db.engine import async_session
+from kp3.processors.embedding import generate_embedding
 from kp3.services.passages import create_passage
 from kp3.services.prompts import get_active_prompt
 from kp3.services.search import SearchMode, search_passages
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["passages"])
+
+# Passage types that should be auto-embedded for semantic search
+AUTO_EMBED_PASSAGE_TYPES = {"session_summary", "memory_shard"}
 
 
 @router.get("/passages/search", response_model=SearchResponse)
@@ -55,9 +63,23 @@ async def search(
 async def create_new_passage(payload: PassageCreate) -> PassageCreateResponse:
     """Create a new passage.
 
-    The passage will be automatically embedded for semantic search.
+    The passage will be automatically embedded for semantic search if the
+    passage_type is in AUTO_EMBED_PASSAGE_TYPES (session_summary, memory_shard).
     Duplicate content (by SHA256 hash) will be rejected.
     """
+    # Auto-generate embedding for searchable passage types
+    embedding: list[float] | None = None
+    if payload.passage_type in AUTO_EMBED_PASSAGE_TYPES:
+        try:
+            embedding = await generate_embedding(payload.content)
+            logger.info(
+                "Auto-generated embedding for %s passage (%d dims)",
+                payload.passage_type,
+                len(embedding),
+            )
+        except Exception:
+            logger.exception("Failed to generate embedding, continuing without")
+
     async with async_session() as session:
         passage = await create_passage(
             session,
@@ -66,6 +88,7 @@ async def create_new_passage(payload: PassageCreate) -> PassageCreateResponse:
             metadata=payload.metadata,
             period_start=payload.period_start,
             period_end=payload.period_end,
+            embedding_qwen3=embedding,
         )
         await session.commit()
 
