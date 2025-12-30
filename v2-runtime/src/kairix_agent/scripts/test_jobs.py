@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import logging
 import sys
+from pathlib import Path
 from typing import Any
 
 from letta_client import AsyncLetta
@@ -27,7 +28,9 @@ logger = logging.getLogger(__name__)
 RECENT_MESSAGE_COUNT = 10
 
 
-async def _run_insights(agent_id: str, letta_url: str, *, force: bool = False) -> dict[str, Any]:
+async def _run_insights(
+    agent_id: str, letta_url: str, *, force: bool = False, input_text: str | None = None
+) -> dict[str, Any]:
     """Run insights job for a specific agent."""
     logger.info("Running insights job for agent %s (force=%s)", agent_id, force)
 
@@ -40,24 +43,30 @@ async def _run_insights(agent_id: str, letta_url: str, *, force: bool = False) -
         # Bypass activity check - run directly
         logger.info("Force mode: bypassing activity check")
 
-        all_messages: list[Any] = [
-            msg
-            async for msg in client.agents.messages.list(
-                agent_id=agent_id,
-                order="asc",
-                order_by="created_at",
-            )
-        ]
-        messages = all_messages[-RECENT_MESSAGE_COUNT:] if all_messages else []
+        if input_text:
+            # Use provided input text
+            logger.info("Using provided input text (%d chars)", len(input_text))
+            conversation_text = input_text
+        else:
+            # Fetch from Letta
+            all_messages: list[Any] = [
+                msg
+                async for msg in client.agents.messages.list(
+                    agent_id=agent_id,
+                    order="asc",
+                    order_by="created_at",
+                )
+            ]
+            messages = all_messages[-RECENT_MESSAGE_COUNT:] if all_messages else []
 
-        if not messages:
-            logger.info("No messages found")
-            return {"status": "skipped", "reason": "no_messages"}
+            if not messages:
+                logger.info("No messages found")
+                return {"status": "skipped", "reason": "no_messages"}
 
-        logger.info("Got %d messages (from %d total)", len(messages), len(all_messages))
+            logger.info("Got %d messages (from %d total)", len(messages), len(all_messages))
 
-        # Format transcript
-        conversation_text = format_transcript(messages)
+            # Format transcript
+            conversation_text = format_transcript(messages)
         logger.info("Transcript:\n%s", conversation_text[:500])
 
         # Create insights agent with search tool
@@ -74,14 +83,14 @@ async def _run_insights(agent_id: str, letta_url: str, *, force: bool = False) -
 
         logger.info("Response (%d chars): %s", len(response), response)
         return {"status": "ok", "response": response, "forced": True}
-    else:
-        result = await _check_agent_insights(
-            client=client,
-            agent_id=agent_id,
-            letta_url=letta_url,
-        )
-        logger.info("Result: %s", result)
-        return dict(result)
+
+    result = await _check_agent_insights(
+        client=client,
+        agent_id=agent_id,
+        letta_url=letta_url,
+    )
+    logger.info("Result: %s", result)
+    return dict(result)
 
 
 def run_insights() -> None:
@@ -90,9 +99,21 @@ def run_insights() -> None:
     parser.add_argument("--agent-id", required=True, help="Conversational agent ID")
     parser.add_argument("--letta-url", default=Config.LETTA_BASE_URL.value, help="Letta server URL")
     parser.add_argument("--force", action="store_true", help="Bypass activity check and run directly")
+    parser.add_argument(
+        "--input",
+        dest="input_text",
+        help="Custom conversation text to process (use @filename to read from file)",
+    )
     args = parser.parse_args()
 
-    result = asyncio.run(_run_insights(args.agent_id, args.letta_url, force=args.force))
+    # Handle @filename syntax for reading from file
+    input_text = args.input_text
+    if input_text and input_text.startswith("@"):
+        input_text = Path(input_text[1:]).read_text(encoding="utf-8")
+
+    result = asyncio.run(
+        _run_insights(args.agent_id, args.letta_url, force=args.force, input_text=input_text)
+    )
     sys.exit(0 if result.get("status") in ("ok", "skipped") else 1)
 
 
