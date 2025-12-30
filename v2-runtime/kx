@@ -86,11 +86,15 @@ HEALTH:
 
 KP3:
     kp3 <cmd>       Run kp3 CLI command
-                    Examples:
-                      kx kp3 passage search "query"
-                      kx kp3 passage ls
-                      kx kp3 run ls
-                      kx kp3 sql "SELECT count(*) FROM passages"
+                    Commands:
+                      kx kp3 passage search "query"   Search passages
+                      kx kp3 passage ls               List passages
+                      kx kp3 prompts list             List extraction prompts
+                      kx kp3 prompts show <name>      Show prompt details
+                      kx kp3 prompts create <name>    Create new prompt version
+                      kx kp3 prompts activate <n> <v> Activate prompt version
+                      kx kp3 run ls                   List processing runs
+                      kx kp3 sql "SELECT ..."         Execute raw SQL
 
 DEPLOYMENT:
     deploy <target> Deploy to remote host (e.g., kx deploy salinas)
@@ -367,13 +371,17 @@ cmd_kp3() {
         echo "Usage: kx kp3 <command> [args...]"
         echo
         echo "Available commands:"
-        echo "  passage search <query>   Search passages"
-        echo "  passage ls               List passages"
-        echo "  passage create <text>    Create a passage"
-        echo "  run ls                   List processing runs"
-        echo "  run create <sql> -p <t>  Create a processing run"
-        echo "  sql <query>              Execute raw SQL"
-        echo "  importer kairix <path>   Import from SQLite backup"
+        echo "  passage search <query>     Search passages"
+        echo "  passage ls                 List passages"
+        echo "  passage create <text>      Create a passage"
+        echo "  prompts list               List extraction prompts"
+        echo "  prompts show <name>        Show prompt details"
+        echo "  prompts create <name> ...  Create new prompt version"
+        echo "  prompts activate <n> <v>   Activate prompt version"
+        echo "  run ls                     List processing runs"
+        echo "  run create <sql> -p <t>    Create a processing run"
+        echo "  sql <query>                Execute raw SQL"
+        echo "  importer kairix <path>     Import from SQLite backup"
         exit 1
     fi
 

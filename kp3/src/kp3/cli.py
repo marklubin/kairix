@@ -400,6 +400,169 @@ def import_kairix(db_path: Path) -> None:
 
 
 # =============================================================================
+# PROMPTS COMMANDS
+# =============================================================================
+
+
+@cli.group()
+def prompts() -> None:
+    """Manage extraction prompts."""
+    pass
+
+
+@prompts.command("list")
+@click.option("--name", "-n", help="Filter by prompt name (e.g., human, persona, world)")
+@click.option("--limit", "-l", default=20, help="Max prompts to show")
+def prompts_list(name: str | None, limit: int) -> None:
+    """List extraction prompts."""
+    from kp3.services.prompts import list_prompts
+
+    async def _list() -> None:
+        async with async_session() as session:
+            prompt_list = await list_prompts(session, name=name, limit=limit)
+
+            if not prompt_list:
+                click.echo("No prompts found.")
+                return
+
+            console = Console()
+            for prompt in prompt_list:
+                status = "[green]ACTIVE[/]" if prompt.is_active else "[dim]inactive[/]"
+                console.print(
+                    f"{prompt.name:<12} v{prompt.version:<3} {status:<18} "
+                    f"{prompt.created_at:%Y-%m-%d %H:%M}  [dim]{prompt.id}[/]"
+                )
+
+    asyncio.run(_list())
+
+
+@prompts.command("show")
+@click.argument("name")
+@click.option("--version", "-v", type=int, help="Specific version (latest active by default)")
+def prompts_show(name: str, version: int | None) -> None:
+    """Show a prompt's details."""
+    from kp3.services.prompts import get_active_prompt, get_prompt_by_version
+
+    async def _show() -> None:
+        async with async_session() as session:
+            if version is not None:
+                prompt = await get_prompt_by_version(session, name, version)
+            else:
+                prompt = await get_active_prompt(session, name)
+
+            if not prompt:
+                if version is not None:
+                    click.echo(f"Prompt '{name}' v{version} not found.")
+                else:
+                    click.echo(f"No active prompt found for '{name}'.")
+                return
+
+            console = Console()
+            status = "[green]ACTIVE[/]" if prompt.is_active else "[dim]inactive[/]"
+            console.print(f"\n[bold]Prompt:[/] {prompt.name} v{prompt.version} {status}")
+            console.print(f"[bold]ID:[/] {prompt.id}")
+            console.print(f"[bold]Created:[/] {prompt.created_at}")
+            console.print()
+            console.print(Panel(prompt.system_prompt, title="System Prompt", border_style="blue"))
+            console.print()
+            console.print(
+                Panel(
+                    prompt.user_prompt_template, title="User Prompt Template", border_style="cyan"
+                )
+            )
+            console.print()
+            console.print(
+                Panel(
+                    json.dumps(prompt.field_descriptions, indent=2),
+                    title="Field Descriptions",
+                    border_style="green",
+                )
+            )
+
+    asyncio.run(_show())
+
+
+@prompts.command("create")
+@click.argument("name")
+@click.option("--system", "-s", type=click.File("r"), required=True, help="System prompt file")
+@click.option("--template", "-t", type=click.File("r"), required=True, help="User template file")
+@click.option("--fields", "-f", type=click.File("r"), help="Field descriptions JSON file")
+@click.option("--activate", is_flag=True, help="Set as active version")
+def prompts_create(
+    name: str,
+    system: click.utils.LazyFile,
+    template: click.utils.LazyFile,
+    fields: click.utils.LazyFile | None,
+    activate: bool,
+) -> None:
+    """Create a new prompt version.
+
+    Reads prompt content from files. Version is auto-incremented.
+
+    \b
+    Example:
+        kp3 prompts create human -s system.txt -t template.txt -f fields.json --activate
+    """
+    from kp3.services.prompts import create_next_version
+
+    system_prompt = system.read()
+    user_prompt_template = template.read()
+    field_descriptions: dict[str, Any] = {}
+    if fields:
+        try:
+            field_descriptions = json.loads(fields.read())
+        except json.JSONDecodeError as e:
+            raise click.ClickException(f"Invalid JSON in fields file: {e}") from e
+
+    async def _create() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                prompt = await create_next_version(
+                    session,
+                    name=name,
+                    system_prompt=system_prompt,
+                    user_prompt_template=user_prompt_template,
+                    field_descriptions=field_descriptions,
+                    is_active=activate,
+                )
+
+                console = Console()
+                console.print(f"[green]Created prompt:[/] {prompt.name} v{prompt.version}")
+                console.print(f"  ID: {prompt.id}")
+                if activate:
+                    console.print("  [green]Set as active[/]")
+
+    asyncio.run(_create())
+
+
+@prompts.command("activate")
+@click.argument("name")
+@click.argument("version", type=int)
+def prompts_activate(name: str, version: int) -> None:
+    """Activate a specific prompt version.
+
+    \b
+    Example:
+        kp3 prompts activate human 3
+    """
+    from kp3.services.prompts import get_prompt_by_version, set_active_prompt
+
+    async def _activate() -> None:
+        async with async_session() as session:
+            async with session.begin():
+                prompt = await get_prompt_by_version(session, name, version)
+                if not prompt:
+                    raise click.ClickException(f"Prompt '{name}' v{version} not found")
+
+                await set_active_prompt(session, prompt.id)
+
+                console = Console()
+                console.print(f"[green]Activated:[/] {prompt.name} v{prompt.version}")
+
+    asyncio.run(_activate())
+
+
+# =============================================================================
 # REFS COMMANDS
 # =============================================================================
 
