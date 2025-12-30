@@ -110,8 +110,8 @@ Message Count: {len(message_ids)}
 </session_transcript>"""
 
 
-async def summarize_session(  # noqa: PLR0915
-    _ctx: Context,
+async def summarize_session(
+    ctx: Context,
     *,
     session_id: str,
     agent_id: str,
@@ -268,26 +268,48 @@ async def summarize_session(  # noqa: PLR0915
         }
 
     except Exception as e:
-        # Mark session as failed and push to DLQ for later recovery
         error_msg = f"{type(e).__name__}: {e}"
-        logger.exception("Summarization failed for session %s: %s", session_id, error_msg)
 
-        await update_session_status(
-            session_id=session_id,
-            status=SessionStatus.FAILED,
-            error_message=error_msg[:500],  # Truncate long errors
-        )
+        # Check if this is the final attempt (SAQ will retry if attempts < retries)
+        job = ctx.get("job")
+        attempts = job.attempts if job else 0
+        retries = job.retries if job else 0
+        is_final_attempt = attempts >= retries
 
-        await _push_to_dlq(
-            session_id=session_id,
-            agent_id=agent_id,
-            error=error_msg,
-            error_traceback=traceback.format_exc(),
-            message_ids=message_ids,
-            period_start=period_start,
-            period_end=period_end,
-            prompt=transcript,
-        )
+        if is_final_attempt:
+            # Final attempt failed - mark session as failed and push to DLQ
+            logger.exception(
+                "Summarization failed permanently for session %s after %d attempts: %s",
+                session_id,
+                attempts + 1,
+                error_msg,
+            )
 
-        # Re-raise so SAQ marks the job as failed
+            await update_session_status(
+                session_id=session_id,
+                status=SessionStatus.FAILED,
+                error_message=error_msg[:500],  # Truncate long errors
+            )
+
+            await _push_to_dlq(
+                session_id=session_id,
+                agent_id=agent_id,
+                error=error_msg,
+                error_traceback=traceback.format_exc(),
+                message_ids=message_ids,
+                period_start=period_start,
+                period_end=period_end,
+                prompt=transcript,
+            )
+        else:
+            # Will be retried - just log
+            logger.warning(
+                "Summarization failed for session %s (attempt %d/%d), will retry: %s",
+                session_id,
+                attempts + 1,
+                retries + 1,
+                error_msg,
+            )
+
+        # Re-raise so SAQ handles retry/failure
         raise

@@ -4,7 +4,6 @@ from kairix_agent.sessions.models import Session, SessionMessage, SessionStatus
 from kairix_agent.sessions.service import (
     create_session,
     get_latest_session_end,
-    get_pending_session_for_agent,
     get_session,
     get_session_message_ids,
     update_session_status,
@@ -16,7 +15,6 @@ __all__ = [
     "SessionStatus",
     "create_session",
     "get_latest_session_end",
-    "get_pending_session_for_agent",
     "get_session",
     "get_session_message_ids",
     "update_session_status",
