@@ -1,5 +1,7 @@
 """Tests for step_memory_blocks job."""
 
+from collections.abc import AsyncIterator, Callable, Coroutine
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,6 +11,7 @@ from kairix_agent.worker.jobs.step_memory import (
     STEP_MEMORY_JOB,
     StepResult,
     _fetch_blocks,
+    _parse_step_response,
     _run_step_agent,
     step_memory_blocks,
 )
@@ -23,12 +26,14 @@ class TestStepResult:
             block_label="persona",
             updated=True,
             new_value="Updated persona text",
+            rationale="Identity shift detected",
             passage_id="passage-123",
             searched_kp3=True,
         )
         assert result.block_label == "persona"
         assert result.updated is True
         assert result.new_value == "Updated persona text"
+        assert result.rationale == "Identity shift detected"
         assert result.passage_id == "passage-123"
         assert result.searched_kp3 is True
         assert result.error is None
@@ -39,12 +44,14 @@ class TestStepResult:
             block_label="human",
             updated=False,
             new_value=None,
+            rationale="No significant changes observed",
             passage_id=None,
             searched_kp3=False,
         )
         assert result.block_label == "human"
         assert result.updated is False
         assert result.new_value is None
+        assert result.rationale == "No significant changes observed"
         assert result.searched_kp3 is False
 
     def test_step_result_with_error(self) -> None:
@@ -53,12 +60,89 @@ class TestStepResult:
             block_label="world",
             updated=False,
             new_value=None,
+            rationale=None,
             passage_id=None,
             searched_kp3=False,
             error="Connection timeout",
         )
         assert result.error == "Connection timeout"
         assert result.updated is False
+        assert result.rationale is None
+
+
+class TestParseStepResponse:
+    """Tests for _parse_step_response function."""
+
+    def test_parse_updating_with_rationale(self) -> None:
+        """Parses UPDATING: format with rationale and new value."""
+        response = """UPDATING: The user mentioned a new project that seems significant.
+
+This is the new block content that should be stored."""
+
+        updated, rationale, new_value = _parse_step_response(response)
+
+        assert updated is True
+        assert rationale == "The user mentioned a new project that seems significant."
+        assert new_value == "This is the new block content that should be stored."
+
+    def test_parse_updating_without_clear_separation(self) -> None:
+        """Parses UPDATING: format without double newline separation."""
+        response = "UPDATING: New content here"
+
+        updated, rationale, new_value = _parse_step_response(response)
+
+        assert updated is True
+        assert rationale == "Update triggered"
+        assert new_value == "New content here"
+
+    def test_parse_no_update_needed_with_rationale(self) -> None:
+        """Parses NO_UPDATE_NEEDED: format with rationale."""
+        response = "NO_UPDATE_NEEDED: The session summary contained only routine interactions."
+
+        updated, rationale, new_value = _parse_step_response(response)
+
+        assert updated is False
+        assert rationale == "The session summary contained only routine interactions."
+        assert new_value is None
+
+    def test_parse_legacy_no_update_format(self) -> None:
+        """Parses legacy NO_UPDATE_NEEDED format (without colon)."""
+        response = "NO_UPDATE_NEEDED"
+
+        updated, rationale, new_value = _parse_step_response(response)
+
+        assert updated is False
+        assert rationale == "No rationale provided"
+        assert new_value is None
+
+    def test_parse_legacy_update_format(self) -> None:
+        """Parses legacy format without prefix (treated as update)."""
+        response = "This is the new block content directly without prefix."
+
+        updated, rationale, new_value = _parse_step_response(response)
+
+        assert updated is True
+        assert rationale == "Update triggered (legacy format)"
+        assert new_value == "This is the new block content directly without prefix."
+
+    def test_parse_case_insensitive(self) -> None:
+        """Response parsing is case-insensitive for prefixes."""
+        response = "no_update_needed: Nothing changed"
+
+        updated, rationale, _new_value = _parse_step_response(response)
+
+        assert updated is False
+        assert rationale == "Nothing changed"
+
+    def test_parse_strips_whitespace(self) -> None:
+        """Response parsing strips whitespace from components."""
+        response = "  UPDATING:  Some rationale here  \n\n  New content  "
+
+        updated, rationale, new_value = _parse_step_response(response)
+
+        assert updated is True
+        assert rationale == "Some rationale here"
+        assert new_value == "New content"
 
 
 class TestFetchBlocks:
@@ -75,7 +159,9 @@ class TestFetchBlocks:
         ]
 
         # Create async iterator mock
-        async def mock_list(*args: object, **kwargs: object) -> None:
+        async def mock_list(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for block in mock_blocks:
                 yield block
 
@@ -97,7 +183,9 @@ class TestFetchBlocks:
             MagicMock(label="human", value=""),
         ]
 
-        async def mock_list(*args: object, **kwargs: object) -> None:
+        async def mock_list(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for block in mock_blocks:
                 yield block
 
@@ -190,9 +278,12 @@ class TestRunStepAgent:
             mock_search.return_value = "Search results"
 
             # Capture the registered tool handler
-            registered_handler = None
+            # Type: async callable that takes (query, limit) and returns str
+            registered_handler: Callable[..., Coroutine[Any, Any, str]] | None = None
 
-            def capture_handler(name: str, handler: object) -> None:
+            def capture_handler(
+                name: str, handler: Callable[..., Coroutine[Any, Any, str]]
+            ) -> None:
                 nonlocal registered_handler
                 if name == "search_kp3":
                     registered_handler = handler
@@ -274,9 +365,7 @@ class TestStepMemoryBlocks:
             patch(
                 "kairix_agent.worker.jobs.step_memory._run_step_agent"
             ) as mock_run,
-            patch(
-                "kairix_agent.worker.jobs.step_memory.publish_event"
-            ) as mock_publish,
+            patch("kairix_agent.worker.jobs.step_memory.publish_event"),
             patch(
                 "kairix_agent.worker.jobs.step_memory.emit_context_state"
             ) as mock_emit,
@@ -293,6 +382,7 @@ class TestStepMemoryBlocks:
                 block_label="test",
                 updated=False,
                 new_value=None,
+                rationale="No changes needed",
                 passage_id=None,
                 searched_kp3=False,
             )
@@ -345,6 +435,7 @@ class TestStepMemoryBlocks:
                     block_label="persona",
                     updated=True,
                     new_value="New persona",
+                    rationale="Relationship deepened",
                     passage_id=None,
                     searched_kp3=False,
                 ),
@@ -352,6 +443,7 @@ class TestStepMemoryBlocks:
                     block_label="human",
                     updated=False,
                     new_value=None,
+                    rationale="No identity changes",
                     passage_id=None,
                     searched_kp3=True,
                 ),
@@ -359,6 +451,7 @@ class TestStepMemoryBlocks:
                     block_label="world",
                     updated=True,
                     new_value="New world",
+                    rationale="New project mentioned",
                     passage_id=None,
                     searched_kp3=True,
                 ),
@@ -419,6 +512,7 @@ class TestStepMemoryBlocks:
                     block_label="human",
                     updated=False,
                     new_value=None,
+                    rationale="No changes",
                     passage_id=None,
                     searched_kp3=False,
                 ),
@@ -426,6 +520,7 @@ class TestStepMemoryBlocks:
                     block_label="world",
                     updated=True,
                     new_value="Updated",
+                    rationale="New element added",
                     passage_id=None,
                     searched_kp3=False,
                 ),

@@ -23,6 +23,7 @@ from kairix_agent.sessions import (
 )
 from kairix_agent.worker.jobs.step_memory import STEP_MEMORY_JOB
 from kairix_agent.worker.jobs.transcript import format_transcript
+from kairix_agent.worker.retry import LLM_RETRY_CONFIG
 
 if TYPE_CHECKING:
     from saq.types import Context
@@ -258,6 +259,7 @@ async def summarize_session(
 
         # 8. Enqueue step job to update persona/human/world blocks
         # Step failures are independent - session is already summarized
+        # Uses same retry strategy as summarization (exponential backoff)
         queue = ctx.get("queue")
         if queue:
             await queue.enqueue(
@@ -267,8 +269,18 @@ async def summarize_session(
                 session_summary=summary_text,
                 period_start=period_start,
                 period_end=period_end,
+                timeout=300,  # 5 minutes (3 agents run in parallel)
+                retries=LLM_RETRY_CONFIG.retries,
+                retry_delay=LLM_RETRY_CONFIG.retry_delay,
+                retry_backoff=LLM_RETRY_CONFIG.retry_backoff,
             )
-            logger.info("Enqueued %s job for agent %s", STEP_MEMORY_JOB, agent_id)
+            logger.info(
+                "Enqueued %s job for agent %s (retries=%d, retry_delay=%.1fs)",
+                STEP_MEMORY_JOB,
+                agent_id,
+                LLM_RETRY_CONFIG.retries,
+                LLM_RETRY_CONFIG.retry_delay,
+            )
         else:
             logger.warning("No queue available, skipping step_memory enqueue")
 

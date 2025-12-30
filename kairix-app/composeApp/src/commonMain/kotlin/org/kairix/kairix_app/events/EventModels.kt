@@ -320,6 +320,7 @@ data class StepCompleteEvent(
     val blockLabel: String,
     val updated: Boolean,
     val newValue: String?,
+    val rationale: String?,
     val searchedKp3: Boolean
 ) : DisplayableEvent {
 
@@ -335,9 +336,23 @@ data class StepCompleteEvent(
     override val contentLines: List<String> = buildList {
         add(if (updated) "Block updated" else "No changes needed")
         if (searchedKp3) add("Searched KP3")
+        // Show rationale as a content line (truncated if long)
+        rationale?.takeIf { it.isNotBlank() }?.let { r ->
+            val truncated = if (r.length > 100) r.take(100) + "..." else r
+            add(truncated)
+        }
     }
 
-    override val expandableText: String? = newValue?.takeIf { updated }
+    override val expandableText: String? = if (updated) {
+        // Show new value with rationale header
+        val parts = mutableListOf<String>()
+        rationale?.takeIf { it.isNotBlank() }?.let { parts.add("Rationale: $it") }
+        newValue?.let { parts.add("\nNew Value:\n$it") }
+        parts.joinToString("\n").takeIf { it.isNotBlank() }
+    } else {
+        // For non-updates, show full rationale if it was truncated
+        rationale?.takeIf { it.length > 100 }
+    }
 
     companion object {
         fun parse(event: AgentEvent, json: Json): StepCompleteEvent? {
@@ -349,6 +364,7 @@ data class StepCompleteEvent(
                     blockLabel = payload.blockLabel,
                     updated = payload.updated,
                     newValue = payload.newValue,
+                    rationale = payload.rationale,
                     searchedKp3 = payload.searchedKp3
                 )
             } catch (e: Exception) {
@@ -366,6 +382,7 @@ private data class StepCompletePayload(
     val updated: Boolean,
     @SerialName("block_label") val blockLabel: String,
     @SerialName("new_value") val newValue: String? = null,
+    val rationale: String? = null,
     @SerialName("passage_id") val passageId: String? = null,
     @SerialName("searched_kp3") val searchedKp3: Boolean = false
 )

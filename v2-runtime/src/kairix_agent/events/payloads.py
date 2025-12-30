@@ -56,5 +56,6 @@ class StepCompletePayload(BaseModel):
     updated: bool  # True if block was updated, False if NO_UPDATE_NEEDED
     block_label: str  # "persona", "human", or "world"
     new_value: str | None = None  # New block value if updated, None otherwise
+    rationale: str | None = None  # Agent's reasoning for update/non-update decision
     passage_id: str | None = None  # KP3 passage ID if stored
     searched_kp3: bool = False  # Whether the agent used search_kp3 tool
