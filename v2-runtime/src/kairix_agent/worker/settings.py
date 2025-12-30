@@ -19,6 +19,7 @@ from kairix_agent.worker.jobs import (
     summarize_session,
     trigger_insights,
 )
+from kairix_agent.worker.jobs.step_memory import step_memory_blocks
 
 # Configure logging before anything else
 setup_logging("worker")
@@ -50,11 +51,12 @@ JOB_TIMEOUTS = {
     "check_session_boundaries": 60,  # 1 minute for session boundary check
     "check_insights_relevance": 60,  # 1 minute max (less than cron interval)
     "trigger_insights": 60,  # 1 minute for on-demand insights
+    "step_memory_blocks": 300,  # 5 minutes (3 agents in parallel, each 60s timeout)
 }
 
 settings = {
     "queue": queue,
-    "functions": [check_insights_relevance, check_session_boundaries, summarize_session, trigger_insights],
+    "functions": [check_insights_relevance, check_session_boundaries, summarize_session, trigger_insights, step_memory_blocks],
     "concurrency": 5,
     "cron_jobs": [
         CronJob(

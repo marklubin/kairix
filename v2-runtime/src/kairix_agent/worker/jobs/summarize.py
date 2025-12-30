@@ -21,6 +21,7 @@ from kairix_agent.sessions import (
     get_session_message_ids,
     update_session_status,
 )
+from kairix_agent.worker.jobs.step_memory import STEP_MEMORY_JOB
 from kairix_agent.worker.jobs.transcript import format_transcript
 
 if TYPE_CHECKING:
@@ -254,6 +255,22 @@ async def summarize_session(
             summarized_at=datetime.now(UTC),
         )
         logger.info("Updated session %s status to summarized", session_id)
+
+        # 8. Enqueue step job to update persona/human/world blocks
+        # Step failures are independent - session is already summarized
+        queue = ctx.get("queue")
+        if queue:
+            await queue.enqueue(
+                STEP_MEMORY_JOB,
+                agent_id=agent_id,
+                letta_url=letta_url,
+                session_summary=summary_text,
+                period_start=period_start,
+                period_end=period_end,
+            )
+            logger.info("Enqueued %s job for agent %s", STEP_MEMORY_JOB, agent_id)
+        else:
+            logger.warning("No queue available, skipping step_memory enqueue")
 
         return {
             "status": "ok",

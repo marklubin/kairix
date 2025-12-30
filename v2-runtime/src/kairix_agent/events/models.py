@@ -20,6 +20,9 @@ class EventType(str, Enum):
     SUMMARY_COMPLETE = "summary_complete"
     INSIGHTS_COMPLETE = "insights_complete"
     CONTEXT_STATE = "context_state"
+    PERSONA_STEP_COMPLETE = "persona_step_complete"
+    HUMAN_STEP_COMPLETE = "human_step_complete"
+    WORLD_STEP_COMPLETE = "world_step_complete"
 
 
 class AgentEvent(Base):
