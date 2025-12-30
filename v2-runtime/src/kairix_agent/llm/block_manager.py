@@ -125,13 +125,17 @@ class BlockManagerAgent:
             "BlockManagerAgent %s generated %d chars", self.config.name, len(result)
         )
 
-        # Update the target block on the conversational agent
-        await letta_client.agents.blocks.update(
-            agent_id=agent_id,
-            block_label=self.config.target_block,
-            value=result,
-        )
-        logger.info("Updated block %s on agent %s", self.config.target_block, agent_id)
+        # Skip block update if agent determined no update needed
+        if result.upper().startswith("NO_UPDATE_NEEDED"):
+            logger.info("Agent determined no update needed, skipping block update")
+        else:
+            # Update the target block on the conversational agent
+            await letta_client.agents.blocks.update(
+                agent_id=agent_id,
+                block_label=self.config.target_block,
+                value=result,
+            )
+            logger.info("Updated block %s on agent %s", self.config.target_block, agent_id)
 
         # Optionally store output to KP3
         if self.config.kp3_storage is not None:
