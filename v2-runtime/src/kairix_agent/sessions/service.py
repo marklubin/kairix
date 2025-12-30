@@ -14,46 +14,23 @@ _async_session = async_sessionmaker(_engine, class_=AsyncSession, expire_on_comm
 
 
 async def get_latest_session_end(agent_id: str) -> datetime | None:
-    """Get the period_end of the most recent SUMMARIZED session for an agent.
+    """Get the period_end of the most recent session for an agent (any status).
 
-    Only considers successfully summarized sessions. Failed sessions are excluded
-    so their messages can be re-processed in a future summarization attempt.
+    Returns the latest session's period_end regardless of summarization status.
+    This decouples session boundary detection from summarization - once messages
+    are captured in a session, they won't be picked up again by boundary detection.
 
     Args:
         agent_id: The Letta agent ID.
 
     Returns:
-        The period_end timestamp of the latest summarized session, or None if none exist.
+        The period_end timestamp of the latest session, or None if none exist.
     """
     async with _async_session() as db:
         result = await db.execute(
             select(Session.period_end)
             .where(Session.agent_id == agent_id)
-            .where(Session.status == SessionStatus.SUMMARIZED.value)
             .order_by(Session.period_end.desc())
-            .limit(1)
-        )
-        return result.scalar_one_or_none()
-
-
-async def get_pending_session_for_agent(agent_id: str) -> Session | None:
-    """Check if there's a pending or failed session for an agent.
-
-    Used to prevent duplicate session creation during race conditions.
-    Also blocks re-creation when a session failed (manual intervention needed).
-
-    Args:
-        agent_id: The Letta agent ID.
-
-    Returns:
-        The pending/failed Session if one exists, None otherwise.
-    """
-    async with _async_session() as db:
-        result = await db.execute(
-            select(Session)
-            .where(Session.agent_id == agent_id)
-            .where(Session.status.in_([SessionStatus.PENDING.value, SessionStatus.FAILED.value]))
-            .order_by(Session.created_at.desc())
             .limit(1)
         )
         return result.scalar_one_or_none()

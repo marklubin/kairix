@@ -16,7 +16,6 @@ from kairix_agent.memory import LettaMemoryService
 from kairix_agent.sessions import (
     create_session,
     get_latest_session_end,
-    get_pending_session_for_agent,
 )
 
 if TYPE_CHECKING:
@@ -85,20 +84,6 @@ async def _check_agent_session_locked(
     Returns:
         Status dict with detection results for this agent.
     """
-    # Check if there's already a pending session (prevents duplicates)
-    pending_session = await get_pending_session_for_agent(agent_id)
-    if pending_session:
-        logger.info(
-            "Agent %s already has pending session %s, skipping boundary check",
-            agent_id,
-            pending_session.id,
-        )
-        return {
-            "status": "skipped",
-            "reason": "pending_session_exists",
-            "session_id": pending_session.id,
-        }
-
     # Load agent config (cached per agent_id after first call)
     agent_config = await get_agent_config(agent_id=agent_id, letta_url=letta_url)
 
@@ -209,6 +194,7 @@ async def _check_agent_session_locked(
     logger.info("Published SESSION_BOUNDARY event for agent %s", agent_config.agent_id)
 
     # Enqueue summarization job with session_id instead of message_ids
+    # Retry with exponential backoff: 5 attempts, starting at 10s delay (10, 20, 40, 80, 160s)
     await queue.enqueue(
         "summarize_session",
         session_id=new_session.id,
@@ -216,6 +202,9 @@ async def _check_agent_session_locked(
         letta_url=letta_url,
         archive_id=agent_config.archive_id,
         timeout=300,  # 5 minutes for summarization
+        retries=5,
+        retry_delay=10.0,  # Start with 10 second delay
+        retry_backoff=2.0,  # Double delay each retry
     )
 
     return {
