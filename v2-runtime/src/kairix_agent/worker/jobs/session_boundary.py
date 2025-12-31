@@ -17,6 +17,7 @@ from kairix_agent.sessions import (
     create_session,
     get_latest_session_end,
 )
+from kairix_agent.worker.retry import LLM_RETRY_CONFIG
 
 if TYPE_CHECKING:
     from saq.types import Context
@@ -194,7 +195,7 @@ async def _check_agent_session_locked(
     logger.info("Published SESSION_BOUNDARY event for agent %s", agent_config.agent_id)
 
     # Enqueue summarization job with session_id instead of message_ids
-    # Retry with exponential backoff: 5 attempts, starting at 10s delay (10, 20, 40, 80, 160s)
+    # Uses shared LLM retry config for exponential backoff
     await queue.enqueue(
         "summarize_session",
         session_id=new_session.id,
@@ -202,9 +203,9 @@ async def _check_agent_session_locked(
         letta_url=letta_url,
         archive_id=agent_config.archive_id,
         timeout=300,  # 5 minutes for summarization
-        retries=5,
-        retry_delay=10.0,  # Start with 10 second delay
-        retry_backoff=2.0,  # Double delay each retry
+        retries=LLM_RETRY_CONFIG.retries,
+        retry_delay=LLM_RETRY_CONFIG.retry_delay,
+        retry_backoff=LLM_RETRY_CONFIG.retry_backoff,
     )
 
     return {

@@ -60,6 +60,9 @@ sealed interface DisplayableEvent {
                     ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
                 "context_state" -> ContextStateEvent.parse(event, json)
                     ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
+                "persona_step_complete", "human_step_complete", "world_step_complete" ->
+                    StepCompleteEvent.parse(event, json)
+                        ?: ParseErrorEvent(event.id, event.createdAt, event.eventType, "Invalid payload")
                 else -> UnknownEvent(event.id, event.createdAt, event.eventType)
             }
         }
@@ -301,4 +304,85 @@ data class ContextStateEvent(
 @Serializable
 private data class ContextStatePayload(
     val blocks: List<MemoryBlock>
+)
+
+// =============================================================================
+// Step Complete Events (persona, human, world block updates)
+// =============================================================================
+
+/**
+ * Step complete event - memory block update after session summarization.
+ * Handles persona_step_complete, human_step_complete, and world_step_complete events.
+ */
+data class StepCompleteEvent(
+    override val id: String,
+    override val createdAt: String,
+    val blockLabel: String,
+    val updated: Boolean,
+    val newValue: String?,
+    val rationale: String?,
+    val searchedKp3: Boolean
+) : DisplayableEvent {
+
+    override val title: String = "${blockLabel.replaceFirstChar { it.uppercase() }} Step"
+
+    override val titleColor: Color = when (blockLabel) {
+        "persona" -> Color(0xFFC2185B) // Dark Pink
+        "human" -> Color(0xFF1976D2)   // Blue
+        "world" -> Color(0xFF388E3C)   // Green
+        else -> Color.Gray
+    }
+
+    override val contentLines: List<String> = buildList {
+        add(if (updated) "Block updated" else "No changes needed")
+        if (searchedKp3) add("Searched KP3")
+        // Show rationale as a content line (truncated if long)
+        rationale?.takeIf { it.isNotBlank() }?.let { r ->
+            val truncated = if (r.length > 100) r.take(100) + "..." else r
+            add(truncated)
+        }
+    }
+
+    override val expandableText: String? = if (updated) {
+        // Show new value with rationale header
+        val parts = mutableListOf<String>()
+        rationale?.takeIf { it.isNotBlank() }?.let { parts.add("Rationale: $it") }
+        newValue?.let { parts.add("\nNew Value:\n$it") }
+        parts.joinToString("\n").takeIf { it.isNotBlank() }
+    } else {
+        // For non-updates, show full rationale if it was truncated
+        rationale?.takeIf { it.length > 100 }
+    }
+
+    companion object {
+        fun parse(event: AgentEvent, json: Json): StepCompleteEvent? {
+            return try {
+                val payload = json.decodeFromJsonElement<StepCompletePayload>(event.payload)
+                StepCompleteEvent(
+                    id = event.id,
+                    createdAt = event.createdAt,
+                    blockLabel = payload.blockLabel,
+                    updated = payload.updated,
+                    newValue = payload.newValue,
+                    rationale = payload.rationale,
+                    searchedKp3 = payload.searchedKp3
+                )
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse StepCompleteEvent payload: ${e.message}")
+                println("  Event ID: ${event.id}")
+                println("  Payload: ${event.payload}")
+                null
+            }
+        }
+    }
+}
+
+@Serializable
+private data class StepCompletePayload(
+    val updated: Boolean,
+    @SerialName("block_label") val blockLabel: String,
+    @SerialName("new_value") val newValue: String? = null,
+    val rationale: String? = null,
+    @SerialName("passage_id") val passageId: String? = null,
+    @SerialName("searched_kp3") val searchedKp3: Boolean = false
 )
