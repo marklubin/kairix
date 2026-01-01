@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import redis.asyncio as redis
 from letta_client import AsyncLetta
+from saq import Queue
 
 from kairix_agent.config import Config
 from kairix_agent.events import EventType, emit_context_state, publish_event
@@ -260,8 +261,9 @@ async def summarize_session(
         # 8. Enqueue step job to update persona/human/world blocks
         # Step failures are independent - session is already summarized
         # Uses same retry strategy as summarization (exponential backoff)
-        queue = ctx.get("queue")
-        if queue:
+        worker = ctx.get("worker")
+        queue = getattr(worker, "queue", None) if worker else None
+        if isinstance(queue, Queue):
             await queue.enqueue(
                 STEP_MEMORY_JOB,
                 agent_id=agent_id,
