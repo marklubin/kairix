@@ -180,13 +180,19 @@ class BlockManagerAgent:
             meta.update(extra_copy)
 
         logger.info(
-            "Storing output to KP3: type=%s, len=%d",
+            "Storing output to KP3: type=%s, len=%d, agent_id=%s",
             self.config.kp3_storage.passage_type,
             len(output),
+            agent_id,
         )
 
+        # Include X-Agent-ID header to scope passage to this agent
+        headers: dict[str, str] = {}
+        if agent_id:
+            headers["X-Agent-ID"] = agent_id
+
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(f"{kp3_url}/passages", json=payload)
+            response = await client.post(f"{kp3_url}/passages", json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
             logger.info("Stored passage: %s", data.get("id", "unknown"))

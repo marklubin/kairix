@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from kairix_common.kp3_client import (
     PassageCreate,
     PassageCreateResponse,
@@ -33,15 +33,19 @@ async def search(
         description="Search mode: fts, semantic, or hybrid",
     ),
     limit: int = Query(default=5, ge=1, le=50, description="Maximum results"),
+    x_agent_id: str | None = Header(None, alias="X-Agent-ID"),
 ) -> SearchResponse:
     """Search passages using full-text, semantic, or hybrid search.
 
     - **fts**: Full-text search using PostgreSQL tsvector
     - **semantic**: Vector similarity search using embeddings
     - **hybrid**: Reciprocal Rank Fusion combining both methods (default)
+
+    Optionally filter by agent_id using the X-Agent-ID header. When provided,
+    results will include passages for that agent plus shared passages (agent_id=NULL).
     """
     async with async_session() as session:
-        results = await search_passages(session, query, mode=mode, limit=limit)
+        results = await search_passages(session, query, mode=mode, limit=limit, agent_id=x_agent_id)
 
     return SearchResponse(
         query=query,
@@ -60,12 +64,17 @@ async def search(
 
 
 @router.post("/passages", response_model=PassageCreateResponse)
-async def create_new_passage(payload: PassageCreate) -> PassageCreateResponse:
+async def create_new_passage(
+    payload: PassageCreate,
+    x_agent_id: str | None = Header(None, alias="X-Agent-ID"),
+) -> PassageCreateResponse:
     """Create a new passage.
 
     The passage will be automatically embedded for semantic search if the
     passage_type is in AUTO_EMBED_PASSAGE_TYPES (session_summary, memory_shard).
     Duplicate content (by SHA256 hash) will be rejected.
+
+    Optionally scope the passage to an agent using the X-Agent-ID header.
     """
     # Auto-generate embedding for searchable passage types
     embedding: list[float] | None = None
@@ -89,6 +98,7 @@ async def create_new_passage(payload: PassageCreate) -> PassageCreateResponse:
             period_start=payload.period_start,
             period_end=payload.period_end,
             embedding_qwen3=embedding,
+            agent_id=x_agent_id,
         )
         await session.commit()
 

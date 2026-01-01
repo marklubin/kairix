@@ -114,9 +114,13 @@ async def _check_agent_insights(
         len(messages),
     )
 
-    # Create insights agent with search tool
+    # Create insights agent with search tool (scoped to this agent)
     insights_agent = BlockManagerAgent(INSIGHTS_CONFIG)
-    insights_agent.register_tool_handler("search_kp3", handle_search_kp3)
+
+    async def scoped_search(query: str, limit: int = 5) -> str:
+        return await handle_search_kp3(query, limit, agent_id=agent_id)
+
+    insights_agent.register_tool_handler("search_kp3", scoped_search)
 
     # Run - agent will call search_kp3 tool if it decides context is needed
     response_text = await insights_agent.run(
@@ -260,9 +264,13 @@ async def trigger_insights(
             len(messages),
         )
 
-        # Create insights agent with search tool
+        # Create insights agent with search tool (scoped to this agent)
         insights_agent = BlockManagerAgent(INSIGHTS_CONFIG)
-        insights_agent.register_tool_handler("search_kp3", handle_search_kp3)
+
+        async def scoped_search(query: str, limit: int = 5) -> str:
+            return await handle_search_kp3(query, limit, agent_id=agent_id)
+
+        insights_agent.register_tool_handler("search_kp3", scoped_search)
 
         # Run - agent will call search_kp3 tool if it decides context is needed
         response_text = await insights_agent.run(

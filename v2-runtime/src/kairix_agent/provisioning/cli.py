@@ -401,6 +401,74 @@ async def find_or_create_archive(
     return archive.id
 
 
+async def _setup_kp3_mcp_server(
+    client: AsyncLetta,
+    agent_id: str,
+    agent_name: str,
+) -> None:
+    """Set up or update the KP3 MCP server for this agent.
+
+    Creates an MCP server with X-Agent-ID header baked in, so the agent's
+    searches are automatically scoped to its own passages.
+
+    Args:
+        client: Letta client.
+        agent_id: The agent ID to scope searches to.
+        agent_name: The agent name (for MCP server naming).
+    """
+    from letta_client.types.create_sse_mcp_server_param import CreateSseMcpServerParam
+    from letta_client.types.update_sse_mcp_server_param import UpdateSseMcpServerParam
+
+    kp3_url = Config.KP3_URL.value
+    mcp_server_name = f"kp3_{agent_name.lower()}"
+    mcp_url = f"{kp3_url}/mcp"
+
+    logger.info("Setting up KP3 MCP server for agent %s...", agent_id)
+
+    # Check if MCP server already exists for this agent
+    existing_server_id: str | None = None
+    servers_response = await client.mcp_servers.list()
+    for server in servers_response:
+        if server.server_name == mcp_server_name:
+            existing_server_id = server.id
+            logger.info("  Found existing MCP server: %s (%s)", mcp_server_name, server.id)
+            break
+
+    if existing_server_id:
+        # Update existing server with current agent_id header
+        logger.info("  Updating MCP server with X-Agent-ID header...")
+        update_config: UpdateSseMcpServerParam = {
+            "server_url": mcp_url,
+            "mcp_server_type": "sse",
+            "custom_headers": {"X-Agent-ID": agent_id},
+        }
+        await client.mcp_servers.update(
+            mcp_server_id=existing_server_id,
+            config=update_config,
+        )
+    else:
+        # Create new MCP server
+        logger.info("  Creating MCP server: %s -> %s", mcp_server_name, mcp_url)
+        create_config: CreateSseMcpServerParam = {
+            "server_url": mcp_url,
+            "mcp_server_type": "sse",
+            "custom_headers": {"X-Agent-ID": agent_id},
+        }
+        server = await client.mcp_servers.create(
+            server_name=mcp_server_name,
+            config=create_config,
+        )
+        existing_server_id = server.id
+        logger.info("  Created MCP server: %s", server.id)
+
+    # Refresh to discover tools
+    if existing_server_id:
+        logger.info("  Refreshing MCP server to discover tools...")
+        await client.mcp_servers.refresh(mcp_server_id=existing_server_id)
+
+    logger.info("  KP3 MCP server setup complete")
+
+
 async def _run_provisioning(
     client: AsyncLetta,
     base_name: str,
@@ -460,6 +528,9 @@ async def _run_provisioning(
         universal_block_ids=None,
         is_conversational=True,
     )
+
+    # Create or update MCP server for KP3 search with agent-scoped headers
+    await _setup_kp3_mcp_server(client, agent_id, base_name)
 
     logger.info("Done! Agent ID: %s", agent_id)
 

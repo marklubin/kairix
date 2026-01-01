@@ -151,6 +151,7 @@ async def _run_step_agent(
         agent = BlockManagerAgent(config)
 
         # Wrap search handler to track usage and log
+        # Captures agent_id from outer scope to scope searches to this agent
         async def tracked_search(query: str, limit: int = 5) -> str:
             nonlocal searched_kp3
             searched_kp3 = True
@@ -161,7 +162,7 @@ async def _run_step_agent(
                 query,
                 limit,
             )
-            result = await handle_search_kp3(query, limit)
+            result = await handle_search_kp3(query, limit, agent_id=agent_id)
             logger.debug(
                 "[%s] %s agent search returned %d chars",
                 agent_id,

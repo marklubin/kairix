@@ -57,6 +57,9 @@ class Passage(Base):
     source_system: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source_external_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
+    # Agent scoping - passages belong to a specific agent
+    agent_id: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
+
     # Embeddings (1024-dim, truncated from qwen3-embedding:4b)
     embedding_qwen3: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
 

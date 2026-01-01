@@ -27,8 +27,22 @@ async def create_passage(
     source_system: str | None = None,
     source_external_id: str | None = None,
     embedding_qwen3: list[float] | None = None,
+    agent_id: str | None = None,
 ) -> Passage:
-    """Create a new passage."""
+    """Create a new passage.
+
+    Args:
+        session: Database session
+        content: Passage content text
+        passage_type: Type of passage (e.g., "session_summary", "memory_shard")
+        period_start: Optional start of the period this passage covers
+        period_end: Optional end of the period this passage covers
+        metadata: Optional metadata dict
+        source_system: Optional source system identifier
+        source_external_id: Optional external ID from source system
+        embedding_qwen3: Optional pre-computed embedding vector
+        agent_id: Optional agent ID to scope this passage to a specific agent
+    """
     content_hash = compute_content_hash(content)
 
     passage = Passage(
@@ -41,6 +55,7 @@ async def create_passage(
         source_system=source_system,
         source_external_id=source_external_id,
         embedding_qwen3=embedding_qwen3,
+        agent_id=agent_id,
     )
 
     session.add(passage)
