@@ -1,4 +1,3 @@
-
 """SAQ worker settings module.
 
 This module exposes the settings dict for SAQ to consume.
@@ -30,19 +29,6 @@ logger = logging.getLogger(__name__)
 queue = Queue.from_url(Config.REDIS_URL.value)
 logger.info("Created queue: %s (redis_url=%s)", queue, Config.REDIS_URL.value)
 
-# Build MONITORED_AGENTS from env vars
-# MONITORED_AGENT_IDS: comma-separated list of agent IDs
-# LETTA_BASE_URL: shared Letta server URL for all agents
-_agent_ids = [
-    aid.strip()
-    for aid in Config.MONITORED_AGENT_IDS.value.split(",")
-    if aid.strip()
-]
-MONITORED_AGENTS = [
-    {"agent_id": aid, "letta_url": Config.LETTA_BASE_URL.value}
-    for aid in _agent_ids
-]
-logger.info("Monitoring %d agents: %s", len(MONITORED_AGENTS), _agent_ids)
 
 # Job-specific timeout settings (in seconds)
 # summarize_session can take a while due to LLM calls
@@ -62,13 +48,13 @@ settings = {
         CronJob(
             check_session_boundaries,
             cron="* * * * *",  # Every minute
-            kwargs={"agents": MONITORED_AGENTS},
+            # No agents kwarg - job fetches all agents from Letta API
             timeout=JOB_TIMEOUTS["check_session_boundaries"],
         ),
         CronJob(
             check_insights_relevance,
             cron="* * * * *",  # Every minute (skips if no message in last INSIGHTS_ACTIVITY_MINUTES)
-            kwargs={"agents": MONITORED_AGENTS},
+            # No agents kwarg - job fetches all agents from Letta API
             timeout=JOB_TIMEOUTS["check_insights_relevance"],
         ),
     ],

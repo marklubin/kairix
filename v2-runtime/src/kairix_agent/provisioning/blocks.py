@@ -1,11 +1,9 @@
 """Memory block definitions for Kairix agents.
 
-Blocks can be shared across agents (same block_id) or agent-specific.
-Shared blocks allow multiple agents to have a unified identity and context.
+All blocks are provisioned for every conversational agent.
 """
 
 from dataclasses import dataclass
-from typing import ClassVar
 
 
 @dataclass
@@ -19,14 +17,9 @@ class BlockDefinition:
     read_only: bool = False
 
 
-class SharedBlocks:
-    """Block definitions shared across the Kairix entity (all agents).
-
-    These blocks define the coherent identity that spans conversational,
-    reflector, and future agents.
-    """
-
-    PERSONA = BlockDefinition(
+# All default blocks provisioned for every conversational agent
+DEFAULT_BLOCKS: list[BlockDefinition] = [
+    BlockDefinition(
         label="persona",
         description="Core identity, tone, and behavioral guidelines for the entity.",
         initial_value="""Name: [Agent name - update this field]
@@ -38,57 +31,42 @@ This block defines your core identity and personality. Update it to include:
 - Any behavioral guidelines or protocols
 
 The agent should maintain this identity across all interactions and update it as the relationship with the user evolves.""",
-    )
-
-    HUMAN = BlockDefinition(
+    ),
+    BlockDefinition(
         label="human",
         description="Information about the human (user) the agent is interacting with.",
         initial_value="""This is my section of core memory devoted to information about the human.
 I don't yet know anything about them.
 What's their name? Where are they from? What do they do? Who are they?
 I should update this memory over time as I interact with the human and learn more about them.""",
-    )
-
-    WORLD = BlockDefinition(
+    ),
+    BlockDefinition(
         label="world",
         description="Durable world context: active projects, key entities, recurring themes, and insights. This block is managed by KP3 and updated via world model extraction. Contains structured information about the user's persistent context that informs conversations.",
         initial_value="No world context loaded yet.",
         limit=20000,  # Larger limit for structured world data
-    )
-
-    # All shared blocks that define the entity's identity
-    ALL: ClassVar[list[BlockDefinition]] = [PERSONA, HUMAN, WORLD]
-
-
-class AgentSpecificBlocks:
-    """Block definitions specific to individual agents (not shared)."""
-
-    FOCUS = BlockDefinition(
+    ),
+    BlockDefinition(
         label="focus",
         description="Reminds you of your current focus and keeps you oriented to the task at hand.",
         initial_value="No current focus set.",
-    )
-
-    LAST_SESSION_SUMMARY = BlockDefinition(
+    ),
+    BlockDefinition(
         label="last_session_summary",
         description="Summary of the most recent conversation session, providing continuity context.",
         initial_value="No previous session recorded yet.",
-    )
-
-    BACKGROUND_INSIGHTS = BlockDefinition(
+    ),
+    BlockDefinition(
         label="background_insights",
         description="Background context and insights retrieved to support the current conversation. This block is automatically updated by the BackgroundInsights agent when conversation topics shift. Use this information to provide more informed, contextually relevant responses. When the content seems stale or irrelevant to the current topic, the BackgroundInsights agent will refresh it.",
         initial_value="No background insights loaded yet.",
         limit=5000,
-    )
-
-    ALL: ClassVar[list[BlockDefinition]] = [FOCUS, LAST_SESSION_SUMMARY, BACKGROUND_INSIGHTS]
+    ),
+]
 
 
 def get_block_by_label(label: str) -> BlockDefinition:
     """Look up a BlockDefinition by its label.
-
-    Currently looks up from code-defined blocks. Future: load from DB.
 
     Args:
         label: The block label (e.g., "persona", "focus").
@@ -99,8 +77,7 @@ def get_block_by_label(label: str) -> BlockDefinition:
     Raises:
         KeyError: If no block with that label exists.
     """
-    # TODO: Future - load block definitions from DB instead of code
-    for block in SharedBlocks.ALL + AgentSpecificBlocks.ALL:
+    for block in DEFAULT_BLOCKS:
         if block.label == label:
             return block
     msg = f"Unknown block label: {label}"

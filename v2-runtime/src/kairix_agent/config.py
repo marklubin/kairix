@@ -11,9 +11,8 @@ dotenv.load_dotenv()
 class Config(Enum):
     """Application configuration sourced from environment variables.
 
-    Note: For background worker jobs, agent-specific config (agent_id, letta_url,
-    archive_id, reflector_id) is passed explicitly to jobs via MONITORED_AGENTS.
-    This allows monitoring multiple agents simultaneously.
+    Note: For background worker jobs, agents are discovered dynamically
+    from the Letta API at job execution time.
 
     The LETTA_* env vars below are used by the voice server and provisioning CLI.
     """
@@ -35,9 +34,6 @@ class Config(Enum):
     # Letta configuration (for voice server and provisioning CLI)
     LETTA_BASE_URL = os.getenv("LETTA_BASE_URL", "http://localhost:9000")
     LETTA_AGENT_ID = os.getenv("LETTA_AGENT_ID", "")
-
-    # Worker agent monitoring (comma-separated list of agent IDs)
-    MONITORED_AGENT_IDS = os.getenv("MONITORED_AGENT_IDS", "")
 
     # External API keys (for voice pipeline)
     DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "")

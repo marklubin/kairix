@@ -17,6 +17,7 @@ from kairix_agent.events import EventType, emit_context_state, publish_event
 from kairix_agent.llm import BlockManagerAgent
 from kairix_agent.llm.configs import INSIGHTS_CONFIG
 from kairix_agent.llm.tools import handle_search_kp3
+from kairix_agent.worker.agents import get_all_agents
 from kairix_agent.worker.jobs.transcript import format_transcript
 
 if TYPE_CHECKING:
@@ -167,9 +168,9 @@ async def _check_agent_insights(
 async def check_insights_relevance(
         _ctx: Context,
         *,
-        agents: list[dict[str, Any]],
+        agents: list[dict[str, Any]] | None = None,
 ) -> dict[str, object]:
-    """Check if background insights need updating for monitored agents.
+    """Check if background insights need updating for all agents.
 
     This job runs every minute. For each agent:
     1. Pull last 10 messages
@@ -178,14 +179,18 @@ async def check_insights_relevance(
 
     Args:
         _ctx: SAQ job context.
-        agents: List of agent configs with agent_id and letta_url.
+        agents: Optional list of agent configs. If None, fetches all agents from Letta.
 
     Returns:
         Status dict with results per agent.
     """
+    # Fetch agents from Letta if not provided
     if not agents:
-        logger.warning("No agents configured, skipping insights check")
-        return {"status": "skipped", "reason": "no_agents_configured"}
+        agents = get_all_agents()
+
+    if not agents:
+        logger.warning("No agents found, skipping insights check")
+        return {"status": "skipped", "reason": "no_agents_found"}
 
     results: dict[str, object] = {}
 

@@ -17,6 +17,7 @@ from kairix_agent.sessions import (
     create_session,
     get_latest_session_end,
 )
+from kairix_agent.worker.agents import get_all_agents
 from kairix_agent.worker.retry import LLM_RETRY_CONFIG
 
 if TYPE_CHECKING:
@@ -220,22 +221,26 @@ async def _check_agent_session_locked(
 async def check_session_boundaries(
     ctx: Context,
     *,
-    agents: list[dict[str, Any]],
+    agents: list[dict[str, Any]] | None = None,
 ) -> dict[str, object]:
-    """Check for completed sessions across all configured agents.
+    """Check for completed sessions across all agents.
 
     Uses Redis distributed locking to prevent race conditions.
 
     Args:
         ctx: SAQ job context (contains queue reference for enqueueing).
-        agents: List of agent configs, each with 'agent_id' and 'letta_url'.
+        agents: Optional list of agent configs. If None, fetches all agents from Letta.
 
     Returns:
         Status dict with detection results per agent.
     """
+    # Fetch agents from Letta if not provided
     if not agents:
-        logger.warning("No agents configured, skipping session check")
-        return {"status": "skipped", "reason": "no agents configured"}
+        agents = get_all_agents()
+
+    if not agents:
+        logger.warning("No agents found, skipping session check")
+        return {"status": "skipped", "reason": "no_agents_found"}
 
     # Get queue from SAQ worker
     worker = ctx.get("worker")
