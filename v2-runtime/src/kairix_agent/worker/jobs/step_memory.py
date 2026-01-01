@@ -54,41 +54,21 @@ class StepResult:
 def _parse_step_response(response: str) -> tuple[bool, str | None, str | None]:
     """Parse step agent response to extract update status, rationale, and new value.
 
-    Expected formats:
-    - "UPDATING: <rationale>\\n\\n<new block content>"
-    - "NO_UPDATE_NEEDED: <rationale>"
+    Simple logic:
+    - If "NO_UPDATE_NEEDED" appears anywhere in the response, don't update
+    - Otherwise, treat the entire response as the new block value
 
     Returns:
         Tuple of (updated, rationale, new_value)
     """
     response = response.strip()
 
-    if response.upper().startswith("UPDATING:"):
-        # Extract rationale and new value
-        content = response[len("UPDATING:") :].strip()
-        # Split on double newline to separate rationale from new block content
-        parts = content.split("\n\n", 1)
-        expected_parts = 2
-        if len(parts) == expected_parts:
-            rationale = parts[0].strip()
-            new_value = parts[1].strip()
-        else:
-            # No clear separation - treat entire content as new value
-            rationale = "Update triggered"
-            new_value = content
-        return True, rationale, new_value
+    # If NO_UPDATE_NEEDED appears anywhere, don't update
+    if "NO_UPDATE_NEEDED" in response.upper():
+        return False, response, None
 
-    if response.upper().startswith("NO_UPDATE_NEEDED:"):
-        # Extract rationale
-        rationale = response[len("NO_UPDATE_NEEDED:") :].strip()
-        return False, rationale, None
-
-    # Legacy format - just NO_UPDATE_NEEDED without colon
-    if response.upper().startswith("NO_UPDATE_NEEDED"):
-        return False, "No rationale provided", None
-
-    # Treat as update if no prefix (legacy format)
-    return True, "Update triggered (legacy format)", response
+    # Otherwise it's an update - the response IS the new block value
+    return True, None, response
 
 
 async def _fetch_blocks(
