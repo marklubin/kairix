@@ -126,7 +126,8 @@ class BlockManagerAgent:
         )
 
         # Skip block update if agent determined no update needed
-        if result.upper().startswith("NO_UPDATE_NEEDED"):
+        # Check if NO_UPDATE_NEEDED appears anywhere in response (handles markdown like **NO_UPDATE_NEEDED:**)
+        if "NO_UPDATE_NEEDED" in result.upper():
             logger.info("Agent determined no update needed, skipping block update")
         else:
             # Update the target block on the conversational agent
