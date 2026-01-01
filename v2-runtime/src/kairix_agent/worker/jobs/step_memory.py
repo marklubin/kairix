@@ -22,6 +22,7 @@ from kairix_agent.llm.configs import (
     WORLD_STEP_CONFIG,
 )
 from kairix_agent.llm.tools import handle_search_kp3
+from kairix_agent.llm.utils import should_skip_block_update
 
 if TYPE_CHECKING:
     from saq.types import Context
@@ -54,17 +55,15 @@ class StepResult:
 def _parse_step_response(response: str) -> tuple[bool, str | None, str | None]:
     """Parse step agent response to extract update status, rationale, and new value.
 
-    Simple logic:
-    - If "NO_UPDATE_NEEDED" appears anywhere in the response, don't update
-    - Otherwise, treat the entire response as the new block value
+    Uses shared should_skip_block_update() to detect NO_UPDATE_NEEDED anywhere
+    in the response. If not skipped, treats the entire response as the new value.
 
     Returns:
         Tuple of (updated, rationale, new_value)
     """
     response = response.strip()
 
-    # If NO_UPDATE_NEEDED appears anywhere, don't update
-    if "NO_UPDATE_NEEDED" in response.upper():
+    if should_skip_block_update(response):
         return False, response, None
 
     # Otherwise it's an update - the response IS the new block value

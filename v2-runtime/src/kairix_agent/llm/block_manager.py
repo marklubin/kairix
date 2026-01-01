@@ -12,6 +12,7 @@ from kairix_common.kp3_client import PromptResponse
 
 from kairix_agent.config import Config
 from kairix_agent.llm.openai_client import OpenAICompatibleClient
+from kairix_agent.llm.utils import should_skip_block_update
 
 if TYPE_CHECKING:
     from letta_client import AsyncLetta
@@ -126,8 +127,7 @@ class BlockManagerAgent:
         )
 
         # Skip block update if agent determined no update needed
-        # Check if NO_UPDATE_NEEDED appears anywhere in response (handles markdown like **NO_UPDATE_NEEDED:**)
-        if "NO_UPDATE_NEEDED" in result.upper():
+        if should_skip_block_update(result):
             logger.info("Agent determined no update needed, skipping block update")
         else:
             # Update the target block on the conversational agent
