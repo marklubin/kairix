@@ -421,7 +421,7 @@ async def _setup_kp3_mcp_server(
 
     kp3_url = Config.KP3_URL.value
     mcp_server_name = f"kp3_{agent_name.lower()}"
-    mcp_url = f"{kp3_url}/mcp"
+    mcp_url = f"{kp3_url}/mcp/sse"
 
     logger.info("Setting up KP3 MCP server for agent %s...", agent_id)
 
