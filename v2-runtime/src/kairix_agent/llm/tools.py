@@ -41,23 +41,27 @@ SEARCH_KP3_TOOL: dict[str, Any] = {
 }
 
 
-async def handle_search_kp3(query: str, limit: int = 5, agent_id: str | None = None) -> str:
+async def handle_search_kp3(query: str, limit: int = 5, *, agent_id: str) -> str:
     """Execute KP3 search and return formatted results.
 
     Args:
         query: Search query text.
         limit: Maximum number of results (1-10).
-        agent_id: Optional agent ID to scope results (includes passages with NULL agent_id).
+        agent_id: Agent ID to scope results (required).
 
     Returns:
         Formatted search results as a string.
+
+    Raises:
+        ValueError: If agent_id is not provided.
     """
+    if not agent_id:
+        raise ValueError("agent_id is required for KP3 search")
+
     kp3_url = Config.KP3_URL.value
     logger.info("Searching KP3: query=%r, limit=%d, agent_id=%s", query, limit, agent_id)
 
-    headers: dict[str, str] = {}
-    if agent_id:
-        headers["X-Agent-ID"] = agent_id
+    headers: dict[str, str] = {"X-Agent-ID": agent_id}
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(

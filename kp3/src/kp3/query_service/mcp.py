@@ -30,16 +30,18 @@ async def search_kp3_passages(
         List of passage results with id, content, passage_type, and relevance score
 
     Note:
-        When accessed via SSE/HTTP, the X-Agent-ID header can be used to scope
-        results to a specific agent (plus shared passages with agent_id=NULL).
+        Requires X-Agent-ID header to scope results to a specific agent.
+        Must be accessed via SSE/HTTP mode with the header set.
     """
     # Clamp limit to valid range
     limit = max(1, min(50, limit))
 
-    # Get agent_id from X-Agent-ID header if available (SSE mode)
-    # In stdio mode, this returns an empty dict so agent_id will be None
+    # Get agent_id from X-Agent-ID header (required)
     headers = get_http_headers()
     agent_id = headers.get("x-agent-id")  # Headers are lowercase
+
+    if not agent_id:
+        raise ValueError("X-Agent-ID header is required for search")
 
     async with async_session() as session:
         results = await search_passages(session, query, mode=mode, limit=limit, agent_id=agent_id)

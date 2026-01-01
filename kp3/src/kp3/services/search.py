@@ -31,7 +31,7 @@ async def search_passages(
     *,
     mode: SearchMode = "hybrid",
     limit: int = 5,
-    agent_id: str | None = None,
+    agent_id: str,
 ) -> list[PassageSearchResult]:
     """Search passages using FTS, semantic, or hybrid search.
 
@@ -40,11 +40,17 @@ async def search_passages(
         query: Search query text
         mode: Search mode - "fts" (full-text), "semantic" (vector), or "hybrid" (RRF fusion)
         limit: Maximum number of results to return
-        agent_id: Optional agent ID to scope results (includes passages with NULL agent_id)
+        agent_id: Agent ID to scope results (required)
 
     Returns:
         List of passage search results ordered by relevance score
+
+    Raises:
+        ValueError: If agent_id is empty
     """
+    if not agent_id:
+        raise ValueError("agent_id is required for search")
+
     if mode == "fts":
         return await _search_fts(session, query, limit, agent_id)
     elif mode == "semantic":
@@ -57,20 +63,16 @@ async def _search_fts(
     session: AsyncSession,
     query: str,
     limit: int,
-    agent_id: str | None = None,
+    agent_id: str,
 ) -> list[PassageSearchResult]:
     """Full-text search using PostgreSQL tsvector."""
-    # Build agent_id filter: match specific agent OR NULL (shared passages)
-    agent_filter = (
-        "AND (agent_id = :agent_id OR agent_id IS NULL)" if agent_id else ""
-    )
-    sql = text(f"""
+    sql = text("""
         SELECT id, content, passage_type,
                ts_rank(content_tsv, websearch_to_tsquery('english', :query)) as score
         FROM passages
         WHERE content_tsv @@ websearch_to_tsquery('english', :query)
           AND passage_type = ANY(:searchable_types)
-          {agent_filter}
+          AND agent_id = :agent_id
         ORDER BY score DESC
         LIMIT :limit
     """)
@@ -78,9 +80,8 @@ async def _search_fts(
         "query": query,
         "limit": limit,
         "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
+        "agent_id": agent_id,
     }
-    if agent_id:
-        params["agent_id"] = agent_id
     result = await session.execute(sql, params)
     rows = result.fetchall()
 
@@ -99,15 +100,11 @@ async def _search_semantic(
     session: AsyncSession,
     query: str,
     limit: int,
-    agent_id: str | None = None,
+    agent_id: str,
 ) -> list[PassageSearchResult]:
     """Semantic search using vector similarity."""
     query_embedding = await generate_embedding(query)
-    # Build agent_id filter: match specific agent OR NULL (shared passages)
-    agent_filter = (
-        "AND (p.agent_id = :agent_id OR p.agent_id IS NULL)" if agent_id else ""
-    )
-    sql = text(f"""
+    sql = text("""
         WITH query_vec AS (
             SELECT cast(:embedding as vector) as vec
         ),
@@ -117,7 +114,7 @@ async def _search_semantic(
             FROM passages p, query_vec q
             WHERE p.embedding_qwen3 IS NOT NULL
               AND p.passage_type = ANY(:searchable_types)
-              {agent_filter}
+              AND p.agent_id = :agent_id
         )
         SELECT * FROM scored ORDER BY score DESC LIMIT :limit
     """)
@@ -125,9 +122,8 @@ async def _search_semantic(
         "embedding": str(query_embedding),
         "limit": limit,
         "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
+        "agent_id": agent_id,
     }
-    if agent_id:
-        params["agent_id"] = agent_id
     result = await session.execute(sql, params)
     rows = result.fetchall()
 
@@ -146,21 +142,11 @@ async def _search_hybrid(
     session: AsyncSession,
     query: str,
     limit: int,
-    agent_id: str | None = None,
+    agent_id: str,
 ) -> list[PassageSearchResult]:
     """Hybrid search combining FTS and semantic with Reciprocal Rank Fusion."""
     query_embedding = await generate_embedding(query)
-    # Build agent_id filters: match specific agent OR NULL (shared passages)
-    agent_filter_fts = (
-        "AND (agent_id = :agent_id OR agent_id IS NULL)" if agent_id else ""
-    )
-    agent_filter_semantic = (
-        "AND (p.agent_id = :agent_id OR p.agent_id IS NULL)" if agent_id else ""
-    )
-    agent_filter_final = (
-        "AND (p.agent_id = :agent_id OR p.agent_id IS NULL)" if agent_id else ""
-    )
-    sql = text(f"""
+    sql = text("""
         WITH query_vec AS (
             SELECT cast(:embedding as vector) as vec
         ),
@@ -172,14 +158,14 @@ async def _search_hybrid(
             FROM passages
             WHERE content_tsv @@ websearch_to_tsquery('english', :query)
               AND passage_type = ANY(:searchable_types)
-              {agent_filter_fts}
+              AND agent_id = :agent_id
         ),
         semantic AS (
             SELECT p.id, row_number() OVER (ORDER BY p.embedding_qwen3 <=> q.vec) as rank
             FROM passages p, query_vec q
             WHERE p.embedding_qwen3 IS NOT NULL
               AND p.passage_type = ANY(:searchable_types)
-              {agent_filter_semantic}
+              AND p.agent_id = :agent_id
         )
         SELECT p.id, p.content, p.passage_type,
                COALESCE(1.0 / (60 + fts.rank), 0) +
@@ -189,7 +175,7 @@ async def _search_hybrid(
         LEFT JOIN semantic ON p.id = semantic.id
         WHERE (fts.id IS NOT NULL OR semantic.id IS NOT NULL)
           AND p.passage_type = ANY(:searchable_types)
-          {agent_filter_final}
+          AND p.agent_id = :agent_id
         ORDER BY score DESC
         LIMIT :limit
     """)
@@ -198,9 +184,8 @@ async def _search_hybrid(
         "embedding": str(query_embedding),
         "limit": limit,
         "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
+        "agent_id": agent_id,
     }
-    if agent_id:
-        params["agent_id"] = agent_id
     result = await session.execute(sql, params)
     rows = result.fetchall()
 

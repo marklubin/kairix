@@ -33,7 +33,7 @@ async def search(
         description="Search mode: fts, semantic, or hybrid",
     ),
     limit: int = Query(default=5, ge=1, le=50, description="Maximum results"),
-    x_agent_id: str | None = Header(None, alias="X-Agent-ID"),
+    x_agent_id: str = Header(..., alias="X-Agent-ID"),
 ) -> SearchResponse:
     """Search passages using full-text, semantic, or hybrid search.
 
@@ -41,8 +41,7 @@ async def search(
     - **semantic**: Vector similarity search using embeddings
     - **hybrid**: Reciprocal Rank Fusion combining both methods (default)
 
-    Optionally filter by agent_id using the X-Agent-ID header. When provided,
-    results will include passages for that agent plus shared passages (agent_id=NULL).
+    Requires X-Agent-ID header. Only returns passages for that specific agent.
     """
     async with async_session() as session:
         results = await search_passages(session, query, mode=mode, limit=limit, agent_id=x_agent_id)
