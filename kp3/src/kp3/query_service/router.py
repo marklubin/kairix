@@ -66,7 +66,7 @@ async def search(
 @router.post("/passages", response_model=PassageCreateResponse)
 async def create_new_passage(
     payload: PassageCreate,
-    x_agent_id: str | None = Header(None, alias="X-Agent-ID"),
+    x_agent_id: str = Header(..., alias="X-Agent-ID"),
 ) -> PassageCreateResponse:
     """Create a new passage.
 
@@ -74,7 +74,7 @@ async def create_new_passage(
     passage_type is in AUTO_EMBED_PASSAGE_TYPES (session_summary, memory_shard).
     Duplicate content (by SHA256 hash) will be rejected.
 
-    Optionally scope the passage to an agent using the X-Agent-ID header.
+    Requires X-Agent-ID header to scope passage to an agent.
     """
     # Auto-generate embedding for searchable passage types
     embedding: list[float] | None = None
