@@ -11,7 +11,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/fluent-bit/bin/fluent-bit -c %h/kairix/v2-runtime/observability/fluent-bit-host.conf
+# Use 'which' to find fluent-bit (apt installs to /usr/bin, manual to /opt/fluent-bit/bin)
+ExecStart=/bin/bash -c 'exec $(which fluent-bit || echo /opt/fluent-bit/bin/fluent-bit) -c %h/kairix/v2-runtime/observability/fluent-bit-host.conf'
 Restart=on-failure
 RestartSec=5
 

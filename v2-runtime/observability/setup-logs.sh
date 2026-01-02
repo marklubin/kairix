@@ -33,10 +33,33 @@ install_fluent_bit() {
     else
         echo "Downloading and installing Fluent Bit..."
 
-        # Detect OS
+        # Detect OS and install using package manager
         if [[ -f /etc/debian_version ]]; then
-            # Debian/Ubuntu
-            curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh
+            # Debian/Ubuntu/Pop!_OS - use apt
+            echo "Installing via apt (Debian/Ubuntu-based)..."
+
+            # Add Fluent Bit GPG key and repo
+            curl -fsSL https://packages.fluentbit.io/fluentbit.key | sudo gpg --dearmor -o /usr/share/keyrings/fluentbit-keyring.gpg
+
+            # Get Ubuntu codename (Pop!_OS maps to Ubuntu)
+            CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2)
+            # Pop!_OS 24.04 uses noble
+            if [[ -z "$CODENAME" ]]; then
+                CODENAME="noble"
+            fi
+
+            echo "deb [signed-by=/usr/share/keyrings/fluentbit-keyring.gpg] https://packages.fluentbit.io/ubuntu/${CODENAME} ${CODENAME} main" | \
+                sudo tee /etc/apt/sources.list.d/fluent-bit.list
+
+            sudo apt-get update
+            sudo apt-get install -y fluent-bit
+
+            # Create symlink to match expected path
+            if [[ ! -d /opt/fluent-bit ]]; then
+                sudo mkdir -p /opt/fluent-bit/bin
+                sudo ln -sf /opt/fluent-bit/bin/fluent-bit /usr/bin/fluent-bit 2>/dev/null || true
+            fi
+
         elif [[ -f /etc/redhat-release ]]; then
             # RHEL/Fedora
             curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh
@@ -48,11 +71,26 @@ install_fluent_bit() {
     fi
 
     # Verify installation
-    if ! /opt/fluent-bit/bin/fluent-bit --version; then
+    if command -v fluent-bit &>/dev/null; then
+        fluent-bit --version
+    elif [[ -f /opt/fluent-bit/bin/fluent-bit ]]; then
+        /opt/fluent-bit/bin/fluent-bit --version
+    else
         echo -e "${RED}Fluent Bit installation failed${NC}"
         exit 1
     fi
     echo -e "${GREEN}Fluent Bit installed successfully${NC}"
+}
+
+# Get fluent-bit binary path
+get_fluent_bit_path() {
+    if command -v fluent-bit &>/dev/null; then
+        echo "fluent-bit"
+    elif [[ -f /opt/fluent-bit/bin/fluent-bit ]]; then
+        echo "/opt/fluent-bit/bin/fluent-bit"
+    else
+        echo ""
+    fi
 }
 
 setup_systemd_service() {
@@ -91,8 +129,9 @@ show_status() {
     print_header "Fluent Bit Status"
 
     echo -e "\n${CYAN}Binary:${NC}"
-    if [[ -f /opt/fluent-bit/bin/fluent-bit ]]; then
-        /opt/fluent-bit/bin/fluent-bit --version
+    local fb_path=$(get_fluent_bit_path)
+    if [[ -n "$fb_path" ]]; then
+        $fb_path --version
     else
         echo -e "${YELLOW}Not installed${NC}"
     fi
