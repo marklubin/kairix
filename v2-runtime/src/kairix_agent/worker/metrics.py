@@ -54,6 +54,8 @@ def init_metrics() -> None:
 
     try:
         # Import OTLP exporter only when needed (may not be installed)
+        import base64  # noqa: PLC0415
+
         from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (  # noqa: PLC0415
             OTLPMetricExporter,
         )
@@ -61,7 +63,15 @@ def init_metrics() -> None:
 
         endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:5081")
 
-        exporter = OTLPMetricExporter(endpoint=endpoint, insecure=True)
+        # OpenObserve requires Basic auth for OTLP ingestion
+        # Format: "org_name:api_token" base64 encoded
+        otel_user = os.environ.get("OTEL_EXPORTER_OTLP_USER", "admin@kairix.local")
+        otel_pass = os.environ.get("OTEL_EXPORTER_OTLP_PASSWORD", "kairix123")
+        auth_string = f"{otel_user}:{otel_pass}"
+        auth_bytes = base64.b64encode(auth_string.encode()).decode()
+        headers = {"Authorization": f"Basic {auth_bytes}"}
+
+        exporter = OTLPMetricExporter(endpoint=endpoint, insecure=True, headers=headers)
         reader = PeriodicExportingMetricReader(exporter, export_interval_millis=30000)
         provider = MeterProvider(
             resource=Resource.create({"service.name": "kairix-worker"}),

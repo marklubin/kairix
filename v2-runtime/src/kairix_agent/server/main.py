@@ -85,8 +85,18 @@ cartesia_api_key = get_or_die("CARTESIA_API_KEY")
 # Initialize OpenTelemetry tracing if configured
 TRACING_ENABLED = os.environ.get("ENABLE_TRACING", "").lower() in ("1", "true", "yes")
 if TRACING_ENABLED and HAS_OTLP:
+    import base64
+
     otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
-    otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
+
+    # OpenObserve requires Basic auth for OTLP ingestion
+    otel_user = os.environ.get("OTEL_EXPORTER_OTLP_USER", "admin@kairix.local")
+    otel_pass = os.environ.get("OTEL_EXPORTER_OTLP_PASSWORD", "kairix123")
+    auth_string = f"{otel_user}:{otel_pass}"
+    auth_bytes = base64.b64encode(auth_string.encode()).decode()
+    headers = {"Authorization": f"Basic {auth_bytes}"}
+
+    otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True, headers=headers)
     setup_tracing(
         service_name="kairix-voice",
         exporter=otlp_exporter,
