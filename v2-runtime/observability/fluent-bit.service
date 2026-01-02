@@ -1,0 +1,24 @@
+# Fluent Bit User Service for Kairix Container Logs
+# Install with: kx logs:setup
+#
+# This runs as a user service to access Podman container logs
+# from the user's journald instance.
+
+[Unit]
+Description=Fluent Bit Log Collector for Kairix
+Documentation=https://docs.fluentbit.io
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/fluent-bit/bin/fluent-bit -c %h/kairix/v2-runtime/observability/fluent-bit-host.conf
+Restart=on-failure
+RestartSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fluent-bit
+
+[Install]
+WantedBy=default.target

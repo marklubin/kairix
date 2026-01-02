@@ -99,6 +99,12 @@ KP3:
 DEPLOYMENT:
     deploy <target> Deploy to remote host (e.g., kx deploy salinas)
 
+OBSERVABILITY:
+    logs:setup      Install Fluent Bit on host for log collection
+    logs:status     Show Fluent Bit service status
+    logs:restart    Restart Fluent Bit service
+    logs:uninstall  Remove Fluent Bit service (keeps binary)
+
 EXAMPLES:
     kx up                           # Start everything
     kx dev                          # Start only dependencies
@@ -403,6 +409,26 @@ cmd_deploy() {
 }
 
 # =============================================================================
+# Observability Commands
+# =============================================================================
+
+cmd_logs_setup() {
+    "$SCRIPT_DIR/observability/setup-logs.sh" install
+}
+
+cmd_logs_status() {
+    "$SCRIPT_DIR/observability/setup-logs.sh" status
+}
+
+cmd_logs_restart() {
+    "$SCRIPT_DIR/observability/setup-logs.sh" restart
+}
+
+cmd_logs_uninstall() {
+    "$SCRIPT_DIR/observability/setup-logs.sh" uninstall
+}
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -482,6 +508,20 @@ case "$command" in
     # Deployment
     deploy)
         cmd_deploy "$@"
+        ;;
+
+    # Observability
+    logs:setup)
+        cmd_logs_setup "$@"
+        ;;
+    logs:status)
+        cmd_logs_status "$@"
+        ;;
+    logs:restart)
+        cmd_logs_restart "$@"
+        ;;
+    logs:uninstall)
+        cmd_logs_uninstall "$@"
         ;;
 
     # Unknown
