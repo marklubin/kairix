@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import time
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -39,8 +40,10 @@ from kairix_agent.events import emit_context_state
 from kairix_agent.logging_config import setup_logging
 from kairix_agent.server.events import connection_manager
 from kairix_agent.server.events.listener import start_event_listener
+from kairix_agent.server.metrics import init_metrics as init_server_metrics
+from kairix_agent.server.metrics import record_session_end, record_session_start
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
-from kairix_agent.server.pipecat import LettaLLMService, UserTurnAggregator
+from kairix_agent.server.pipecat import LettaLLMService, PipelineMetricsObserver, UserTurnAggregator
 from kairix_agent.server.provider import LettaProvider
 from kairix_agent.server.voice.pipeline_manager import voice_pipeline_manager
 from kairix_agent.voices import service as voice_service
@@ -52,6 +55,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan handler - starts background tasks."""
+    # Initialize server metrics
+    init_server_metrics()
+
     # Start the Postgres event listener
     listener_task = asyncio.create_task(start_event_listener())
     logger.info("Event listener task started")
@@ -279,8 +285,16 @@ async def voice_endpoint(
     # Register TTS with pipeline manager for live voice updates
     await voice_pipeline_manager.register(agent_id, tts)
 
+    # Track session timing
+    session_start = time.perf_counter()
+    record_session_start(agent_id)
+    session_error = False
+
     try:
         async with aiohttp.ClientSession():
+            # Create metrics observer
+            metrics_observer = PipelineMetricsObserver(agent_id)
+
             # Build the pipeline
             pipeline = Pipeline(
                 [
@@ -289,6 +303,7 @@ async def voice_endpoint(
                     user_turn_aggregator,
                     llm,  # Letta LLM
                     tts,  # Text-to-speech
+                    metrics_observer,  # Collect latency metrics
                     transport.output(),  # Audio back to client
                 ]
             )
@@ -307,7 +322,14 @@ async def voice_endpoint(
 
             runner = PipelineRunner()
             await runner.run(task)
+    except Exception:
+        session_error = True
+        raise
     finally:
+        # Record session end
+        duration = time.perf_counter() - session_start
+        record_session_end(agent_id, duration, error=session_error)
+
         # Unregister on disconnect
         await voice_pipeline_manager.unregister(agent_id, tts)
 
