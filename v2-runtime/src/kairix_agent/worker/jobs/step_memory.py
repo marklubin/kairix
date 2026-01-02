@@ -23,6 +23,12 @@ from kairix_agent.llm.configs import (
 )
 from kairix_agent.llm.tools import handle_search_kp3
 from kairix_agent.llm.utils import should_skip_block_update
+from kairix_agent.worker.metrics import (
+    instrument_job,
+    record_block_update,
+    record_kp3_results,
+    record_tool_call,
+)
 
 if TYPE_CHECKING:
     from saq.types import Context
@@ -141,7 +147,19 @@ async def _run_step_agent(
                 query,
                 limit,
             )
+
+            # Record tool call metric
+            record_tool_call("search_kp3", agent_id)
+
             result = await handle_search_kp3(query, limit, agent_id=agent_id)
+
+            # Record result count metric (count passages by list item markers)
+            if result == "No relevant passages found.":
+                result_count = 0
+            else:
+                result_count = result.count("\n- ") + 1
+            record_kp3_results(result_count, agent_id)
+
             logger.debug(
                 "[%s] %s agent search returned %d chars",
                 agent_id,
@@ -184,9 +202,7 @@ async def _run_step_agent(
             agent_id,
             block_label,
             len(result),
-            result[:LOG_RESPONSE_LENGTH] + "..."
-            if len(result) > LOG_RESPONSE_LENGTH
-            else result,
+            result[:LOG_RESPONSE_LENGTH] + "..." if len(result) > LOG_RESPONSE_LENGTH else result,
         )
 
         # Parse response to extract update status, rationale, and new value
@@ -240,6 +256,7 @@ async def _run_step_agent(
         )
 
 
+@instrument_job("step_memory")
 async def step_memory_blocks(
     _ctx: Context,
     *,
@@ -320,12 +337,8 @@ async def step_memory_blocks(
             _run_step_agent(
                 PERSONA_STEP_CONFIG, agent_id, client, blocks, session_summary, metadata
             ),
-            _run_step_agent(
-                HUMAN_STEP_CONFIG, agent_id, client, blocks, session_summary, metadata
-            ),
-            _run_step_agent(
-                WORLD_STEP_CONFIG, agent_id, client, blocks, session_summary, metadata
-            ),
+            _run_step_agent(HUMAN_STEP_CONFIG, agent_id, client, blocks, session_summary, metadata),
+            _run_step_agent(WORLD_STEP_CONFIG, agent_id, client, blocks, session_summary, metadata),
             return_exceptions=True,
         )
         logger.info("[%s] All 3 step agents completed", agent_id)
@@ -360,6 +373,12 @@ async def step_memory_blocks(
                 errors_count += 1
             elif step_result.updated:
                 updates_count += 1
+
+            # Record block update metric (tracks updated vs skipped)
+            if not step_result.error:
+                record_block_update(
+                    step_result.block_label, updated=step_result.updated, agent_id=agent_id
+                )
 
             event_type = event_mapping.get(step_result.block_label)
             if event_type:

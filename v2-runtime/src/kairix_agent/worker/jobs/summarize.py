@@ -24,6 +24,7 @@ from kairix_agent.sessions import (
 )
 from kairix_agent.worker.jobs.step_memory import STEP_MEMORY_JOB
 from kairix_agent.worker.jobs.transcript import format_transcript
+from kairix_agent.worker.metrics import instrument_job, record_block_update
 from kairix_agent.worker.retry import LLM_RETRY_CONFIG
 
 if TYPE_CHECKING:
@@ -99,8 +100,7 @@ async def _format_session_transcript(
     # Fetch messages and filter to those in this session
     message_id_set = set(message_ids)
     messages = [
-        msg async for msg in client.agents.messages.list(agent_id)
-        if msg.id in message_id_set
+        msg async for msg in client.agents.messages.list(agent_id) if msg.id in message_id_set
     ]
 
     session_transcript = format_transcript(messages)
@@ -113,6 +113,7 @@ Message Count: {len(message_ids)}
 </session_transcript>"""
 
 
+@instrument_job("summarize")
 async def summarize_session(
     ctx: Context,
     *,
@@ -221,6 +222,9 @@ async def summarize_session(
             }
 
         logger.info("Received summary (%d chars) from DeepSeek", len(summary_text))
+
+        # Record block update metric (BlockManagerAgent updated last_session_summary)
+        record_block_update("last_session_summary", updated=True, agent_id=agent_id)
 
         # 3. Store summary in Letta archival memory (for conversational agent search)
         passage = await client.archives.passages.create(

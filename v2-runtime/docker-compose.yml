@@ -17,6 +17,7 @@ volumes:
   kairix-pgdata:
     external: true
     name: agent-server_kairix-pgdata
+  openobserve-data:
 
 services:
   # ===========================================================================
@@ -87,28 +88,31 @@ services:
     networks:
       - kairix-net
 
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: dozzle
-    volumes:
-      - ${DOCKER_SOCK:-/run/user/1000/podman/podman.sock}:/var/run/docker.sock:ro
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    container_name: openobserve
     ports:
-      - "9999:8080"
+      - "5080:5080"    # UI + API
+      - "5081:5081"    # OTLP gRPC
     environment:
-      - DOZZLE_NO_ANALYTICS=true
+      - ZO_ROOT_USER_EMAIL=admin@kairix.local
+      - ZO_ROOT_USER_PASSWORD=kairix123
+      - ZO_DATA_DIR=/data
+    volumes:
+      - openobserve-data:/data
     restart: unless-stopped
     networks:
       - kairix-net
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: jaeger
-    ports:
-      - "16686:16686"  # Jaeger UI
-      - "4317:4317"    # OTLP gRPC
-      - "4318:4318"    # OTLP HTTP
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    container_name: fluent-bit
+    volumes:
+      - /var/log/journal:/var/log/journal:ro
+      - /run/log/journal:/run/log/journal:ro
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    depends_on:
+      - openobserve
     restart: unless-stopped
     networks:
       - kairix-net
@@ -178,7 +182,7 @@ services:
       - KP3_URL=http://kp3-service:8080
       - LOG_LEVEL=INFO
       - ENABLE_TRACING=${ENABLE_TRACING:-true}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5081
     depends_on:
       postgres:
         condition: service_healthy
@@ -186,7 +190,7 @@ services:
         condition: service_healthy
       letta:
         condition: service_started
-      jaeger:
+      openobserve:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/hello"]
@@ -221,6 +225,8 @@ services:
       - LETTA_BASE_URL=http://letta:8283
       - KP3_URL=http://kp3-service:8080
       - LOG_LEVEL=INFO
+      - ENABLE_METRICS=${ENABLE_METRICS:-true}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5081
     depends_on:
       postgres:
         condition: service_healthy

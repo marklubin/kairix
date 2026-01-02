@@ -21,10 +21,7 @@ def get_all_agents() -> list[dict[str, Any]]:
     letta_url = Config.LETTA_BASE_URL.value
     try:
         client = Letta(base_url=letta_url)
-        agents = [
-            {"agent_id": agent.id, "letta_url": letta_url}
-            for agent in client.agents.list()
-        ]
+        agents = [{"agent_id": agent.id, "letta_url": letta_url} for agent in client.agents.list()]
     except Exception:
         logger.exception("Failed to fetch agents from Letta API")
         return []

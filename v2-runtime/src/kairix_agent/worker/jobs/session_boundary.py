@@ -18,6 +18,7 @@ from kairix_agent.sessions import (
     get_latest_session_end,
 )
 from kairix_agent.worker.agents import get_all_agents
+from kairix_agent.worker.metrics import instrument_job
 from kairix_agent.worker.retry import LLM_RETRY_CONFIG
 
 if TYPE_CHECKING:
@@ -108,7 +109,8 @@ async def _check_agent_session_locked(
     # Fetch all messages and filter to user/assistant messages AFTER the last session
     all_messages = await memory_service.get_all_messages()
     messages = [
-        m for m in all_messages
+        m
+        for m in all_messages
         if m.message_type in ("user_message", "assistant_message")
         and (latest_session_end is None or m.date > latest_session_end)
     ]
@@ -218,6 +220,7 @@ async def _check_agent_session_locked(
     }
 
 
+@instrument_job("session_boundary")
 async def check_session_boundaries(
     ctx: Context,
     *,

@@ -19,11 +19,15 @@ from kairix_agent.worker.jobs import (
     trigger_insights,
 )
 from kairix_agent.worker.jobs.step_memory import step_memory_blocks
+from kairix_agent.worker.metrics import init_metrics
 
 # Configure logging before anything else
 setup_logging("worker")
 
 logger = logging.getLogger(__name__)
+
+# Initialize OpenTelemetry metrics
+init_metrics()
 
 
 queue = Queue.from_url(Config.REDIS_URL.value)
@@ -42,7 +46,13 @@ JOB_TIMEOUTS = {
 
 settings = {
     "queue": queue,
-    "functions": [check_insights_relevance, check_session_boundaries, summarize_session, trigger_insights, step_memory_blocks],
+    "functions": [
+        check_insights_relevance,
+        check_session_boundaries,
+        summarize_session,
+        trigger_insights,
+        step_memory_blocks,
+    ],
     "concurrency": 5,
     "cron_jobs": [
         CronJob(

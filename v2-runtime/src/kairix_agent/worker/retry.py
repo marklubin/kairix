@@ -33,9 +33,7 @@ class RetryConfig:
         # Sum of geometric series: a * (1 - r^n) / (1 - r)
         if self.retry_backoff == 1.0:
             return self.retry_delay * self.retries
-        return self.retry_delay * (1 - self.retry_backoff**self.retries) / (
-            1 - self.retry_backoff
-        )
+        return self.retry_delay * (1 - self.retry_backoff**self.retries) / (1 - self.retry_backoff)
 
 
 # Standard retry config for LLM-dependent jobs

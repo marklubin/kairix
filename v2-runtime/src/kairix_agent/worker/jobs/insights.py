@@ -19,6 +19,12 @@ from kairix_agent.llm.configs import INSIGHTS_CONFIG
 from kairix_agent.llm.tools import handle_search_kp3
 from kairix_agent.worker.agents import get_all_agents
 from kairix_agent.worker.jobs.transcript import format_transcript
+from kairix_agent.worker.metrics import (
+    instrument_job,
+    record_block_update,
+    record_kp3_results,
+    record_tool_call,
+)
 
 if TYPE_CHECKING:
     from saq.types import Context
@@ -32,9 +38,9 @@ RECENT_MESSAGE_COUNT = 10
 
 
 async def _check_agent_insights(
-        client: AsyncLetta,
-        agent_id: str,
-        letta_url: str,
+    client: AsyncLetta,
+    agent_id: str,
+    letta_url: str,
 ) -> dict[str, object]:
     """Check and potentially update insights for a single agent.
 
@@ -119,7 +125,15 @@ async def _check_agent_insights(
     insights_agent = BlockManagerAgent(INSIGHTS_CONFIG)
 
     async def scoped_search(query: str, limit: int = 5) -> str:
-        return await handle_search_kp3(query, limit, agent_id=agent_id)
+        record_tool_call("search_kp3", agent_id)
+        result = await handle_search_kp3(query, limit, agent_id=agent_id)
+        # Count results (passages are formatted as list items)
+        if result == "No relevant passages found.":
+            result_count = 0
+        else:
+            result_count = result.count("\n- ") + 1
+        record_kp3_results(result_count, agent_id)
+        return result
 
     insights_agent.register_tool_handler("search_kp3", scoped_search)
 
@@ -141,6 +155,9 @@ async def _check_agent_insights(
     no_update = "NO_UPDATE_NEEDED" in response_text.upper()
     if no_update:
         logger.info("Insights agent determined no update needed for agent %s", agent_id)
+
+    # Record block update metric
+    record_block_update("insights", updated=not no_update, agent_id=agent_id)
 
     # Publish event for connected clients
     await publish_event(
@@ -165,10 +182,11 @@ async def _check_agent_insights(
     }
 
 
+@instrument_job("insights_cron")
 async def check_insights_relevance(
-        _ctx: Context,
-        *,
-        agents: list[dict[str, Any]] | None = None,
+    _ctx: Context,
+    *,
+    agents: list[dict[str, Any]] | None = None,
 ) -> dict[str, object]:
     """Check if background insights need updating for all agents.
 
@@ -214,6 +232,7 @@ async def check_insights_relevance(
     return {"status": "ok", "agents": results}
 
 
+@instrument_job("insights_trigger")
 async def trigger_insights(
     _ctx: Context,
     *,
@@ -273,7 +292,15 @@ async def trigger_insights(
         insights_agent = BlockManagerAgent(INSIGHTS_CONFIG)
 
         async def scoped_search(query: str, limit: int = 5) -> str:
-            return await handle_search_kp3(query, limit, agent_id=agent_id)
+            record_tool_call("search_kp3", agent_id)
+            result = await handle_search_kp3(query, limit, agent_id=agent_id)
+            # Count results
+            if result == "No relevant passages found.":
+                result_count = 0
+            else:
+                result_count = result.count("\n- ") + 1
+            record_kp3_results(result_count, agent_id)
+            return result
 
         insights_agent.register_tool_handler("search_kp3", scoped_search)
 
@@ -295,6 +322,9 @@ async def trigger_insights(
         no_update = "NO_UPDATE_NEEDED" in response_text.upper()
         if no_update:
             logger.info("Triggered insights determined no update needed for agent %s", agent_id)
+
+        # Record block update metric
+        record_block_update("insights", updated=not no_update, agent_id=agent_id)
 
         # Publish event
         await publish_event(
