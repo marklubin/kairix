@@ -85,6 +85,7 @@ cartesia_api_key = get_or_die("CARTESIA_API_KEY")
 
 # Initialize OpenTelemetry tracing if configured
 TRACING_ENABLED = os.environ.get("ENABLE_TRACING", "").lower() in ("1", "true", "yes")
+WHISKER_ENABLED = os.environ.get("ENABLE_WHISKER", "").lower() in ("1", "true", "yes")
 if TRACING_ENABLED and HAS_OTLP:
     otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
     otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
@@ -280,7 +281,10 @@ async def voice_endpoint(
             )
 
             # WhiskerObserver starts a WebSocket server on port 9090 for the Whisker debugger
-            whisker = WhiskerObserver(pipeline)
+            # Only enable when ENABLE_WHISKER=1 to avoid port conflicts with multiple sessions
+            observers: list[WhiskerObserver] = []
+            if WHISKER_ENABLED:
+                observers.append(WhiskerObserver(pipeline))
 
             task = PipelineTask(
                 pipeline,
@@ -289,7 +293,7 @@ async def voice_endpoint(
                     enable_metrics=True,
                     enable_usage_metrics=True,
                 ),
-                observers=[whisker],
+                observers=observers,
                 enable_tracing=TRACING_ENABLED,
                 enable_turn_tracking=True,
                 conversation_id=f"voice-{agent_id}",
