@@ -90,11 +90,12 @@ if TRACING_ENABLED and HAS_OTLP:
     otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
 
     # OpenObserve requires Basic auth for OTLP ingestion
+    # Note: gRPC metadata keys must be lowercase
     otel_user = os.environ.get("OTEL_EXPORTER_OTLP_USER", "admin@kairix.local")
     otel_pass = os.environ.get("OTEL_EXPORTER_OTLP_PASSWORD", "kairix123")
     auth_string = f"{otel_user}:{otel_pass}"
     auth_bytes = base64.b64encode(auth_string.encode()).decode()
-    headers = {"Authorization": f"Basic {auth_bytes}"}
+    headers = (("authorization", f"Basic {auth_bytes}"),)
 
     otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True, headers=headers)
     setup_tracing(
