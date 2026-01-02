@@ -25,7 +25,6 @@ from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketTransport,
 )
 from pipecat.utils.tracing.setup import setup_tracing
-from pipecat_whisker import WhiskerObserver
 from saq import Queue
 
 try:
@@ -85,9 +84,6 @@ cartesia_api_key = get_or_die("CARTESIA_API_KEY")
 
 # Initialize OpenTelemetry tracing if configured
 TRACING_ENABLED = os.environ.get("ENABLE_TRACING", "").lower() in ("1", "true", "yes")
-
-# Track Whisker ports to avoid conflicts with multiple voice sessions
-_whisker_port_counter = 9090
 if TRACING_ENABLED and HAS_OTLP:
     otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
     otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
@@ -282,14 +278,6 @@ async def voice_endpoint(
                 ]
             )
 
-            # WhiskerObserver starts a WebSocket server for the Whisker debugger
-            # Use dynamic ports to avoid conflicts with multiple concurrent sessions
-            global _whisker_port_counter
-            whisker_port = _whisker_port_counter
-            _whisker_port_counter += 1
-            logger.info("Starting Whisker debugger on port %d for agent %s", whisker_port, agent_id)
-            whisker = WhiskerObserver(pipeline, port=whisker_port)
-
             task = PipelineTask(
                 pipeline,
                 params=PipelineParams(
@@ -297,7 +285,6 @@ async def voice_endpoint(
                     enable_metrics=True,
                     enable_usage_metrics=True,
                 ),
-                observers=[whisker],
                 enable_tracing=TRACING_ENABLED,
                 enable_turn_tracking=True,
                 conversation_id=f"voice-{agent_id}",
