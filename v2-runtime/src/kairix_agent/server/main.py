@@ -38,13 +38,13 @@ except ImportError:
 from kairix_agent.config import Config
 from kairix_agent.events import emit_context_state
 from kairix_agent.logging_config import setup_logging
+from kairix_agent.server.conversation import ConversationService
 from kairix_agent.server.events import connection_manager
 from kairix_agent.server.events.listener import start_event_listener
 from kairix_agent.server.metrics import init_metrics as init_server_metrics
 from kairix_agent.server.metrics import record_session_end, record_session_start
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
 from kairix_agent.server.pipecat import LettaLLMService, PipelineMetricsObserver, UserTurnAggregator
-from kairix_agent.server.provider import LettaProvider
 from kairix_agent.server.voice.pipeline_manager import voice_pipeline_manager
 from kairix_agent.voices import service as voice_service
 from kairix_agent.voices.router import router as voices_router
@@ -134,7 +134,13 @@ async def websocket_endpoint(websocket: WebSocket, agent_id: str) -> None:
         agent_id: Required agent ID query param.
     """
     await websocket.accept()
-    letta_provider = LettaProvider(agent_id=agent_id)
+
+    # Create job queue for background tasks (insights, etc.)
+    job_queue = Queue.from_url(Config.REDIS_URL.value)
+
+    # Use shared ConversationService for consistent behavior with voice
+    conversation = ConversationService(agent_id=agent_id, queue=job_queue)
+
     try:
         while True:
             text = await websocket.receive_text()
@@ -147,7 +153,7 @@ async def websocket_endpoint(websocket: WebSocket, agent_id: str) -> None:
             await websocket.send_text(response_start.model_dump_json())
 
             chunk_cnt = 0
-            async for chunk in letta_provider.stream_response(user_message=input_chunk.text):
+            async for chunk in conversation.stream_response(user_message=input_chunk.text):
                 logger.info(f"Received chunk {chunk_cnt}. Content: {chunk}")
                 response_chunk = ResponseChunk(
                     chunk_id=f"chunk-{chunk_cnt}",
