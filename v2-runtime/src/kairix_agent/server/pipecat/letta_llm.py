@@ -1,6 +1,7 @@
 """Letta LLM service for Pipecat pipelines.
 
 This bridges Letta's streaming API into Pipecat's frame-based architecture.
+Uses the shared ConversationService for consistent behavior with the /ws endpoint.
 """
 
 from __future__ import annotations
@@ -8,8 +9,6 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING
 
-from letta_client import AsyncLetta, AsyncStream
-from letta_client.types.agents import AssistantMessage, LettaStreamingResponse
 from pipecat.frames.frames import (
     Frame,
     LLMFullResponseEndFrame,
@@ -17,12 +16,9 @@ from pipecat.frames.frames import (
     TextFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
-from pipecat.utils.text.markdown_text_filter import MarkdownTextFilter
-from rich.pretty import pretty_repr
 
-from kairix_agent.config import Config
+from kairix_agent.server.conversation import ConversationService
 from kairix_agent.server.pipecat.user_turn_aggregator import UserTurnMessageFrame
-from kairix_agent.worker.jobs import TRIGGER_INSIGHTS_JOB
 
 if TYPE_CHECKING:
     from saq import Queue
@@ -34,13 +30,14 @@ class LettaLLMService(FrameProcessor):
     """Pipecat LLM service that uses Letta as the backend.
 
     This processor receives transcription frames (from STT) and emits text
-    frames (for TTS) by calling the Letta agent API.
+    frames (for TTS) by calling the Letta agent API via the shared
+    ConversationService.
 
     Letta manages conversation history server-side, so we don't need Pipecat's
     context aggregator - we just forward each utterance to Letta.
 
     Frame Flow:
-        Input:  TranscriptionFrame (from STT) or TextFrame
+        Input:  UserTurnMessageFrame (from UserTurnAggregator)
         Output: LLMFullResponseStartFrame → TextFrame(s) → LLMFullResponseEndFrame
     """
 
@@ -61,13 +58,14 @@ class LettaLLMService(FrameProcessor):
             queue: Optional SAQ queue for enqueuing background jobs.
         """
         super().__init__(name=name)
-        if base_url is None:
-            base_url = Config.LETTA_BASE_URL.value
-        self._base_url = base_url
-        self._client = AsyncLetta(base_url=base_url)
         self._agent_id = agent_id
-        self._filter = MarkdownTextFilter()
-        self._queue = queue
+        # Use shared ConversationService for consistent behavior with /ws
+        self._conversation = ConversationService(
+            agent_id=agent_id,
+            base_url=base_url,
+            queue=queue,
+            filter_markdown=True,
+        )
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         """Process incoming frames and generate LLM responses.
@@ -95,48 +93,13 @@ class LettaLLMService(FrameProcessor):
         # Signal response is starting
         await self.push_frame(LLMFullResponseStartFrame())
 
-        response_stream: AsyncStream[
-            LettaStreamingResponse
-        ] = await self._client.agents.messages.stream(
-            agent_id=self._agent_id, input=user_message, streaming=True, stream_tokens=True
-        )
-
-        async for response in response_stream:
-            pretty_response = pretty_repr(response)
-            logger.info(
-                "Got letta response of type %s, with content: \n\n %s \n\n",
-                response.message_type,
-                pretty_response,
-            )
-            if isinstance(response, AssistantMessage):
-                if not isinstance(response.content, str):
-                    logger.info("Unexpected content type for response: %s", type(response.content))
-                else:
-                    filtered_text = await self._filter.filter(response.content)
-                    await self.push_frame(TextFrame(text=filtered_text))
+        # Stream response via shared ConversationService
+        # (handles markdown filtering and background job enqueueing)
+        async for chunk in self._conversation.stream_response(user_message):
+            await self.push_frame(TextFrame(text=chunk))
 
         # Signal response is complete
         await self.push_frame(LLMFullResponseEndFrame())
-
-        # Enqueue background insights job
-        await self._enqueue_insights()
-
-    async def _enqueue_insights(self) -> None:
-        """Enqueue an insights reflection job after LLM response."""
-        if self._queue is None:
-            logger.debug("No queue configured, skipping insights trigger")
-            return
-
-        try:
-            await self._queue.enqueue(
-                TRIGGER_INSIGHTS_JOB,
-                agent_id=self._agent_id,
-                letta_url=self._base_url,
-                timeout=60,
-            )
-            logger.info("Enqueued insights job for agent %s", self._agent_id)
-        except Exception:
-            logger.exception("Failed to enqueue insights job")
 
     def _extract_message(self, frame: Frame) -> str | None:
         if isinstance(frame, UserTurnMessageFrame):
