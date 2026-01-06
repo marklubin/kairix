@@ -35,6 +35,7 @@ class KokoroTTSService(OpenAITTSService):
         voice: str = "af_bella",
         model: str = "kokoro",
         sample_rate: int = 24000,
+        speed: float = 1.0,
         **kwargs,
     ) -> None:
         """Initialize Kokoro TTS service.
@@ -44,6 +45,7 @@ class KokoroTTSService(OpenAITTSService):
             voice: Voice ID (default: af_bella)
             model: Model name (default: kokoro)
             sample_rate: Audio sample rate (default: 24000)
+            speed: Speech speed 0.25-4.0 (default: 1.0)
             **kwargs: Additional arguments passed to OpenAITTSService
         """
         super().__init__(
@@ -54,6 +56,7 @@ class KokoroTTSService(OpenAITTSService):
             sample_rate=sample_rate,
             **kwargs,
         )
+        self._speed = speed
 
     async def run_tts(self, text: str) -> AsyncGenerator[Frame, None]:
         """Generate speech from text using Kokoro TTS.
@@ -77,6 +80,7 @@ class KokoroTTSService(OpenAITTSService):
                 "model": self.model_name,
                 "voice": self._voice_id,  # Use voice directly, not VALID_VOICES lookup
                 "response_format": "pcm",
+                "speed": self._speed,
             }
 
             async with self._client.audio.speech.with_streaming_response.create(

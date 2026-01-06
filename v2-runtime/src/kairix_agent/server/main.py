@@ -282,13 +282,15 @@ async def voice_endpoint(
     tts_provider = os.getenv("TTS_PROVIDER", "cartesia").lower()
     if tts_provider == "kokoro":
         kokoro_url = os.getenv("KOKORO_URL", "http://host.containers.internal:8880/v1")
-        kokoro_voice = os.getenv("KOKORO_VOICE", "af_bella")
+        kokoro_voice = os.getenv("KOKORO_VOICE", "af_heart")
+        kokoro_speed = float(os.getenv("KOKORO_SPEED", "1.2"))
         tts = KokoroTTSService(
             base_url=kokoro_url,
             voice=kokoro_voice,
             sample_rate=24000,  # Kokoro native rate
+            speed=kokoro_speed,
         )
-        logger.info("Using Kokoro TTS: %s voice=%s", kokoro_url, kokoro_voice)
+        logger.info("Using Kokoro TTS: %s voice=%s speed=%s", kokoro_url, kokoro_voice, kokoro_speed)
     else:
         tts = CartesiaTTSService(
             api_key=cartesia_api_key,
