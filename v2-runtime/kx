@@ -391,7 +391,12 @@ cmd_kp3() {
         exit 1
     fi
 
-    $COMPOSE run --rm kp3 kp3 "$@"
+    # Use podman/docker directly to avoid podman-compose run bugs
+    $CONTAINER_CMD run --rm \
+        --network v2-runtime_kairix-net \
+        -e KP3_DATABASE_URL=postgresql+asyncpg://kairix:kairix@kairix-postgres:5432/kp3 \
+        kp3-service:latest \
+        kp3 "$@"
 }
 
 # =============================================================================
