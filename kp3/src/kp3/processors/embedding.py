@@ -27,7 +27,7 @@ def _create_llm() -> "LLM":
 
     llm = LLM(
         model=settings.vllm_embedding_model,
-        runner="pooling",
+        task="embed",  # vLLM 0.8.x uses task instead of runner
         gpu_memory_utilization=settings.vllm_gpu_memory_utilization,
         enforce_eager=settings.vllm_enforce_eager,
         trust_remote_code=True,  # Required for some embedding models
