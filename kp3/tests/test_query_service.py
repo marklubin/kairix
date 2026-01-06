@@ -125,11 +125,11 @@ class TestRESTAPI:
         assert "score" in result
 
     @pytest.mark.asyncio
-    @pytest.mark.ollama
+    @pytest.mark.vllm
     async def test_search_endpoint_default_mode(
         self, test_client: AsyncClient, sample_passages: list[Passage]
     ) -> None:
-        """Test that search endpoint defaults to hybrid mode (requires Ollama)."""
+        """Test that search endpoint defaults to hybrid mode (requires vLLM/GPU)."""
         response = await test_client.get(
             "/passages/search", params={"query": "database"}
         )

@@ -1,6 +1,6 @@
 """Tests for embedding processor."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,19 +11,27 @@ from kp3.services.passages import create_passage
 
 
 @pytest.fixture
-def mock_ollama_client():
-    """Create mock Ollama client."""
-    client = AsyncMock()
-    # Mock embed response
-    client.embed.return_value = MagicMock(
-        embeddings=[[0.1] * 1024]  # 1024-dim vector
-    )
-    return client
+def mock_vllm():
+    """Create mock vLLM LLM instance."""
+    llm = MagicMock()
+    # Mock embed response - returns list of EmbeddingRequestOutput-like objects
+    output = MagicMock()
+    output.outputs.embedding = [0.1] * 1024  # 1024-dim vector for bge-large
+    llm.embed.return_value = [output]
+    return llm
+
+
+@pytest.fixture
+def mock_generate_embedding():
+    """Mock the generate_embedding function."""
+    with patch("kp3.processors.embedding.generate_embedding") as mock:
+        mock.return_value = [0.1] * 1024
+        yield mock
 
 
 async def test_embedding_processor_generates_embedding(
     session: AsyncSession,
-    mock_ollama_client: AsyncMock,
+    mock_generate_embedding: AsyncMock,
 ):
     """Processor generates embedding for passage."""
     passage = await create_passage(
@@ -33,7 +41,7 @@ async def test_embedding_processor_generates_embedding(
     )
     await session.commit()
 
-    processor = EmbeddingProcessor(client=mock_ollama_client)
+    processor = EmbeddingProcessor()
 
     group = ProcessorGroup(
         passage_ids=[passage.id],
@@ -49,15 +57,13 @@ async def test_embedding_processor_generates_embedding(
     assert "embedding_qwen3" in result.updates
     assert len(result.updates["embedding_qwen3"]) == 1024
 
-    # Verify Ollama was called
-    mock_ollama_client.embed.assert_called_once()
-    call_args = mock_ollama_client.embed.call_args
-    assert call_args.kwargs["input"] == "Test content for embedding"
+    # Verify generate_embedding was called
+    mock_generate_embedding.assert_called_once_with("Test content for embedding")
 
 
 async def test_embedding_processor_skips_existing(
     session: AsyncSession,
-    mock_ollama_client: AsyncMock,
+    mock_generate_embedding: AsyncMock,
 ):
     """Processor skips passages that already have embeddings."""
     passage = await create_passage(
@@ -69,7 +75,7 @@ async def test_embedding_processor_skips_existing(
     passage.embedding_qwen3 = [0.5] * 1024
     await session.commit()
 
-    processor = EmbeddingProcessor(client=mock_ollama_client)
+    processor = EmbeddingProcessor()
 
     group = ProcessorGroup(
         passage_ids=[passage.id],
@@ -81,12 +87,12 @@ async def test_embedding_processor_skips_existing(
     result = await processor.process(group, config)
 
     assert result.action == "pass"
-    mock_ollama_client.embed.assert_not_called()
+    mock_generate_embedding.assert_not_called()
 
 
 async def test_embedding_processor_force_regenerate(
     session: AsyncSession,
-    mock_ollama_client: AsyncMock,
+    mock_generate_embedding: AsyncMock,
 ):
     """Processor regenerates embedding when force=True."""
     passage = await create_passage(
@@ -94,10 +100,10 @@ async def test_embedding_processor_force_regenerate(
         content="Re-embed me",
         passage_type="raw",
     )
-    passage.embedding_qwen3 = [0.5] * 1024
+    passage.embedding_qwen3 = [0.5] * 1536
     await session.commit()
 
-    processor = EmbeddingProcessor(client=mock_ollama_client)
+    processor = EmbeddingProcessor()
 
     group = ProcessorGroup(
         passage_ids=[passage.id],
@@ -109,14 +115,14 @@ async def test_embedding_processor_force_regenerate(
     result = await processor.process(group, config)
 
     assert result.action == "update"
-    mock_ollama_client.embed.assert_called_once()
+    mock_generate_embedding.assert_called_once()
 
 
 async def test_embedding_processor_empty_group(
-    mock_ollama_client: AsyncMock,
+    mock_generate_embedding: AsyncMock,
 ):
     """Processor returns pass for empty groups."""
-    processor = EmbeddingProcessor(client=mock_ollama_client)
+    processor = EmbeddingProcessor()
 
     group = ProcessorGroup(
         passage_ids=[],
@@ -128,31 +134,34 @@ async def test_embedding_processor_empty_group(
     result = await processor.process(group, config)
 
     assert result.action == "pass"
-    mock_ollama_client.embed.assert_not_called()
+    mock_generate_embedding.assert_not_called()
 
 
-async def test_embedding_processor_custom_model(
-    session: AsyncSession,
-    mock_ollama_client: AsyncMock,
-):
-    """Processor uses model from config."""
-    passage = await create_passage(
-        session,
-        content="Custom model test",
-        passage_type="raw",
-    )
-    await session.commit()
+async def test_embedding_batch_generation(mock_vllm: MagicMock):
+    """Test batch embedding generation."""
+    from kp3.processors import embedding
 
-    processor = EmbeddingProcessor(client=mock_ollama_client)
+    # Setup mock to return multiple outputs
+    outputs = []
+    for i in range(3):
+        output = MagicMock()
+        output.outputs.embedding = [0.1 * (i + 1)] * 1024
+        outputs.append(output)
+    mock_vllm.embed.return_value = outputs
 
-    group = ProcessorGroup(
-        passage_ids=[passage.id],
-        passages=[passage],
-        group_key=str(passage.id),
-    )
+    with patch.object(embedding, "_llm_instance", mock_vllm):
+        result = await embedding.generate_embeddings_batch(["text1", "text2", "text3"])
 
-    config = EmbeddingConfig(model="custom-model:latest")
-    await processor.process(group, config)
+    assert len(result) == 3
+    # Verify embed was called (truncation happens in _embed_sync)
+    mock_vllm.embed.assert_called_once_with(["text1", "text2", "text3"])
 
-    call_args = mock_ollama_client.embed.call_args
-    assert call_args.kwargs["model"] == "custom-model:latest"
+
+async def test_embedding_batch_empty_list(mock_vllm: MagicMock):
+    """Test batch embedding with empty list."""
+    from kp3.processors import embedding
+
+    result = await embedding.generate_embeddings_batch([])
+
+    assert result == []
+    mock_vllm.embed.assert_not_called()

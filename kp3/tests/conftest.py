@@ -29,7 +29,7 @@ def _docker_available() -> bool:
 
 # Cache the result to avoid checking multiple times
 _DOCKER_AVAILABLE: bool | None = None
-_OLLAMA_AVAILABLE: bool | None = None
+_VLLM_AVAILABLE: bool | None = None
 
 
 def docker_available() -> bool:
@@ -40,23 +40,22 @@ def docker_available() -> bool:
     return _DOCKER_AVAILABLE
 
 
-def _ollama_available() -> bool:
-    """Check if Ollama is available and running."""
+def _vllm_available() -> bool:
+    """Check if vLLM/GPU is available."""
     try:
-        import httpx
+        import torch
 
-        response = httpx.get("http://localhost:11434/api/version", timeout=2.0)
-        return response.status_code == 200
+        return torch.cuda.is_available()
     except Exception:
         return False
 
 
-def ollama_available() -> bool:
-    """Check if Ollama is available (cached)."""
-    global _OLLAMA_AVAILABLE
-    if _OLLAMA_AVAILABLE is None:
-        _OLLAMA_AVAILABLE = _ollama_available()
-    return _OLLAMA_AVAILABLE
+def vllm_available() -> bool:
+    """Check if vLLM is available (cached)."""
+    global _VLLM_AVAILABLE
+    if _VLLM_AVAILABLE is None:
+        _VLLM_AVAILABLE = _vllm_available()
+    return _VLLM_AVAILABLE
 
 
 @pytest.fixture(autouse=True)
@@ -68,11 +67,11 @@ def skip_docker_tests(request: pytest.FixtureRequest) -> None:
 
 
 @pytest.fixture(autouse=True)
-def skip_ollama_tests(request: pytest.FixtureRequest) -> None:
-    """Skip tests marked with 'ollama' if Ollama is not available."""
-    if request.node.get_closest_marker("ollama"):
-        if not ollama_available():
-            pytest.skip("Ollama not available or not running")
+def skip_vllm_tests(request: pytest.FixtureRequest) -> None:
+    """Skip tests marked with 'vllm' if GPU is not available."""
+    if request.node.get_closest_marker("vllm"):
+        if not vllm_available():
+            pytest.skip("vLLM/GPU not available")
 
 
 @pytest.fixture(scope="session")
@@ -195,9 +194,7 @@ async def sample_passages(db_session: AsyncSession) -> list[Passage]:
 
 
 @pytest.fixture
-async def test_client(
-    db_engine: Any, _set_env: None
-) -> AsyncGenerator[AsyncClient, None]:
+async def test_client(db_engine: Any, _set_env: None) -> AsyncGenerator[AsyncClient, None]:
     """Create an async HTTP client for testing the FastAPI app."""
     # Import here to ensure env vars are set first
     from kp3.db import engine as engine_module

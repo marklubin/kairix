@@ -15,7 +15,7 @@ dependencies = [
     "pydantic-settings>=2.0",
     # LLM & embeddings
     "anthropic>=0.40",
-    "ollama>=0.4",
+    "vllm>=0.6",  # In-process embedding generation
     "openai>=1.0",  # Used for DeepSeek (OpenAI-compatible API)
     # CLI
     "click>=8.1",
@@ -97,5 +97,5 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 markers = [
     "docker: marks tests as requiring Docker/Podman (deselect with '-m \"not docker\"')",
-    "ollama: marks tests as requiring Ollama (skipped automatically if unavailable)",
+    "vllm: marks tests as requiring vLLM/GPU (skipped automatically if unavailable)",
 ]
