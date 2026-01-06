@@ -260,7 +260,7 @@ services:
       - KP3_DATABASE_URL=postgresql+asyncpg://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/kp3
       - KP3_QUERY_HOST=0.0.0.0
       - KP3_QUERY_PORT=8080
-      - CUDA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=1
     devices:
       - nvidia.com/gpu=all  # GPU passthrough via CDI
     depends_on:
