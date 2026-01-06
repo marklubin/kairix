@@ -75,15 +75,11 @@ class ConversationService:
         """
         logger.info("ConversationService received message: %s", user_message)
 
-        # Append /no_think to disable Qwen3's chain-of-thought reasoning
-        # This significantly reduces latency for voice/streaming use cases
-        input_with_mode = f"{user_message} /no_think"
-
         response_stream: AsyncStream[
             LettaStreamingResponse
         ] = await self._client.agents.messages.stream(
             agent_id=self._agent_id,
-            input=input_with_mode,
+            input=user_message,
             streaming=True,
             stream_tokens=True,
         )
