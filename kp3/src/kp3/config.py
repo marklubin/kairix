@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://kp3:kp3@localhost:5432/kp3"
 
     # vLLM embeddings (in-process with GPU)
-    vllm_embedding_model: str = "Qwen/Qwen3-Embedding-4B"
+    vllm_embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"  # 600M params, ~1.5GB VRAM
     vllm_embedding_dim: int = 1024  # MRL truncation from native 2560
     vllm_gpu_memory_utilization: float = 0.3
     vllm_enforce_eager: bool = True
