@@ -329,47 +329,62 @@ def passage_ls(passage_type: str | None, limit: int) -> None:
 @click.option("--mode", "-m", default="hybrid", type=click.Choice(["fts", "semantic", "hybrid"]))
 @click.option("--limit", "-n", default=5, help="Max results to show")
 @click.option("--agent", "-a", required=True, help="Agent ID to scope search")
-def passage_search(query: str, mode: str, limit: int, agent: str) -> None:
-    """Search passages using FTS, semantic, or hybrid search."""
-    from kp3.services.search import search_passages
+@click.option(
+    "--service-url",
+    envvar="KP3_SERVICE_URL",
+    default="http://kp3-service:8080",
+    help="KP3 service URL (uses vLLM for embeddings)",
+)
+def passage_search(query: str, mode: str, limit: int, agent: str, service_url: str) -> None:
+    """Search passages using FTS, semantic, or hybrid search.
 
-    async def _search() -> None:
-        async with async_session() as session:
-            results = await search_passages(
-                session,
-                query,
-                mode=mode,  # type: ignore[arg-type]
-                limit=limit,
-                agent_id=agent,
+    Calls the kp3-service HTTP API which has GPU access for embeddings.
+    """
+    import httpx
+
+    console = Console()
+
+    try:
+        with httpx.Client(timeout=120.0) as client:
+            response = client.get(
+                f"{service_url}/passages/search",
+                params={"query": query, "mode": mode, "limit": limit},
+                headers={"X-Agent-ID": agent},
             )
+            response.raise_for_status()
+            data = response.json()
+    except httpx.RequestError as e:
+        console.print(f"[red]Error connecting to kp3-service:[/] {e}")
+        raise SystemExit(1) from e
+    except httpx.HTTPStatusError as e:
+        console.print(f"[red]HTTP error:[/] {e.response.status_code} - {e.response.text}")
+        raise SystemExit(1) from e
 
-            if not results:
-                click.echo("No results found.")
-                return
+    results = data.get("results", [])
+    if not results:
+        click.echo("No results found.")
+        return
 
-            console = Console()
-            console.print(f"\n[bold]{mode.upper()}[/bold] search for: [cyan]{query}[/cyan]\n")
+    console.print(f"\n[bold]{mode.upper()}[/bold] search for: [cyan]{query}[/cyan]\n")
 
-            for i, result in enumerate(results, 1):
-                score = f"[bold green][{result.score:.4f}][/]"
-                ptype = f"[bold blue]{result.passage_type}[/]"
-                title = f"#{i} {score} {ptype}"
-                subtitle = f"[dim]{result.id}[/]"
+    for i, result in enumerate(results, 1):
+        score = f"[bold green][{result['score']:.4f}][/]"
+        ptype = f"[bold blue]{result['passage_type']}[/]"
+        title = f"#{i} {score} {ptype}"
+        subtitle = f"[dim]{result['id']}[/]"
 
-                console.print(
-                    Panel(
-                        result.content,
-                        title=title,
-                        subtitle=subtitle,
-                        title_align="left",
-                        subtitle_align="left",
-                        border_style="blue",
-                        padding=(1, 2),
-                    )
-                )
-                console.print()
-
-    asyncio.run(_search())
+        console.print(
+            Panel(
+                result["content"],
+                title=title,
+                subtitle=subtitle,
+                title_align="left",
+                subtitle_align="left",
+                border_style="blue",
+                padding=(1, 2),
+            )
+        )
+        console.print()
 
 
 @cli.group()
