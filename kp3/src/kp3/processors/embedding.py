@@ -1,9 +1,9 @@
-"""Embedding processor supporting Ollama and vLLM backends."""
+"""Embedding processor using vLLM in-process."""
 
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from kp3.config import get_settings
 from kp3.processors.base import Processor, ProcessorGroup, ProcessorResult
@@ -12,45 +12,6 @@ if TYPE_CHECKING:
     from vllm import LLM
 
 logger = logging.getLogger(__name__)
-
-
-class EmbeddingBackend(Protocol):
-    """Protocol for embedding backends."""
-
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings for texts."""
-        ...
-
-
-# =============================================================================
-# Ollama Backend
-# =============================================================================
-
-
-class OllamaBackend:
-    """Embedding backend using Ollama API."""
-
-    def __init__(self) -> None:
-        import ollama
-
-        settings = get_settings()
-        self._client = ollama.AsyncClient(host=settings.ollama_host)
-        self._model = settings.ollama_embedding_model
-        self._dim = settings.ollama_embedding_dim
-
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings via Ollama API."""
-        response = await self._client.embed(
-            model=self._model,
-            input=texts,
-            dimensions=self._dim,
-        )
-        return [list(emb) for emb in response.embeddings]
-
-
-# =============================================================================
-# vLLM Backend
-# =============================================================================
 
 _vllm_instance: "LLM | None" = None
 _vllm_lock = asyncio.Lock()
@@ -74,69 +35,31 @@ def _create_vllm() -> "LLM":
     return llm
 
 
-class VLLMBackend:
-    """Embedding backend using vLLM in-process."""
-
-    def __init__(self) -> None:
-        self._dim = get_settings().vllm_embedding_dim
-
-    async def _get_llm(self) -> "LLM":
-        """Get or create singleton LLM instance."""
-        global _vllm_instance
-        async with _vllm_lock:
-            if _vllm_instance is None:
-                _vllm_instance = await asyncio.to_thread(_create_vllm)
-            return _vllm_instance
-
-    def _embed_sync(self, llm: "LLM", texts: list[str]) -> list[list[float]]:
-        """Synchronous embedding with MRL truncation."""
-        outputs = llm.embed(texts)
-        return [output.outputs.embedding[: self._dim] for output in outputs]
-
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings via vLLM."""
-        llm = await self._get_llm()
-        return await asyncio.to_thread(self._embed_sync, llm, texts)
+async def _get_vllm() -> "LLM":
+    """Get or create singleton LLM instance."""
+    global _vllm_instance
+    async with _vllm_lock:
+        if _vllm_instance is None:
+            _vllm_instance = await asyncio.to_thread(_create_vllm)
+        return _vllm_instance
 
 
-# =============================================================================
-# Backend Selection
-# =============================================================================
-
-_backend_instance: EmbeddingBackend | None = None
-_backend_lock = asyncio.Lock()
-
-
-async def _get_backend() -> EmbeddingBackend:
-    """Get or create the embedding backend based on config."""
-    global _backend_instance
-    async with _backend_lock:
-        if _backend_instance is None:
-            settings = get_settings()
-            if settings.embedding_backend == "vllm":
-                logger.info("Using vLLM embedding backend")
-                _backend_instance = VLLMBackend()
-            else:
-                logger.info("Using Ollama embedding backend")
-                _backend_instance = OllamaBackend()
-        return _backend_instance
-
-
-# =============================================================================
-# Public API
-# =============================================================================
+def _embed_sync(llm: "LLM", texts: list[str], dim: int) -> list[list[float]]:
+    """Synchronous embedding with MRL truncation."""
+    outputs = llm.embed(texts)
+    return [output.outputs.embedding[:dim] for output in outputs]
 
 
 @dataclass
 class EmbeddingConfig:
     """Configuration for embedding processor."""
 
-    model: str | None = None  # Ignored - uses configured backend
+    model: str | None = None  # Ignored - uses configured model
     force: bool = False  # Re-generate even if embedding exists
 
 
 class EmbeddingProcessor(Processor[EmbeddingConfig]):
-    """Processor that generates embeddings for passages."""
+    """Processor that generates embeddings for passages using vLLM."""
 
     async def process(
         self,
@@ -179,13 +102,14 @@ async def generate_embedding(text: str, model: str | None = None) -> list[float]
 
     Args:
         text: Text to embed.
-        model: Ignored - uses configured backend.
+        model: Ignored - uses configured vLLM model.
 
     Returns:
         Embedding vector as list of floats.
     """
-    backend = await _get_backend()
-    embeddings = await backend.embed([text])
+    settings = get_settings()
+    llm = await _get_vllm()
+    embeddings = await asyncio.to_thread(_embed_sync, llm, [text], settings.vllm_embedding_dim)
     return embeddings[0]
 
 
@@ -197,7 +121,7 @@ async def generate_embeddings_batch(
 
     Args:
         texts: List of texts to embed.
-        model: Ignored - uses configured backend.
+        model: Ignored - uses configured vLLM model.
 
     Returns:
         List of embedding vectors.
@@ -205,5 +129,6 @@ async def generate_embeddings_batch(
     if not texts:
         return []
 
-    backend = await _get_backend()
-    return await backend.embed(texts)
+    settings = get_settings()
+    llm = await _get_vllm()
+    return await asyncio.to_thread(_embed_sync, llm, texts, settings.vllm_embedding_dim)

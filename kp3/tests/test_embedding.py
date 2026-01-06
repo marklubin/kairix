@@ -14,9 +14,8 @@ from kp3.services.passages import create_passage
 def mock_vllm():
     """Create mock vLLM LLM instance."""
     llm = MagicMock()
-    # Mock embed response - returns list of EmbeddingRequestOutput-like objects
     output = MagicMock()
-    output.outputs.embedding = [0.1] * 1024  # 1024-dim vector for bge-large
+    output.outputs.embedding = [0.1] * 1024
     llm.embed.return_value = [output]
     return llm
 
@@ -57,7 +56,6 @@ async def test_embedding_processor_generates_embedding(
     assert "embedding_qwen3" in result.updates
     assert len(result.updates["embedding_qwen3"]) == 1024
 
-    # Verify generate_embedding was called
     mock_generate_embedding.assert_called_once_with("Test content for embedding")
 
 
@@ -71,7 +69,6 @@ async def test_embedding_processor_skips_existing(
         content="Already embedded",
         passage_type="raw",
     )
-    # Manually set embedding
     passage.embedding_qwen3 = [0.5] * 1024
     await session.commit()
 
@@ -100,7 +97,7 @@ async def test_embedding_processor_force_regenerate(
         content="Re-embed me",
         passage_type="raw",
     )
-    passage.embedding_qwen3 = [0.5] * 1536
+    passage.embedding_qwen3 = [0.5] * 1024
     await session.commit()
 
     processor = EmbeddingProcessor()
@@ -141,7 +138,6 @@ async def test_embedding_batch_generation(mock_vllm: MagicMock):
     """Test batch embedding generation."""
     from kp3.processors import embedding
 
-    # Setup mock to return multiple outputs
     outputs = []
     for i in range(3):
         output = MagicMock()
@@ -150,13 +146,9 @@ async def test_embedding_batch_generation(mock_vllm: MagicMock):
     mock_vllm.embed.return_value = outputs
 
     with patch.object(embedding, "_vllm_instance", mock_vllm):
-        # Also need to set backend to use vLLM
-        mock_backend = embedding.VLLMBackend()
-        with patch.object(embedding, "_backend_instance", mock_backend):
-            result = await embedding.generate_embeddings_batch(["text1", "text2", "text3"])
+        result = await embedding.generate_embeddings_batch(["text1", "text2", "text3"])
 
     assert len(result) == 3
-    # Verify embed was called
     mock_vllm.embed.assert_called_once_with(["text1", "text2", "text3"])
 
 
