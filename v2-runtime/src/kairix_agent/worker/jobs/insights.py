@@ -54,22 +54,17 @@ async def _check_agent_insights(
     Returns:
         Status dict.
     """
-    # Pull all messages and take last N (Letta API ignores order=desc)
-    all_messages: list[Any] = [
+    # Fetch only the most recent N messages (desc order, then reverse for chronological)
+    recent_messages: list[Any] = [
         msg
         async for msg in client.agents.messages.list(
             agent_id=agent_id,
-            order="asc",
-            order_by="created_at",
+            limit=RECENT_MESSAGE_COUNT,
         )
     ]
 
-    if len(all_messages) > 1000:
-        msg = f"Agent {agent_id} has {len(all_messages)} messages - need to implement proper pagination"
-        raise RuntimeError(msg)
-
-    # Take last N messages (most recent, in chronological order)
-    messages = all_messages[-RECENT_MESSAGE_COUNT:] if all_messages else []
+    # Reverse to get chronological order (oldest first)
+    messages = list(reversed(recent_messages))
 
     if not messages:
         logger.info("No messages for agent %s, skipping insights check", agent_id)
@@ -77,7 +72,7 @@ async def _check_agent_insights(
 
     # Debug: dump message IDs and timestamps
     logger.info(
-        "Got %d messages for agent %s (from %d total):", len(messages), agent_id, len(all_messages)
+        "Got %d recent messages for agent %s:", len(messages), agent_id
     )
     for i, m in enumerate(messages[-5:]):
         logger.info("  [%d] %s | %s | %s", i, m.id, m.date, m.message_type)
@@ -260,21 +255,17 @@ async def trigger_insights(
     try:
         client = AsyncLetta(base_url=letta_url)
 
-        # Fetch recent messages (skip session gap check - we know conversation is active)
-        all_messages: list[Any] = [
+        # Fetch only the most recent N messages
+        recent_messages: list[Any] = [
             msg
             async for msg in client.agents.messages.list(
                 agent_id=agent_id,
-                order="asc",
-                order_by="created_at",
+                limit=RECENT_MESSAGE_COUNT,
             )
         ]
 
-        if len(all_messages) > 1000:
-            msg = f"Agent {agent_id} has {len(all_messages)} messages - need pagination"
-            raise RuntimeError(msg)
-
-        messages = all_messages[-RECENT_MESSAGE_COUNT:] if all_messages else []
+        # Reverse to get chronological order (oldest first)
+        messages = list(reversed(recent_messages))
 
         if not messages:
             logger.info("No messages for agent %s, skipping triggered insights", agent_id)
