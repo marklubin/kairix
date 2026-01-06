@@ -5,7 +5,14 @@ Uses the OpenAI-compatible Kokoro-FastAPI server for local TTS.
 
 from __future__ import annotations
 
+import logging
+from collections.abc import AsyncGenerator
+
+from openai import BadRequestError
+from pipecat.frames.frames import ErrorFrame, Frame, TTSAudioRawFrame, TTSStartedFrame, TTSStoppedFrame
 from pipecat.services.openai.tts import OpenAITTSService
+
+logger = logging.getLogger(__name__)
 
 
 class KokoroTTSService(OpenAITTSService):
@@ -47,3 +54,58 @@ class KokoroTTSService(OpenAITTSService):
             sample_rate=sample_rate,
             **kwargs,
         )
+
+    async def run_tts(self, text: str) -> AsyncGenerator[Frame, None]:
+        """Generate speech from text using Kokoro TTS.
+
+        Overrides OpenAITTSService.run_tts to bypass VALID_VOICES validation
+        since Kokoro uses its own voice IDs.
+
+        Args:
+            text: The text to synthesize into speech.
+
+        Yields:
+            Frame: Audio frames containing the synthesized speech data.
+        """
+        logger.debug("%s: Generating TTS [%s]", self, text)
+        try:
+            await self.start_ttfb_metrics()
+
+            # Pass voice directly instead of looking up in VALID_VOICES
+            create_params = {
+                "input": text,
+                "model": self.model_name,
+                "voice": self._voice_id,  # Use voice directly, not VALID_VOICES lookup
+                "response_format": "pcm",
+            }
+
+            async with self._client.audio.speech.with_streaming_response.create(
+                **create_params
+            ) as r:
+                if r.status_code != 200:
+                    error = await r.text()
+                    logger.error(
+                        "%s error getting audio (status: %s, error: %s)",
+                        self,
+                        r.status_code,
+                        error,
+                    )
+                    yield ErrorFrame(
+                        error=f"Error getting audio (status: {r.status_code}, error: {error})"
+                    )
+                    return
+
+                await self.start_tts_usage_metrics(text)
+
+                chunk_size = self.chunk_size
+
+                yield TTSStartedFrame()
+                async for chunk in r.iter_bytes(chunk_size):
+                    if len(chunk) > 0:
+                        await self.stop_ttfb_metrics()
+                        frame = TTSAudioRawFrame(chunk, self.sample_rate, 1)
+                        yield frame
+                yield TTSStoppedFrame()
+        except BadRequestError as e:
+            logger.exception("Kokoro TTS error")
+            yield ErrorFrame(error=f"Kokoro TTS error: {e}")
