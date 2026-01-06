@@ -1,11 +1,16 @@
 """Pipeline manager for tracking active voice pipelines."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any
 
 from pipecat.frames.frames import TTSUpdateSettingsFrame
-from pipecat.services.cartesia.tts import CartesiaTTSService
+
+if TYPE_CHECKING:
+    from pipecat.processors.frame_processor import FrameProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +23,10 @@ class VoicePipelineManager:
     """
 
     def __init__(self) -> None:
-        self._pipelines: dict[str, set[CartesiaTTSService]] = defaultdict(set)
+        self._pipelines: dict[str, set[Any]] = defaultdict(set)
         self._lock = asyncio.Lock()
 
-    async def register(self, agent_id: str, tts: CartesiaTTSService) -> None:
+    async def register(self, agent_id: str, tts: FrameProcessor) -> None:
         """Register a TTS service for an agent."""
         async with self._lock:
             self._pipelines[agent_id].add(tts)
@@ -31,7 +36,7 @@ class VoicePipelineManager:
                 len(self._pipelines[agent_id]),
             )
 
-    async def unregister(self, agent_id: str, tts: CartesiaTTSService) -> None:
+    async def unregister(self, agent_id: str, tts: FrameProcessor) -> None:
         """Unregister a TTS service for an agent."""
         async with self._lock:
             self._pipelines[agent_id].discard(tts)

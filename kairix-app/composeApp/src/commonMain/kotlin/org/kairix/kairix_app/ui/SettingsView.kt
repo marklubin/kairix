@@ -9,7 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.kairix.kairix_app.ConnectionState
-import org.kairix.kairix_app.Endpoint
+import org.kairix.kairix_app.endpoints.EndpointConfig
 import org.kairix.kairix_app.voice.Voice
 
 /**
@@ -18,8 +18,9 @@ import org.kairix.kairix_app.voice.Voice
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsView(
-    selectedEndpoint: Endpoint,
-    onEndpointSelected: (Endpoint) -> Unit,
+    endpoints: List<EndpointConfig>,
+    selectedEndpoint: EndpointConfig?,
+    onEndpointSelected: (EndpointConfig) -> Unit,
     connectionState: ConnectionState,
     voices: List<Voice>,
     currentVoice: Voice?,
@@ -54,20 +55,49 @@ fun SettingsView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Endpoint dropdown
+        var endpointExpanded by remember { mutableStateOf(false) }
+
+        ExposedDropdownMenuBox(
+            expanded = endpointExpanded,
+            onExpandedChange = {
+                if (connectionState == ConnectionState.DISCONNECTED) {
+                    endpointExpanded = it
+                }
+            }
         ) {
-            Endpoint.entries.forEach { endpoint ->
-                FilterChip(
-                    selected = selectedEndpoint == endpoint,
-                    onClick = {
-                        if (connectionState == ConnectionState.DISCONNECTED) {
+            OutlinedTextField(
+                value = selectedEndpoint?.label ?: "Select endpoint",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = endpointExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
+                enabled = connectionState == ConnectionState.DISCONNECTED
+            )
+            ExposedDropdownMenu(
+                expanded = endpointExpanded,
+                onDismissRequest = { endpointExpanded = false }
+            ) {
+                endpoints.forEach { endpoint ->
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(endpoint.label)
+                                Text(
+                                    text = endpoint.agentId,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        onClick = {
                             onEndpointSelected(endpoint)
+                            endpointExpanded = false
                         }
-                    },
-                    label = { Text(endpoint.label) },
-                    enabled = connectionState == ConnectionState.DISCONNECTED
-                )
+                    )
+                }
             }
         }
 
@@ -114,27 +144,27 @@ fun SettingsView(
                 )
             }
         } else {
-            var expanded by remember { mutableStateOf(false) }
+            var voiceExpanded by remember { mutableStateOf(false) }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
+                    expanded = voiceExpanded,
+                    onExpandedChange = { voiceExpanded = it },
                     modifier = Modifier.weight(1f)
                 ) {
                     OutlinedTextField(
                         value = selectedVoice?.name ?: currentVoice?.name ?: "No voice configured",
                         onValueChange = {},
                         readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = voiceExpanded) },
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        expanded = voiceExpanded,
+                        onDismissRequest = { voiceExpanded = false }
                     ) {
                         voices.forEach { voice ->
                             DropdownMenuItem(
@@ -152,14 +182,14 @@ fun SettingsView(
                                 },
                                 onClick = {
                                     onVoiceSelected(voice)
-                                    expanded = false
+                                    voiceExpanded = false
                                 }
                             )
                         }
                     }
                 }
 
-                // Save button - enabled when selection differs from current
+                // Save button
                 val hasChanges = selectedVoice != null && selectedVoice.id != currentVoice?.id
                 Button(
                     onClick = onSaveVoice,

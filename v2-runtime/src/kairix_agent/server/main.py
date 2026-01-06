@@ -21,6 +21,8 @@ from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.serializers.protobuf import ProtobufFrameSerializer
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.stt import DeepgramSTTService
+
+from kairix_agent.server.pipecat.kokoro_tts import KokoroTTSService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
@@ -276,11 +278,23 @@ async def voice_endpoint(
         ),
     )
 
-    tts = CartesiaTTSService(
-        api_key=cartesia_api_key,
-        voice_id=voice_id,
-        sample_rate=22050,  # Match KMP app playback rate
-    )
+    # Select TTS provider based on environment
+    tts_provider = os.getenv("TTS_PROVIDER", "cartesia").lower()
+    if tts_provider == "kokoro":
+        kokoro_url = os.getenv("KOKORO_URL", "http://host.containers.internal:8880/v1")
+        kokoro_voice = os.getenv("KOKORO_VOICE", "af_bella")
+        tts = KokoroTTSService(
+            base_url=kokoro_url,
+            voice=kokoro_voice,
+            sample_rate=24000,  # Kokoro native rate
+        )
+        logger.info("Using Kokoro TTS: %s voice=%s", kokoro_url, kokoro_voice)
+    else:
+        tts = CartesiaTTSService(
+            api_key=cartesia_api_key,
+            voice_id=voice_id,
+            sample_rate=22050,  # Match KMP app playback rate
+        )
     user_turn_aggregator = UserTurnAggregator()
 
     # Create SAQ queue for background jobs

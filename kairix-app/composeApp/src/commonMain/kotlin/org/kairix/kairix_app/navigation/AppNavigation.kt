@@ -1,6 +1,7 @@
 package org.kairix.kairix_app.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Settings
@@ -17,6 +18,7 @@ enum class AppScreen(
     val icon: ImageVector
 ) {
     Events("Events", Icons.Filled.Inbox),
+    Chat("Chat", Icons.AutoMirrored.Filled.Chat),
     Context("Context", Icons.Filled.Memory),
     Settings("Settings", Icons.Filled.Settings)
 }

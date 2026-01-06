@@ -1,0 +1,33 @@
+CREATE TABLE ChatMessageEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX idx_chat_agent_created ON ChatMessageEntity(agent_id, created_at);
+
+insertMessage:
+INSERT INTO ChatMessageEntity(id, agent_id, role, content, created_at)
+VALUES (?, ?, ?, ?, ?);
+
+selectMessagesByAgent:
+SELECT * FROM ChatMessageEntity
+WHERE agent_id = ?
+ORDER BY created_at ASC;
+
+selectRecentMessagesByAgent:
+SELECT * FROM ChatMessageEntity
+WHERE agent_id = ?
+ORDER BY created_at DESC
+LIMIT ?;
+
+deleteMessagesByAgent:
+DELETE FROM ChatMessageEntity WHERE agent_id = ?;
+
+deleteMessage:
+DELETE FROM ChatMessageEntity WHERE id = ?;
+
+updateMessageContent:
+UPDATE ChatMessageEntity SET content = ? WHERE id = ?;
