@@ -324,25 +324,79 @@ def passage_ls(passage_type: str | None, limit: int) -> None:
     asyncio.run(_list())
 
 
+def _resolve_agent_name(name: str, letta_url: str) -> str:
+    """Resolve agent name to ID using Letta API (case-insensitive exact match)."""
+    import httpx
+
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.get(f"{letta_url}/v1/agents")
+            response.raise_for_status()
+            agents = response.json()
+    except httpx.RequestError as e:
+        raise click.ClickException(f"Error connecting to Letta: {e}") from e
+    except httpx.HTTPStatusError as e:
+        raise click.ClickException(f"Letta API error: {e.response.status_code}") from e
+
+    # Case-insensitive exact match
+    name_lower = name.lower()
+    for agent in agents:
+        if agent.get("name", "").lower() == name_lower:
+            return agent["id"]
+
+    # No match found - show available agents
+    available = [a.get("name", "unnamed") for a in agents]
+    raise click.ClickException(
+        f"Agent '{name}' not found. Available agents: {', '.join(available)}"
+    )
+
+
 @passage.command("search")
 @click.argument("query")
 @click.option("--mode", "-m", default="hybrid", type=click.Choice(["fts", "semantic", "hybrid"]))
 @click.option("--limit", "-n", default=5, help="Max results to show")
-@click.option("--agent", "-a", required=True, help="Agent ID to scope search")
+@click.option("--agent", "-a", default=None, help="Agent ID to scope search")
+@click.option("--agent-name", "-A", default=None, help="Agent name (case-insensitive)")
 @click.option(
     "--service-url",
     envvar="KP3_SERVICE_URL",
     default="http://kp3-service:8080",
     help="KP3 service URL (uses vLLM for embeddings)",
 )
-def passage_search(query: str, mode: str, limit: int, agent: str, service_url: str) -> None:
+@click.option(
+    "--letta-url",
+    envvar="LETTA_BASE_URL",
+    default="http://letta:8283",
+    help="Letta API URL (for agent name resolution)",
+)
+def passage_search(
+    query: str,
+    mode: str,
+    limit: int,
+    agent: str | None,
+    agent_name: str | None,
+    service_url: str,
+    letta_url: str,
+) -> None:
     """Search passages using FTS, semantic, or hybrid search.
 
     Calls the kp3-service HTTP API which has GPU access for embeddings.
+    Requires either --agent (ID) or --agent-name (name lookup via Letta).
     """
     import httpx
 
     console = Console()
+
+    # Validate: exactly one of agent or agent_name must be provided
+    if agent and agent_name:
+        raise click.ClickException("Specify either --agent or --agent-name, not both")
+    if not agent and not agent_name:
+        raise click.ClickException("Either --agent or --agent-name is required")
+
+    # Resolve agent name to ID if needed
+    if agent_name:
+        agent = _resolve_agent_name(agent_name, letta_url)
+        console.print(f"[dim]Resolved '{agent_name}' → {agent}[/dim]\n")
 
     try:
         with httpx.Client(timeout=120.0) as client:
