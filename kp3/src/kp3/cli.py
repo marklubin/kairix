@@ -328,7 +328,8 @@ def passage_ls(passage_type: str | None, limit: int) -> None:
 @click.argument("query")
 @click.option("--mode", "-m", default="hybrid", type=click.Choice(["fts", "semantic", "hybrid"]))
 @click.option("--limit", "-n", default=5, help="Max results to show")
-def passage_search(query: str, mode: str, limit: int) -> None:
+@click.option("--agent", "-a", required=True, help="Agent ID to scope search")
+def passage_search(query: str, mode: str, limit: int, agent: str) -> None:
     """Search passages using FTS, semantic, or hybrid search."""
     from kp3.services.search import search_passages
 
@@ -339,6 +340,7 @@ def passage_search(query: str, mode: str, limit: int) -> None:
                 query,
                 mode=mode,  # type: ignore[arg-type]
                 limit=limit,
+                agent_id=agent,
             )
 
             if not results:
