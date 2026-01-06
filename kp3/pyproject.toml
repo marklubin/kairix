@@ -15,7 +15,8 @@ dependencies = [
     "pydantic-settings>=2.0",
     # LLM & embeddings
     "anthropic>=0.40",
-    "vllm>=0.6",  # In-process embedding generation
+    "ollama>=0.4",  # Ollama API for containerized deployments
+    "vllm>=0.6",  # In-process embedding for local GPU
     "openai>=1.0",  # Used for DeepSeek (OpenAI-compatible API)
     # CLI
     "click>=8.1",

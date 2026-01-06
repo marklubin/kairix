@@ -16,12 +16,19 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://kp3:kp3@localhost:5432/kp3"
 
-    # vLLM (for embeddings - in-process)
-    # Same model as ollama qwen3-embedding:4b, truncated to 1024 dims via MRL
+    # Embeddings - supports "ollama" or "vllm" backend
+    embedding_backend: str = "ollama"  # "ollama" for containers, "vllm" for local GPU
+
+    # Ollama settings (used when embedding_backend="ollama")
+    ollama_host: str = "http://localhost:11434"
+    ollama_embedding_model: str = "qwen3-embedding:4b"
+    ollama_embedding_dim: int = 1024
+
+    # vLLM settings (used when embedding_backend="vllm")
     vllm_embedding_model: str = "Qwen/Qwen3-Embedding-4B"
     vllm_embedding_dim: int = 1024  # MRL truncation from native 2560
-    vllm_gpu_memory_utilization: float = 0.3  # Low since embeddings are lightweight
-    vllm_enforce_eager: bool = True  # Disable CUDA graphs for lower memory
+    vllm_gpu_memory_utilization: float = 0.3
+    vllm_enforce_eager: bool = True
 
     # Anthropic (for LLM processing)
     anthropic_api_key: str = ""

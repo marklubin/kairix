@@ -149,11 +149,14 @@ async def test_embedding_batch_generation(mock_vllm: MagicMock):
         outputs.append(output)
     mock_vllm.embed.return_value = outputs
 
-    with patch.object(embedding, "_llm_instance", mock_vllm):
-        result = await embedding.generate_embeddings_batch(["text1", "text2", "text3"])
+    with patch.object(embedding, "_vllm_instance", mock_vllm):
+        # Also need to set backend to use vLLM
+        mock_backend = embedding.VLLMBackend()
+        with patch.object(embedding, "_backend_instance", mock_backend):
+            result = await embedding.generate_embeddings_batch(["text1", "text2", "text3"])
 
     assert len(result) == 3
-    # Verify embed was called (truncation happens in _embed_sync)
+    # Verify embed was called
     mock_vllm.embed.assert_called_once_with(["text1", "text2", "text3"])
 
 
