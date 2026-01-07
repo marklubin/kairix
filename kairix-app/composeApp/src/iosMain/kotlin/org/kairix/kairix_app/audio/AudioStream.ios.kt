@@ -4,6 +4,9 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.get
 import kotlinx.cinterop.set
 import platform.AVFAudio.*
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSOperationQueue
+import platform.darwin.NSObjectProtocol
 
 @OptIn(ExperimentalForeignApi::class)
 actual class AudioStream actual constructor(
@@ -15,6 +18,7 @@ actual class AudioStream actual constructor(
     private var isCapturing = false
     private var isPlaying = false
     private var hwSampleRate: Int = 48000  // Will be set from actual hardware
+    private var configChangeObserver: NSObjectProtocol? = null
 
     // Format for playback (what server sends us)
     private val playbackFormat = AVAudioFormat(
@@ -29,27 +33,37 @@ actual class AudioStream actual constructor(
         val session = AVAudioSession.sharedInstance()
         session.setCategory(
             AVAudioSessionCategoryPlayAndRecord,
-            mode = AVAudioSessionModeVoiceChat,  // Enables AEC
+            mode = AVAudioSessionModeVoiceChat,
             options = AVAudioSessionCategoryOptionDefaultToSpeaker or
                     AVAudioSessionCategoryOptionAllowBluetooth,
             error = null
         )
         session.setActive(true, error = null)
 
-        // 2. Get input node and its NATIVE hardware format
+        // 2. Set up player node for playback FIRST (before voice processing)
+        audioEngine.attachNode(playerNode)
+        audioEngine.connect(playerNode, audioEngine.mainMixerNode, playbackFormat)
+
+        // 3. Get input node
         val inputNode = audioEngine.inputNode
+        val outputNode = audioEngine.outputNode
+
+        // 4. Enable voice processing on BOTH nodes for echo cancellation
+        // This must be done AFTER nodes are connected but BEFORE engine starts
+        inputNode.setVoiceProcessingEnabled(true, error = null)
+        outputNode.setVoiceProcessingEnabled(true, error = null)
+
+        // 5. Get hardware format AFTER enabling voice processing (format may change)
         val hwFormat = inputNode.outputFormatForBus(0u)
         hwSampleRate = hwFormat.sampleRate.toInt()
 
-        // 3. Tap at HARDWARE format, resample manually in callback
-        // This is the most reliable approach - iOS requires tap format to match hardware
+        // 6. Install tap at hardware format
         inputNode.installTapOnBus(
             bus = 0u,
             bufferSize = 4096u,
             format = hwFormat
         ) { buffer, _ ->
             buffer?.let {
-                // Resample from hardware rate (48kHz) to target rate (16kHz)
                 val bytes = pcmBufferToBytesResampled(it, hwSampleRate, sampleRateIn)
                 if (bytes.isNotEmpty()) {
                     onAudioChunk(bytes)
@@ -57,18 +71,40 @@ actual class AudioStream actual constructor(
             }
         }
 
-        // 4. Set up player node for playback
-        audioEngine.attachNode(playerNode)
-        audioEngine.connect(playerNode, audioEngine.mainMixerNode, playbackFormat)
+        // 7. Observe configuration changes - engine stops itself after voice processing enabled
+        configChangeObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+            name = AVAudioEngineConfigurationChangeNotification,
+            `object` = audioEngine,
+            queue = NSOperationQueue.mainQueue
+        ) { _ ->
+            // Engine stopped due to config change, restart it
+            if (!audioEngine.isRunning()) {
+                audioEngine.prepare()
+                audioEngine.startAndReturnError(null)
+            }
+        }
 
-        // 5. Start the engine
+        // 8. Start the engine
         audioEngine.prepare()
         audioEngine.startAndReturnError(null)
+
+        // 9. If engine stopped (due to voice processing config change), start again
+        if (!audioEngine.isRunning()) {
+            audioEngine.prepare()
+            audioEngine.startAndReturnError(null)
+        }
+
         isCapturing = true
     }
 
     actual fun stopCapture() {
         if (!isCapturing) return
+
+        // Remove config change observer
+        configChangeObserver?.let {
+            NSNotificationCenter.defaultCenter.removeObserver(it)
+            configChangeObserver = null
+        }
 
         audioEngine.inputNode.removeTapOnBus(0u)
         audioEngine.stop()
