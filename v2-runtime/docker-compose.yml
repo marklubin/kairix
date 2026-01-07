@@ -69,6 +69,10 @@ services:
       - .env
     environment:
       - LETTA_DEBUG=False
+      - VLLM_API_BASE=http://vllm:8000
+    depends_on:
+      vllm:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - kairix-net
@@ -144,6 +148,46 @@ services:
     command: TCP-LISTEN:1025,fork,reuseaddr TCP:host.containers.internal:1025
     extra_hosts:
       - "host.containers.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # ===========================================================================
+  # vLLM Inference Server
+  # ===========================================================================
+
+  vllm:
+    image: vllm/vllm-openai:v0.8.5
+    container_name: vllm
+    ports:
+      - "8001:8000"
+    environment:
+      - VLLM_USE_V1=0
+      - HF_HOME=/root/.cache/huggingface
+      - CUDA_VISIBLE_DEVICES=0
+    command: >
+      --model ${VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct-AWQ}
+      --max-model-len ${VLLM_MAX_MODEL_LEN:-16384}
+      --enable-auto-tool-choice
+      --tool-call-parser hermes
+      --enable-prefix-caching
+      --gpu-memory-utilization 0.85
+    volumes:
+      - ${HF_CACHE_DIR:-~/.cache/huggingface}:/root/.cache/huggingface
+    devices:
+      - nvidia.com/gpu=0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # Model loading takes time
+    deploy:
+      resources:
+        limits:
+          memory: 24G
+        reservations:
+          memory: 16G
     restart: unless-stopped
     networks:
       - kairix-net
