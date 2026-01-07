@@ -329,8 +329,8 @@ def _resolve_agent_name(name: str, letta_url: str) -> str:
     import httpx
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            response = client.get(f"{letta_url}/v1/agents")
+        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            response = client.get(f"{letta_url}/v1/agents/")
             response.raise_for_status()
             agents = response.json()
     except httpx.RequestError as e:
