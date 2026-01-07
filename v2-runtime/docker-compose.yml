@@ -193,6 +193,37 @@ services:
       - kairix-net
 
   # ===========================================================================
+  # Kokoro TTS Server
+  # ===========================================================================
+
+  kokoro-tts:
+    image: ghcr.io/remsky/kokoro-fastapi-gpu:latest
+    container_name: kokoro-tts
+    ports:
+      - "8880:8880"
+    environment:
+      - USE_GPU=true
+      - DOWNLOAD_MODEL=true
+      - CUDA_VISIBLE_DEVICES=1
+    devices:
+      - nvidia.com/gpu=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8880/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s  # Model download/loading
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
+  # ===========================================================================
   # APPLICATION SERVICES (profile: app)
   # ===========================================================================
 
@@ -220,6 +251,11 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5081
       - OTEL_EXPORTER_OTLP_USER=admin@kairix.local
       - OTEL_EXPORTER_OTLP_PASSWORD=kairix123
+      # TTS Configuration
+      - TTS_PROVIDER=${TTS_PROVIDER:-kokoro}
+      - KOKORO_URL=http://kokoro-tts:8880/v1
+      - KOKORO_VOICE=${KOKORO_VOICE:-af_heart}
+      - KOKORO_SPEED=${KOKORO_SPEED:-1.2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -229,6 +265,8 @@ services:
         condition: service_started
       openobserve:
         condition: service_started
+      kokoro-tts:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/hello"]
       interval: 30s
