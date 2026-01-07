@@ -1,11 +1,15 @@
 """Service layer for voice configuration operations."""
 
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
 from kairix_agent.config import Config
 from kairix_agent.voices.models import AgentVoiceSettings, Voice
+
+logger = logging.getLogger(__name__)
 
 _engine = create_async_engine(Config.DATABASE_URL.value, echo=False)
 _async_session = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
@@ -79,15 +83,40 @@ async def delete_voice(voice_id: str) -> bool:
 
 
 async def get_agent_voice(agent_id: str) -> Voice | None:
-    """Get the voice configured for an agent."""
+    """Get the voice configured for an agent.
+
+    Checks in order:
+    1. Legacy agent_voice_settings table (for backward compatibility)
+    2. New unified agents table (if agent has voice_id set)
+    """
     async with _async_session() as db:
+        # First check legacy table
         result = await db.execute(
             select(AgentVoiceSettings)
             .options(selectinload(AgentVoiceSettings.voice))
             .where(AgentVoiceSettings.agent_id == agent_id)
         )
         settings = result.scalar_one_or_none()
-        return settings.voice if settings else None
+        if settings and settings.voice:
+            return settings.voice
+
+        # Fall back to unified agents table
+        from kairix_agent.agents.models import Agent
+
+        result = await db.execute(
+            select(Agent).where(Agent.letta_agent_id == agent_id)
+        )
+        agent = result.scalar_one_or_none()
+        if agent and agent.voice_id:
+            voice_result = await db.execute(
+                select(Voice).where(Voice.id == agent.voice_id)
+            )
+            voice = voice_result.scalar_one_or_none()
+            if voice:
+                logger.debug("Voice lookup from agents table: agent_id=%s, voice=%s", agent_id, voice.name)
+                return voice
+
+        return None
 
 
 async def set_agent_voice(agent_id: str, voice_id: str) -> AgentVoiceSettings:
