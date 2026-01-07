@@ -242,8 +242,9 @@ async def voice_endpoint(
     vad = SileroVADAnalyzer(
         sample_rate=16000,
         params=VADParams(
-            start_secs=0.2,  # Quick to detect speech start
-            stop_secs=0.2,  # Low value required for smart turn model analysis
+            start_secs=0.1,  # 100ms to detect speech start
+            stop_secs=0.2,  # 200ms silence before end of speech
+            min_volume=0.4,  # Lower threshold for speech detection
         ),
     )
 
