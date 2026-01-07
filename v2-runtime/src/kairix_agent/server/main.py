@@ -21,8 +21,6 @@ from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.serializers.protobuf import ProtobufFrameSerializer
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.stt import DeepgramSTTService
-
-from kairix_agent.server.pipecat.kokoro_tts import KokoroTTSService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
@@ -30,12 +28,16 @@ from pipecat.transports.websocket.fastapi import (
 from pipecat.utils.tracing.setup import setup_tracing
 from saq import Queue
 
+from kairix_agent.server.pipecat.kokoro_tts import KokoroTTSService
+
 try:
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
     HAS_OTLP = True
 except ImportError:
     HAS_OTLP = False
+
+from pydantic import BaseModel
 
 from kairix_agent.config import Config
 from kairix_agent.events import emit_context_state
@@ -47,11 +49,22 @@ from kairix_agent.server.metrics import init_metrics as init_server_metrics
 from kairix_agent.server.metrics import record_session_end, record_session_start
 from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, ResponseStart
 from kairix_agent.server.pipecat import LettaLLMService, PipelineMetricsObserver, UserTurnAggregator
+from kairix_agent.server.pipecat.echo_cancellation import EchoCancellationProcessor
 from kairix_agent.server.voice.pipeline_manager import voice_pipeline_manager
 from kairix_agent.voices import service as voice_service
 from kairix_agent.voices.router import router as voices_router
 
 logger = logging.getLogger(__name__)
+
+# Track active echo cancellation processors by agent_id for runtime config updates
+_echo_processors: dict[str, EchoCancellationProcessor] = {}
+
+
+class EchoCancellationSettings(BaseModel):
+    """Settings for echo cancellation thresholds."""
+
+    normal_min_volume: float = 0.4
+    speaking_min_volume: float = 0.7
 
 
 @asynccontextmanager
@@ -77,6 +90,29 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(voices_router)
+
+
+@app.put("/agents/{agent_id}/echo-settings")
+async def update_echo_settings(
+    agent_id: str,
+    settings: EchoCancellationSettings,
+) -> dict[str, str]:
+    """Update echo cancellation thresholds for an active voice session.
+
+    Args:
+        agent_id: The agent ID with an active voice session.
+        settings: New threshold values.
+
+    Returns:
+        Status message.
+    """
+    if agent_id in _echo_processors:
+        _echo_processors[agent_id].update_thresholds(
+            settings.normal_min_volume,
+            settings.speaking_min_volume,
+        )
+        return {"status": "ok", "message": "Thresholds updated"}
+    return {"status": "not_found", "message": "No active voice session for this agent"}
 
 
 def get_or_die(env_var: str) -> str:
@@ -308,6 +344,14 @@ async def voice_endpoint(
     # Register TTS with pipeline manager for live voice updates
     await voice_pipeline_manager.register(agent_id, tts)
 
+    # Create echo cancellation processor (Layer 2 of echo cancellation)
+    # Layer 1 is iOS hardware AEC via AVAudioSessionModeVoiceChat
+    echo_processor = EchoCancellationProcessor(
+        normal_min_volume=0.4,
+        speaking_min_volume=0.7,
+    )
+    _echo_processors[agent_id] = echo_processor
+
     # Track session timing
     session_start = time.perf_counter()
     record_session_start(agent_id)
@@ -322,6 +366,7 @@ async def voice_endpoint(
             pipeline = Pipeline(
                 [
                     transport.input(),  # Audio from client
+                    echo_processor,  # Adaptive VAD for echo cancellation
                     stt,  # Speech-to-text
                     user_turn_aggregator,
                     llm,  # Letta LLM
@@ -355,6 +400,9 @@ async def voice_endpoint(
 
         # Unregister on disconnect
         await voice_pipeline_manager.unregister(agent_id, tts)
+
+        # Remove echo processor from registry
+        _echo_processors.pop(agent_id, None)
 
 
 def main() -> None:
