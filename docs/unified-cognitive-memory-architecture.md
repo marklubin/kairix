@@ -1,22 +1,256 @@
 # Unified Cognitive Memory Architecture
 
 > Design document for KP3's cognitive memory system
+>
+> **Primary runtime surface:** `POST /cognition/increment` (single write primitive)
 
-## Core Insight
+---
 
-**Two-tier architecture:**
+## Core Invariants
 
-1. **Foundation Tier** (domain-agnostic primitives):
-   - Passages, Refs, Branches, Hooks, Derivations
-   - General-purpose building blocks
+These invariants are non-negotiable:
 
-2. **Cognitive Tier** (domain-specific, built on foundation):
-   - CognitiveFrame, Perceptions, Cognition processes
-   - **CognitiveFrames are themselves passages with refs** - versioned, branchable, queryable
+1. **Passages are immutable.** Once created, content never changes.
+2. **Refs are the only mutable state.** Everything else is append-only.
+3. **`/cognition/increment` is atomic.** Passage + derivation + ref update all commit or none.
+4. **No silent lost updates.** Optimistic locking is required on ref advancement.
+5. **Frames used by runtime represent closures.** Frozen snapshot mode is supported.
+6. **Canonical entity creation is judge-gated + uniqueness-protected.** No blind minting.
+
+---
+
+## What KP3 Is (The Thesis)
+
+KP3 is a cognitive memory substrate built on a small set of primitives:
+
+- **Passages**: immutable content snapshots (text + metadata + optional embedding)
+- **Refs**: mutable named pointers to passages (current "active" state)
+- **Derivations**: provenance edges connecting passages (state evolution graph)
+- **Frames**: snapshot closures over cognitive state (runtime-facing scoping)
+- **Cognition increment**: repeatable state transitions that:
+  1. read previous state
+  2. compute next state
+  3. write next passage + derivation
+  4. advance the relevant ref
+
+This separation prevents "state soup" and keeps provenance first-class.
+
+---
+
+## Two-Tier Architecture
+
+### Foundation Tier (Domain-Agnostic)
+
+General-purpose building blocks:
+
+| Primitive | Purpose |
+|-----------|---------|
+| **Passages** | Immutable content units (text + hash + embedding + metadata) |
+| **Refs** | Mutable name → passage pointers |
+| **Derivations** | Provenance edges (source → derived) |
+| **Hooks** | Side effects on ref updates |
+| **Branches** | Groupings of refs with configuration |
+
+### Cognitive Tier (Domain-Specific)
+
+Built entirely on foundation primitives:
+
+| Concept | Implementation |
+|---------|---------------|
+| **CognitiveFrame** | A passage containing JSON config, pointed to by a ref |
+| **Perceptions** | Refs with naming conventions (`{agent}/perception/{name}`) |
+| **Cognition** | The `increment_perception` fold operation |
 
 **Key principle:** Everything is passages and refs. The cognitive layer is metadata that describes how to interpret and evolve them.
 
-## Foundation Tier (Domain-Agnostic)
+---
+
+## Key Clarifications (Decisions Locked)
+
+### A) Semantic Dedupe at the Perception/Ref Layer, Not Passage Layer
+
+The goal of dedupe is **canonical identity**, e.g. ensuring:
+- `entity/claude`
+- `entity/the-great-anthropic-god-monster-of-truth`
+
+resolve to the same canonical entity ref when appropriate.
+
+**Passage-level dedupe is a separate "storage efficiency" concern** and should not be conflated with semantic identity.
+
+### B) Frames are Snapshot Closures (Runtime Facing)
+
+The runtime surface must query "against a specific frame" where the frame represents a closure of relevant cognitive state.
+
+Important distinction:
+
+| Mode | Behavior |
+|------|----------|
+| **Live lens frame** | Points to ref names, resolves HEAD at read time → **not deterministic** |
+| **Frozen snapshot frame** | Pins passage IDs → **deterministic closure, proper snapshot semantics** |
+
+**Recommendation:** Support a **resolved snapshot frame** representation:
+- Frame definition stores ref names + config
+- Activation or resolution produces a derived frame passage that pins the referenced passage IDs
+
+---
+
+## Biggest Risks + Mitigations
+
+### Risk 1: Lost Updates on Ref Advancement (Concurrency)
+
+**Problem:** Two concurrent increments can read the same previous passage and "last write wins" the ref update, silently dropping a branch from HEAD.
+
+**Mitigation:** Optimistic locking on ref update inside `/cognition/increment`:
+- Request includes `expected_previous_passage_id`
+- Server compares to current ref target
+- Mismatch → `409 CONFLICT` (caller retries)
+
+This prevents silent state loss while preserving provenance.
+
+### Risk 2: Identity Drift via Synonyms/Nicknames/Stylization
+
+**Problem:** Duplicate entities created under variant strings create fragmented knowledge.
+
+**Mitigation:** Semantic canonicalization at creation time with an **LLM judge final gate** (see below).
+
+### Risk 3: Frames Accidentally Become Live-Lenses
+
+**Problem:** If frames store only ref names, runtime search is nondeterministic and can "leak" new HEAD content not intended for that snapshot.
+
+**Mitigation:** Allow frame resolution to a "frozen" representation with pinned passage IDs for all member refs.
+
+### Risk 4: Hooks Can Loop or Become Non-Deterministic
+
+**Mitigation:** Define hard rules:
+- Hooks fire only after commit
+- Hook failures do not roll back ref updates (unless explicitly configured)
+- Hook recursion is blocked by default
+- Retries are safe / idempotent
+
+---
+
+## Semantic Entity Dedupe: LLM Judge as Final Gate
+
+### The Contract
+
+When creating an entity perception/ref (e.g. `entity/*`), KP3 must:
+
+1. **Candidate set selection**
+   - Restrict by namespace and prefix (`entity/*`)
+   - Shortlist by embedding similarity (top-K)
+   - Optionally add lexical candidates (same normalized tokens) to avoid embedding blind spots
+
+2. **Final judgment via LLM**
+   - Compare proposed entity to candidates
+   - Return structured decision
+
+3. **Commit**
+   - `DUPLICATE` → return canonical ref, do not create new
+   - `NOT_DUPLICATE` → create new canonical entity ref
+   - `UNSURE` → policy-defined (recommended: do *not* merge; create unverified entity or fail safe)
+
+**Mandatory invariant:** *No new canonical entity ref is created without a final LLM decision.*
+
+### Judge Output Schema
+
+```json
+{
+  "decision": "DUPLICATE | NOT_DUPLICATE | UNSURE",
+  "canonical_ref": "test-agent/entity/claude",
+  "confidence": 0.92,
+  "evidence": ["Both refer to Claude, Anthropic's AI model"]
+}
+```
+
+### Concurrency-Safe Canonical Creation
+
+Even with the judge, two clients racing can still mint two canonicals unless the commit is guarded.
+
+**Recommended:** Enforce a DB uniqueness constraint on canonical entity identity key (or canonicalized content hash) and retry on conflict.
+
+---
+
+## Primary Runtime Write Primitive: `POST /cognition/increment`
+
+### Purpose
+
+Atomically:
+1. Resolve frame closure (live or frozen mode)
+2. Read previous perception state
+3. Compute the next state via LLM
+4. Create new passage
+5. Create derivation edge(s)
+6. Advance ref using optimistic locking
+7. Optionally enqueue hooks (gated by frame config)
+
+### Request Schema
+
+```json
+{
+  "agent_id": "test-agent",
+
+  "frame_ref": "test-agent/frame/production",
+  "frame_snapshot_mode": "live | frozen",
+
+  "perception_ref": "test-agent/perception/persona",
+
+  "input": {
+    "content": "session summary text...",
+    "content_type": "text/plain",
+    "metadata": { "source": "unit_test" }
+  },
+
+  "context_refs": [
+    "test-agent/perception/human",
+    "test-agent/perception/world"
+  ],
+
+  "process_step_id": "step_persona",
+  "llm_config": { "model": "gpt-4o" },
+
+  "expected_previous_passage_id": "P1",
+
+  "idempotency_key": "6a4b8b9f-xxxx-xxxx-xxxx-e2c1"
+}
+```
+
+### Response Schema
+
+```json
+{
+  "ok": true,
+  "perception_ref": "test-agent/perception/persona",
+  "previous_passage_id": "P1",
+  "new_passage_id": "P2",
+
+  "derivation": {
+    "derived_passage_id": "P2",
+    "source_passage_ids": ["P1"],
+    "context_passage_ids": ["PH", "PW"],
+    "process_step_id": "step_persona"
+  },
+
+  "ref_update": {
+    "applied": true,
+    "new_ref_version": 42
+  },
+
+  "trace_id": "trace_abc123"
+}
+```
+
+### Failure Modes
+
+| Code | Meaning |
+|------|---------|
+| `409 CONFLICT` | Expected previous doesn't match current ref target (retry required) |
+| `422 UNPROCESSABLE` | Frame closure missing required refs (strict closure) |
+| `503 SERVICE UNAVAILABLE` | Model failure; **no partial writes committed** |
+| `200` (repeated) | Same output on repeated `idempotency_key` |
+
+---
+
+## Foundation Primitives
 
 ### Passages
 
@@ -26,9 +260,9 @@ Immutable content units. The atomic storage primitive.
 class Passage:
     id: UUID
     content: str
-    content_hash: str      # dedup
+    content_hash: str      # content dedup
     embedding: Vector      # semantic search
-    passage_type: str      # classification (foundation level)
+    passage_type: str      # classification
     agent_id: str | None   # optional ownership
     metadata: dict
     created_at: datetime
@@ -42,27 +276,41 @@ Mutable name → passage pointers. The addressing primitive.
 class PassageRef:
     name: str              # e.g., "corindel/perception/persona"
     passage_id: UUID       # what it points to
+    version: int           # for optimistic locking
     updated_at: datetime
     metadata: dict
 ```
 
-Refs are hierarchical by convention: `{namespace}/{category}/{name}`
-
-### Branches
-
-Groupings of refs with configuration. Already exists as `WorldModelBranch`.
-
-### Hooks
-
-Side effects on ref updates. Already exists as `PassageRefHook`.
+Refs are hierarchical by convention: `{agent_id}/{category}/{name}`
 
 ### Derivations
 
-Provenance chains. Already exists as `PassageDerivation`.
+Provenance edges with full context.
 
-## Cognitive Tier (Domain-Specific)
+```python
+class PassageDerivation:
+    derived_passage_id: UUID
+    source_passage_ids: list[UUID]    # What was "previous"
+    context_passage_ids: list[UUID]   # What was read for context
+    process_step_id: str              # What process created this
+    created_at: datetime
+```
 
-Built entirely on foundation primitives. **CognitiveFrames are passages. Perceptions are refs.**
+### Hooks
+
+Side effects on ref updates.
+
+```python
+class PassageRefHook:
+    ref_name: str          # Pattern or exact match
+    action_type: str       # e.g., "letta_agent_block_update"
+    config: dict           # Action-specific config
+    enabled: bool
+```
+
+---
+
+## Cognitive Tier
 
 ### CognitiveFrame
 
@@ -70,12 +318,13 @@ A CognitiveFrame defines an agent's cognitive configuration:
 - Which perceptions are active
 - What cognition processes update them
 - How search is scoped
+- Whether hooks fire
 
 **CognitiveFrame IS a passage** pointed to by a ref:
-```
-Ref: "corindel/frame/production" → Passage containing:
+
+```json
 {
-  "name": "Corindel-Production",
+  "name": "Production",
   "agent_id": "corindel",
 
   "perceptions": [
@@ -98,48 +347,16 @@ Ref: "corindel/frame/production" → Passage containing:
 ```
 
 Because it's a passage:
-- It has a content_hash (versioned)
-- It can be derived from a previous frame (branching)
-- It can be searched/queried
-- Multiple frames can exist: "corindel/frame/production", "corindel/frame/experiment"
+- Versioned (content hash)
+- Branchable (derivations)
+- Queryable (search)
+- Multiple frames can exist: `corindel/frame/production`, `corindel/frame/experiment`
 
 ### Perceptions
 
-**Perceptions are refs** in the cognitive tier. They represent the agent's "view" of something.
+**Perceptions are refs** in the cognitive tier. All perceptions function identically via `increment_perception`. The frame simply lists which perceptions exist for an agent.
 
-All perceptions function identically - they're refs pointing to passages that can be incremented via `increment_perception`. The frame simply lists which perceptions exist for an agent.
-
-Some perceptions start in the initial frame config (persona, human, world), others can be added later (entities, concepts). This is configuration, not a type distinction - the mechanics are identical.
-
-### Semantic Deduplication (Optional)
-
-When creating new perceptions that might duplicate existing ones (like entities), the API can optionally check for semantic similarity:
-
-```python
-async def get_or_create_perception(
-    session,
-    agent_id: str,
-    ref_prefix: str,      # e.g., "corindel/entity"
-    content: str,
-    *,
-    dedup: bool = False,  # Enable semantic dedup
-    similarity_threshold: float = 0.85,
-) -> str:
-    """Return ref name for perception, optionally deduping."""
-
-    if dedup:
-        # Search existing perceptions with this prefix
-        existing = await search_similar(session, ref_prefix, content, threshold)
-        if existing:
-            return existing.ref_name  # Reuse existing
-
-    # Create new perception
-    ref_name = f"{ref_prefix}/{generate_slug(content)}"
-    # ... create passage and ref
-    return ref_name
-```
-
-This is a feature of the `create_perception` API, not a fundamental type distinction.
+---
 
 ## Architecture Diagram
 
@@ -154,10 +371,11 @@ This is a feature of the `create_perception` API, not a fundamental type distinc
 │   │ embedding│             │ id       │            │ action   │        │
 │   └──────────┘             └──────────┘            └──────────┘        │
 │                                                                         │
-│   DERIVATIONS               BRANCHES (existing)                         │
+│   DERIVATIONS               BRANCHES                                    │
 │   ┌──────────┐             ┌──────────┐                                │
 │   │ source → │             │ group of │                                │
 │   │ derived  │             │ refs     │                                │
+│   │ context  │             │          │                                │
 │   └──────────┘             └──────────┘                                │
 └─────────────────────────────────────────────────────────────────────────┘
                               ▲
@@ -168,50 +386,47 @@ This is a feature of the `create_perception` API, not a fundamental type distinc
 │                                                                         │
 │   COGNITIVE FRAME (is a Passage with a Ref)                             │
 │   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │  Ref: "corindel/frame/production"                               │  │
+│   │  Ref: "agent/frame/production"                                  │  │
 │   │  ↓                                                              │  │
 │   │  Passage: {                                                     │  │
-│   │    perceptions: [ ... ],    // flat list of perception refs     │  │
+│   │    perceptions: [ ... ],                                        │  │
 │   │    cognition_config: { processes: {...} },                      │  │
 │   │    hooks_enabled: true                                          │  │
 │   │  }                                                              │  │
 │   └─────────────────────────────────────────────────────────────────┘  │
 │                              │                                          │
-│                              │ defines                                  │
-│                              ▼                                          │
-│   PERCEPTIONS (are Refs - all work identically)                         │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │    corindel/perception/persona → Passage (self-model)           │  │
-│   │    corindel/perception/human   → Passage (user-model)           │  │
-│   │    corindel/perception/world   → Passage (world-context)        │  │
-│   │    corindel/entity/mark-lubin  → Passage (entity model)         │  │
-│   │    corindel/concept/kairix     → Passage (concept model)        │  │
+│   PERCEPTIONS (are Refs)     │                                          │
+│   ┌──────────────────────────┼──────────────────────────────────────┐  │
+│   │  agent/perception/persona → Passage                             │  │
+│   │  agent/perception/human   → Passage                             │  │
+│   │  agent/entity/claude      → Passage                             │  │
 │   └─────────────────────────────────────────────────────────────────┘  │
 │                                                                         │
-│   COGNITION: input + previous → new (fold operation)                    │
+│   COGNITION: POST /cognition/increment                                  │
 │   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │  increment_perception() - same for ALL perceptions              │  │
-│   │  (creates passage, updates ref, fires hooks)                    │  │
-│   │                                                                 │  │
-│   │  Optional: dedup flag when creating new perceptions             │  │
+│   │  input + previous + context → LLM → new passage                 │  │
+│   │  + derivation link + ref update (optimistic lock)               │  │
+│   │  + hooks fire (if enabled)                                      │  │
 │   └─────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
 ## API Design
 
-### Foundation APIs (domain-agnostic)
+### Foundation APIs
 
 ```
 # Passages
 POST /passages                    # Create
 GET  /passages/{id}               # Get by ID
-GET  /passages/search             # Search all (admin/operational)
+GET  /admin/passages/search       # Search ALL passages (admin)
 
 # Refs
-GET  /refs/{name}                 # Get ref + passage
+GET  /refs/{name}                 # Get ref + resolve passage
 GET  /refs?prefix=...             # List by prefix
-PUT  /refs/{name}                 # Update (fires hooks)
+PUT  /refs/{name}                 # Update (with optimistic lock)
 GET  /refs/{name}/history         # Historical values
 
 # Derivations
@@ -219,695 +434,394 @@ GET  /passages/{id}/sources       # What was this derived from?
 GET  /passages/{id}/derived       # What derived from this?
 ```
 
-### Cognitive APIs (domain-specific)
+### Cognitive APIs
 
 ```
-# Cognitive Frames
+# Frames
 GET  /frames                      # List frames for agent
-GET  /frames/{name}               # Get frame (parsed perception list)
+GET  /frames/{name}               # Get frame content
 POST /frames                      # Create new frame
 POST /frames/{name}/fork          # Fork from existing
-POST /frames/{name}/activate      # Set as active
+POST /frames/{name}/resolve       # Resolve to frozen snapshot
 
 # Perceptions
-GET  /perceptions                 # List perceptions in active frame
-GET  /perceptions/{name}          # Get perception content
-POST /perceptions                 # Create (with dedup check)
+GET  /perceptions                 # List perceptions in frame
+POST /perceptions                 # Create (with LLM judge for entities)
 
-# Cognition
-POST /cognition/compute           # Run cognition process
-  {
-    "frame": "corindel/frame/production",
-    "perception": "corindel/perception/persona",
-    "input": "...",
-    "process": "step_persona"
-  }
+# Cognition (the single write primitive)
+POST /cognition/increment         # Atomic: input + previous → new
 
-# Search (scoped to active frame)
-GET  /search?query=X&frame=corindel/frame/production
+# Search (scoped to frame)
+GET  /search?query=X&frame=agent/frame/production
 ```
 
-## Example: Frame Evolution
-
-```
-Initial Frame (v1):
-  Ref: "corindel/frame/production" → Passage-F1
-  Content: {
-    perceptions: [
-      {name: "persona", ref: "corindel/perception/persona"},
-      {name: "human", ref: "corindel/perception/human"},
-      {name: "world", ref: "corindel/perception/world"}
-    ]
-  }
-
-After conversation, agent learns about entity:
-  Cognition detects new entity "Mark Lubin"
-  Dedup check: no similar entity exists (optional)
-  Create: corindel/entity/mark-lubin → Passage-E1
-
-  Update frame (v2):
-  Ref: "corindel/frame/production" → Passage-F2
-  Content: {
-    perceptions: [
-      {name: "persona", ref: "corindel/perception/persona"},
-      {name: "human", ref: "corindel/perception/human"},
-      {name: "world", ref: "corindel/perception/world"},
-      {name: "entity:mark-lubin", ref: "corindel/entity/mark-lubin"}
-    ]
-  }
-
-  Derivation: Passage-F2 derived from Passage-F1
-
-Later, another reference to "Mark":
-  Dedup check: similar entity exists (mark-lubin, similarity=0.95)
-  Update existing: corindel/entity/mark-lubin → Passage-E2
-  Frame stays at v2 (no new perception, just updated existing)
-```
-
-## The Computation Primitive
-
-### `increment_perception`
-
-The single primitive that ALL cognition reduces to:
-
-```python
-async def increment_perception(
-    input_content: str,
-    perception_ref: str,
-    prompt_name: str,
-    *,
-    agent_id: str,
-    context_refs: list[str] | None = None,  # Additional refs to read
-    search_query: str | None = None,         # Optional KP3 search for context
-) -> Passage:
-    """
-    The fold operation: (input, previous) → new
-
-    1. Load previous state from perception_ref (if exists)
-    2. Optionally load context from additional refs
-    3. Optionally search KP3 for relevant context
-    4. Load prompt from KP3
-    5. Call LLM: input + previous + context + prompt → new_content
-    6. Create new passage
-    7. Create derivation link to previous
-    8. Update perception_ref to point to new passage
-    9. Hooks fire automatically (e.g., Letta sync)
-
-    Returns the new passage.
-    """
-```
-
-### API Endpoint
-
-```
-POST /cognition/increment
-{
-  "input_content": "...",
-  "perception_ref": "corindel/perception/persona",
-  "prompt_name": "step_persona",
-  "context_refs": ["corindel/perception/human", "corindel/perception/world"],
-  "search_query": "relevant topics"  // optional
-}
-Header: X-Agent-ID
-
-Returns: {
-  "passage_id": "...",
-  "ref_name": "...",
-  "content": "...",
-  "previous_passage_id": "..." // if existed
-}
-```
+---
 
 ## Mapping Existing Jobs to the Primitive
 
-### Current State (v2-runtime)
+Each existing job becomes a call to `POST /cognition/increment`:
 
-| Job | Input | Previous | Output | Letta Block |
-|-----|-------|----------|--------|-------------|
-| `summarize_session` | transcript | none | session_summary | last_session_summary |
-| `trigger_insights` | last 10 msgs | insights block | insights | background_insights |
-| `step_memory_blocks` (persona) | summary | persona block | step:persona | persona |
-| `step_memory_blocks` (human) | summary | human block | step:human | human |
-| `step_memory_blocks` (world) | summary | world block | step:world | world |
+| Existing Job | perception_ref | context_refs | Letta Hook |
+|--------------|----------------|--------------|------------|
+| `summarize_session` | `{agent}/session/summary` | none | `last_session_summary` |
+| `trigger_insights` | `{agent}/insight/latest` | search query | `background_insights` |
+| `step_memory_blocks` (persona) | `{agent}/perception/persona` | human, world | `persona` |
+| `step_memory_blocks` (human) | `{agent}/perception/human` | persona, world | `human` |
+| `step_memory_blocks` (world) | `{agent}/perception/world` | persona, human | `world` |
 
-### Current State (KP3)
-
-| Processor | Input | Previous (via refs) | Output | Refs Updated |
-|-----------|-------|---------------------|--------|--------------|
-| `WorldModelProcessor` | passage | human/persona/world refs | state:* passages | world/*/HEAD |
-
-### Migration Mapping
-
-Each existing job becomes a call to `increment_perception`:
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EXISTING: summarize_session                                             │
-│                                                                         │
-│   BlockManagerAgent(SUMMARIZER_CONFIG)                                  │
-│     input: transcript                                                   │
-│     target_block: last_session_summary                                  │
-│     kp3_storage: session_summary                                        │
-│                                                                         │
-│ BECOMES: increment_perception(                                          │
-│     input_content=transcript,                                           │
-│     perception_ref="{agent}/session/summary",                           │
-│     prompt_name="block_manager_summarizer",                             │
-│   )                                                                     │
-│   + Hook: letta_agent_block_update → last_session_summary               │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EXISTING: trigger_insights                                              │
-│                                                                         │
-│   BlockManagerAgent(INSIGHTS_CONFIG)                                    │
-│     input: last 10 messages                                             │
-│     target_block: background_insights                                   │
-│     tools: search_kp3                                                   │
-│     kp3_storage: None                                                   │
-│                                                                         │
-│ BECOMES: increment_perception(                                          │
-│     input_content=formatted_messages,                                   │
-│     perception_ref="{agent}/insight/latest",                            │
-│     prompt_name="block_manager_insights",                               │
-│     search_query=<extracted from messages>                              │
-│   )                                                                     │
-│   + Hook: letta_agent_block_update → background_insights                │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EXISTING: step_memory_blocks (persona)                                  │
-│                                                                         │
-│   BlockManagerAgent(PERSONA_STEP_CONFIG)                                │
-│     input: session summary                                              │
-│     reads: persona, human, world blocks from Letta                      │
-│     target_block: persona                                               │
-│     tools: search_kp3                                                   │
-│     kp3_storage: step:persona                                           │
-│                                                                         │
-│ BECOMES: increment_perception(                                          │
-│     input_content=session_summary,                                      │
-│     perception_ref="{agent}/perception/persona",                        │
-│     prompt_name="step_persona",                                         │
-│     context_refs=[                                                      │
-│       "{agent}/perception/human",                                       │
-│       "{agent}/perception/world"                                        │
-│     ],                                                                  │
-│   )                                                                     │
-│   + Hook: letta_agent_block_update → persona                            │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EXISTING: step_memory_blocks (human)                                    │
-│                                                                         │
-│ BECOMES: increment_perception(                                          │
-│     input_content=session_summary,                                      │
-│     perception_ref="{agent}/perception/human",                          │
-│     prompt_name="step_human",                                           │
-│     context_refs=[                                                      │
-│       "{agent}/perception/persona",                                     │
-│       "{agent}/perception/world"                                        │
-│     ],                                                                  │
-│   )                                                                     │
-│   + Hook: letta_agent_block_update → human                              │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EXISTING: step_memory_blocks (world)                                    │
-│                                                                         │
-│ BECOMES: increment_perception(                                          │
-│     input_content=session_summary,                                      │
-│     perception_ref="{agent}/perception/world",                          │
-│     prompt_name="step_world",                                           │
-│     context_refs=[                                                      │
-│       "{agent}/perception/persona",                                     │
-│       "{agent}/perception/human"                                        │
-│     ],                                                                  │
-│   )                                                                     │
-│   + Hook: letta_agent_block_update → world                              │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EXISTING: WorldModelProcessor (KP3 batch)                               │
-│                                                                         │
-│   Makes 3 parallel LLM calls                                            │
-│   Reads from world/*/HEAD refs                                          │
-│   Creates state:* passages                                              │
-│   Updates refs                                                          │
-│                                                                         │
-│ BECOMES: 3x increment_perception() calls (can be parallel)              │
-│   - increment_perception(..., perception_ref="world/human/HEAD", ...)   │
-│   - increment_perception(..., perception_ref="world/persona/HEAD", ...) │
-│   - increment_perception(..., perception_ref="world/world/HEAD", ...)   │
-│                                                                         │
-│   Note: WorldModelProcessor also does shadow table sync - that becomes  │
-│   a separate hook or post-processing step                               │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-## Orchestration: Who Calls increment_perception?
-
-The orchestration stays in v2-runtime (job scheduling, triggers). KP3 just provides the primitive.
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          V2-RUNTIME                                      │
-│                                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                    SAQ JOB QUEUE                                 │   │
-│  │                                                                  │   │
-│  │  check_session_boundaries (cron)                                 │   │
-│  │    → enqueue summarize_session                                   │   │
-│  │                                                                  │   │
-│  │  summarize_session                                               │   │
-│  │    → POST /cognition/increment (session/summary)                 │   │
-│  │    → enqueue step_memory_blocks                                  │   │
-│  │                                                                  │   │
-│  │  step_memory_blocks                                              │   │
-│  │    → POST /cognition/increment (perception/persona) ─┐          │   │
-│  │    → POST /cognition/increment (perception/human)  ──┼─ parallel│   │
-│  │    → POST /cognition/increment (perception/world)  ──┘          │   │
-│  │                                                                  │   │
-│  │  trigger_insights (after LLM response)                           │   │
-│  │    → POST /cognition/increment (insight/latest)                  │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-                              │
-                              │ HTTP
-                              ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                            KP3                                           │
-│                                                                         │
-│  POST /cognition/increment                                              │
-│    1. Load previous from perception_ref                                 │
-│    2. Load context from context_refs                                    │
-│    3. Optional: search KP3 for additional context                       │
-│    4. Load prompt                                                       │
-│    5. Call LLM                                                          │
-│    6. Create passage + derivation                                       │
-│    7. Update ref (fires hooks → Letta sync)                             │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-## What Changes, What Stays
-
-### In v2-runtime (mostly stays):
-- **Job scheduling**: cron triggers, event-based enqueueing ✓
-- **Job logic**: transform to call KP3 API instead of BlockManagerAgent
-- **Event publishing**: stays ✓
-- **Session management**: stays ✓
-
-### In KP3 (new):
-- **`/cognition/increment` endpoint**: the single primitive
-- **Perception ref management**: create/update refs
-- **Hook firing**: on ref update → Letta sync
-
-### Removed from v2-runtime:
-- **`BlockManagerAgent` class**: replaced by KP3 API call
-- **`OpenAICompatibleClient`**: LLM calls move to KP3
-- **Direct Letta block updates**: handled by KP3 hooks
-
-## Ref Naming for Existing Blocks
-
-| Current Letta Block | New Perception Ref |
-|---------------------|-------------------|
-| `last_session_summary` | `{agent}/session/summary` |
-| `background_insights` | `{agent}/insight/latest` |
-| `persona` | `{agent}/perception/persona` |
-| `human` | `{agent}/perception/human` |
-| `world` | `{agent}/perception/world` |
-
-## Hook Configuration
-
-Each perception ref that should sync to Letta needs a hook:
-
-```sql
-INSERT INTO passage_ref_hooks (ref_name, action_type, config, enabled)
-VALUES
-  ('corindel/session/summary', 'letta_agent_block_update',
-   '{"agent_id": "agent-xxx", "block_label": "last_session_summary"}', true),
-
-  ('corindel/insight/latest', 'letta_agent_block_update',
-   '{"agent_id": "agent-xxx", "block_label": "background_insights"}', true),
-
-  ('corindel/perception/persona', 'letta_agent_block_update',
-   '{"agent_id": "agent-xxx", "block_label": "persona"}', true),
-
-  ('corindel/perception/human', 'letta_agent_block_update',
-   '{"agent_id": "agent-xxx", "block_label": "human"}', true),
-
-  ('corindel/perception/world', 'letta_agent_block_update',
-   '{"agent_id": "agent-xxx", "block_label": "world"}', true);
-```
+---
 
 ## Implementation Plan
 
-### Phase 1: Foundation Tier - Expose Existing APIs
+### Phase 1: Foundation APIs
+- Expose refs HTTP endpoints (GET, PUT with optimistic lock, history)
+- Expose derivations HTTP endpoints (sources, derived)
+- Add admin passages search
 
-Foundation primitives mostly exist. Expose them via HTTP.
+### Phase 2: Cognitive Frame
+- Frame service (create, fork, resolve to frozen)
+- Frame HTTP endpoints
 
-**New API endpoints in KP3:**
+### Phase 3: Cognition Increment
+- Implement `/cognition/increment` with:
+  - Optimistic locking (`expected_previous_passage_id`)
+  - Idempotency key support
+  - Atomic transaction (passage + derivation + ref)
+  - Hook firing (gated)
 
-1. **`kp3/src/kp3/api/refs.py`** - Ref operations
-   ```
-   GET  /refs/{name}           # Get ref + resolve passage
-   GET  /refs?prefix=...       # List by prefix
-   PUT  /refs/{name}           # Update ref (fires hooks)
-   GET  /refs/{name}/history   # Historical values
-   ```
+### Phase 4: Entity Dedupe with LLM Judge
+- Candidate selection (embedding + lexical)
+- LLM judge integration
+- Concurrency-safe canonical creation
 
-2. **`kp3/src/kp3/api/derivations.py`** - Provenance operations
-   ```
-   GET  /passages/{id}/sources  # What was this derived from?
-   GET  /passages/{id}/derived  # What derived from this?
-   ```
+### Phase 5: Frame-Scoped Search
+- Search within frame's perception refs
+- Frozen snapshot support
 
-3. **`kp3/src/kp3/api/passages.py`** - Add admin search
-   ```
-   GET  /admin/passages/search  # Search ALL passages (no scope)
-   ```
+### Phase 6: Wire Up v2-runtime
+- Transform BlockManagerAgent calls to `/cognition/increment`
+- Remove direct Letta block updates (handled by hooks)
 
-**Existing (no changes needed):**
-- `kp3/src/kp3/services/refs.py` ✓
-- `kp3/src/kp3/services/derivations.py` ✓
-- `kp3/src/kp3/services/search.py` ✓
+---
 
-### Phase 2: Cognitive Tier - CognitiveFrame
+# Appendix A: End-to-End Test Plan
 
-CognitiveFrame is just a passage with a ref. No new tables needed.
+## A.1 Test Goals
 
-**New in KP3:**
+Validate KP3 supports core operations end-to-end:
+- Passages: create/read/immutability
+- Refs: create/update/history/list-by-prefix
+- Derivations: provenance tracking
+- Frames: create/fork/version/activate
+- Perceptions: create + semantic entity canonicalization
+- Cognition increment: atomic state transitions
+- Frame-scoped search
+- Concurrency safety + idempotency + rollback on failure
 
-1. **`kp3/src/kp3/services/frames.py`** - Frame operations
-   ```python
-   async def get_frame(session, ref_name: str) -> dict:
-       """Load and parse frame passage."""
-       passage = await get_ref_passage(session, ref_name)
-       return json.loads(passage.content)
+**All tests run WITHOUT v2-runtime/Letta/Kairix orchestration dependencies.**
 
-   async def create_frame(
-       session,
-       agent_id: str,
-       name: str,
-       perceptions: list[dict],
-       cognition_config: dict,
-   ) -> PassageRef:
-       """Create frame passage and ref."""
-       content = json.dumps({
-           "name": name,
-           "agent_id": agent_id,
-           "perceptions": perceptions,  # flat list
-           "cognition_config": cognition_config,
-           "hooks_enabled": True,
-       })
-       passage = await create_passage(session, content, passage_type="cognitive_frame")
-       ref_name = f"{agent_id}/frame/{slugify(name)}"
-       await set_ref(session, ref_name, passage.id, fire_hooks=False)
-       return ref_name
+## A.2 Test Environment
 
-   async def fork_frame(session, source_ref: str, new_name: str) -> str:
-       """Create new frame derived from source."""
-       # Load source
-       # Create new passage with same content
-       # Link derivation
-       # Create new ref
+### Required Components
+- KP3 API service
+- Postgres (with pgvector)
+- Deterministic embedding stub
+- Deterministic LLM stub
 
-   async def update_frame_perceptions(
-       session,
-       frame_ref: str,
-       add_perception: dict | None = None,
-       remove_perception: str | None = None,
-   ) -> str:
-       """Update frame's perceptions (creates new version)."""
-   ```
+### Deterministic Providers
 
-2. **`kp3/src/kp3/api/frames.py`** - HTTP endpoints
-   ```
-   GET  /frames                 # List frames for agent
-   GET  /frames/{name}          # Get frame content
-   POST /frames                 # Create new
-   POST /frames/{name}/fork     # Fork
-   POST /frames/{name}/activate # Set active
-   ```
+To avoid flaky tests:
+- **LLM stub** returns: `OUT:<sha256(input + prev + prompt)[:16]>`
+- **LLM judge stub** returns deterministic decision based on configured test mapping
+- **Embedding stub** returns deterministic vector from content hash seed
 
-### Phase 3: Cognition & Perceptions
-
-**New in KP3:**
-
-1. **`kp3/src/kp3/services/cognition.py`** - The fold operation
-   ```python
-   async def compute(
-       session,
-       frame_ref: str,
-       perception_ref: str,
-       input_content: str,
-       process_name: str,
-   ) -> Passage:
-       """Run cognition: input + previous → new."""
-       # 1. Load frame to get cognition_config
-       frame = await get_frame(session, frame_ref)
-       process = frame["cognition_config"]["processes"][process_name]
-
-       # 2. Load current perception
-       previous = await get_ref_passage(session, perception_ref)
-
-       # 3. Load prompt
-       prompt = await get_prompt(session, process["prompt"])
-
-       # 4. Call LLM
-       new_content = await call_llm(input_content, previous.content, prompt)
-
-       # 5. Create new passage
-       passage = await create_passage(session, new_content, ...)
-
-       # 6. Link derivation
-       await create_derivation(session, passage.id, [previous.id])
-
-       # 7. Update ref (fires hooks if frame.hooks_enabled)
-       await set_ref(session, perception_ref, passage.id,
-                     fire_hooks=frame["hooks_enabled"])
-
-       return passage
-   ```
-
-2. **`kp3/src/kp3/services/perceptions.py`** - Perception operations with optional dedup
-   ```python
-   async def get_or_create_perception(
-       session,
-       agent_id: str,
-       ref_prefix: str,      # e.g., "corindel/entity"
-       content: str,
-       frame_ref: str | None = None,  # If provided, adds to frame
-       *,
-       dedup: bool = False,
-       similarity_threshold: float = 0.85,
-   ) -> str:
-       """Get existing or create new perception, optionally deduping."""
-       if dedup:
-           existing = await search_similar(session, ref_prefix, content, threshold)
-           if existing:
-               return existing.ref_name
-
-       # Create new perception
-       passage = await create_passage(session, content, ...)
-       ref_name = f"{ref_prefix}/{generate_slug(content)}"
-       await set_ref(session, ref_name, passage.id)
-
-       # Optionally update frame to include new perception
-       if frame_ref:
-           await update_frame_perceptions(
-               session, frame_ref,
-               add_perception={"name": ref_name.split("/")[-1], "ref": ref_name}
-           )
-
-       return ref_name
-   ```
-
-3. **`kp3/src/kp3/api/cognition.py`** - HTTP endpoint
-   ```
-   POST /cognition/compute
-   POST /perceptions          # Create with dedup
-   GET  /perceptions          # List in frame
-   ```
-
-### Phase 4: Search Scoped by Frame
-
-**Modify in KP3:**
-
-1. **`kp3/src/kp3/services/search.py`**
-   ```python
-   async def search(
-       session,
-       query: str,
-       agent_id: str,
-       *,
-       frame_ref: str | None = None,  # NEW - scope to frame
-       mode: SearchMode = "hybrid",
-       limit: int = 5,
-   ) -> list[SearchResult]:
-       if frame_ref:
-           # Load frame, get all perception refs
-           frame = await get_frame(session, frame_ref)
-           perception_refs = [p["ref"] for p in frame["perceptions"]]
-
-           # Get passage_ids from those refs
-           passage_ids = [await get_ref(session, r) for r in perception_refs]
-
-           # Search within those passages
-           return await search_within(session, query, passage_ids, mode, limit)
-       else:
-           # Current behavior: all searchable types
-   ```
-
-### Phase 5: Wire Up v2-runtime
-
-**Modify in v2-runtime:**
-
-1. **Agent startup** - Resolve frame ref from config/DB
-2. **`block_manager.py`** - Call `/cognition/compute`
-3. **`summarize.py`** - Use cognition for summary
-4. **Worker jobs** - Pass frame context
-
-### Phase 6: Context Window Management
-
-1. **`check_context_window`** job
-2. **Redis lock** for summarization
-
-### Phase 7: Social Agents (Future)
-
-- Entity perceptions: `{agent}/entity/{name}`
-- Social perceptions: `{agent}/social/{other}`
-- Frame evolves to include new perceptions dynamically
-
-## Key Design Decisions
-
-### 1. Two-Tier Architecture
-- **Foundation**: Domain-agnostic primitives (passages, refs, hooks, derivations)
-- **Cognitive**: Domain-specific layer built on foundation (frames, perceptions, cognition)
-
-### 2. CognitiveFrame IS a Passage
-Frames are passages pointed to by refs. This means:
-- Versioned (content hash)
-- Branchable (derivations)
-- Queryable (search)
-- No new tables needed
-
-### 3. Perceptions ARE Refs
-At the cognitive layer, we call them "perceptions" but they're just refs with naming conventions.
-- All perceptions work identically via `increment_perception`
-- Ref naming by convention: `{agent}/perception/{name}`, `{agent}/entity/{name}`, etc.
-- Frame lists which perceptions exist (can be extended dynamically)
-
-### 4. Frame-Scoped Search
-Search is scoped by frame, not by passage_type. The frame defines what's "visible".
-
-### 5. Optional Deduplication
-When creating new perceptions (like entities), dedup can be enabled via an API flag. This is a feature, not a type distinction.
-
-### 6. KP3 Owns Cognition
-The fold operation lives in KP3. v2-runtime is a thin client.
-
-## Files Summary
-
-**Create in KP3 (Foundation APIs):**
-- `kp3/src/kp3/api/refs.py` - HTTP endpoints for `/refs`
-- `kp3/src/kp3/api/derivations.py` - HTTP endpoints for provenance
-
-**Create in KP3 (Cognitive Tier):**
-- `kp3/src/kp3/services/frames.py` - Frame operations
-- `kp3/src/kp3/services/cognition.py` - The fold operation
-- `kp3/src/kp3/services/perceptions.py` - Perception ops + dedup
-- `kp3/src/kp3/api/frames.py` - HTTP endpoints for `/frames`
-- `kp3/src/kp3/api/cognition.py` - HTTP endpoint for `/cognition/compute`
-
-**Modify in KP3:**
-- `kp3/src/kp3/services/search.py` - Add `frame_ref` parameter
-
-**Modify in v2-runtime:**
-- `src/kairix_agent/llm/block_manager.py` - Call KP3 cognition API
-- Agent startup - resolve frame ref
-
-**Create in v2-runtime:**
-- `src/kairix_agent/worker/jobs/context_window.py` - Context check job
-- `src/kairix_agent/worker/jobs/locks.py` - Redis lock helpers
-
-**Existing (already works):**
-- `kp3/src/kp3/services/refs.py` - Ref CRUD + hooks ✓
-- `kp3/src/kp3/services/derivations.py` - Provenance ✓
-- `kp3/src/kp3/hooks/letta_sync.py` - Letta projection ✓
-
-## Verification
-
-1. **Foundation tests**:
-   - Refs API: CRUD, history, list by prefix
-   - Derivations API: sources, derived
-
-2. **Frame tests**:
-   - Create frame passage with ref
-   - Fork creates derived frame
-   - Update perceptions creates new version
-
-3. **Cognition tests**:
-   - `compute()` creates passage + derivation + updates ref
-   - Hooks fire if `frame.hooks_enabled`
-
-4. **Perception dedup tests** (when `dedup=True`):
-   - Similar content returns existing perception ref
-   - New content creates new perception
-   - Without dedup flag, always creates new
-
-5. **Search with frame**:
-   - `search(frame_ref=...)` returns only frame's perceptions
-   - Admin search returns all passages
-
-6. **End-to-end**:
-   - Create agent with frame
-   - Run cognition on perception
-   - Verify passage created, ref updated, hook fired
-   - Search scoped to frame perceptions
-
-## Final Architecture Summary
+## A.3 Test Data Conventions
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     FOUNDATION TIER                                      │
-│                                                                         │
-│   Passages ←──────── Refs ─────────► Hooks                              │
-│      ↑                 │                                                │
-│      │                 │                                                │
-│   Derivations ─────────┘                                                │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-                              ▲
-                              │ built on
-                              │
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     COGNITIVE TIER                                       │
-│                                                                         │
-│   CognitiveFrame (is a Passage with Ref)                                │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │  corindel/frame/production → {                                  │  │
-│   │    perceptions: [                                               │  │
-│   │      {name: "persona", ref: "corindel/perception/persona"},     │  │
-│   │      {name: "human", ref: "corindel/perception/human"},         │  │
-│   │      ...                                                        │  │
-│   │    ],                                                           │  │
-│   │    cognition_config: { processes: {...} },                      │  │
-│   │    hooks_enabled: true                                          │  │
-│   │  }                                                              │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                              │                                          │
-│                              ▼                                          │
-│   Perceptions (are Refs - all work identically)                         │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │  corindel/perception/persona → Passage                          │  │
-│   │  corindel/perception/human   → Passage                          │  │
-│   │  corindel/entity/mark-lubin  → Passage                          │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-│   Cognition: input + previous → new (fold operation)                    │
-│   Search: scoped to frame's perceptions                                 │
-└─────────────────────────────────────────────────────────────────────────┘
+agent_id = "test-agent"
+
+Ref naming:
+  test-agent/frame/production
+  test-agent/frame/active
+  test-agent/perception/persona
+  test-agent/perception/human
+  test-agent/perception/world
+  test-agent/entity/claude
+  test-agent/entity/mark-lubin
 ```
+
+All tests run against fresh DB or clean teardown.
+
+---
+
+## A.4 End-to-End Scenarios
+
+### Scenario A: Passage + Ref Primitives
+
+**Goal:** Validate foundation behavior.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | `POST /passages` content `"Hello world"` | Returns passage ID |
+| 2 | `GET /passages/{id}` | Content matches |
+| 3 | `PUT /refs/test-agent/perception/persona` → passage_id | Ref created |
+| 4 | `GET /refs/test-agent/perception/persona` | Resolves to correct passage |
+| 5 | Update ref to new passage | Success |
+| 6 | `GET /refs/{name}/history` | Shows 2 versions, ordered |
+
+---
+
+### Scenario B: Derivations Form Provenance Chain
+
+**Goal:** Provenance is queryable both directions.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Create P1 ("state v1") | |
+| 2 | Create P2 ("state v2") | |
+| 3 | Create derivation: P2 derived from P1 | |
+| 4 | `GET /passages/{P2}/sources` | Contains P1 |
+| 5 | `GET /passages/{P1}/derived` | Contains P2 |
+
+---
+
+### Scenario C: Frame Creation + Activation
+
+**Goal:** Frame exists as passage + ref-addressable closure.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | `POST /frames` with persona/human/world perceptions | Frame created |
+| 2 | `GET /frames/{name}` | Returns JSON payload |
+| 3 | `POST /frames/{name}/activate` | Success |
+| 4 | Verify activation | `frame/active` reflects |
+
+---
+
+### Scenario D: Frame Fork Creates Derived Version
+
+**Goal:** Fork produces derived frame.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Create F1 = production | |
+| 2 | Fork to F2 = experimental | |
+| 3 | Query derivation | F2 derived from F1 |
+| 4 | Verify F1 unchanged | Original not mutated |
+
+---
+
+### Scenario E: Entity Dedupe - Obvious Duplicate Aliases
+
+**Goal:** Canonicalization works for stylized synonyms.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | `get_or_create_entity("Claude")` | Returns `entity/claude` |
+| 2 | `get_or_create_entity("the-great-anthropic-god-monster-of-truth")` | |
+| 3 | Embedding shortlist includes `entity/claude` | |
+| 4 | Judge returns `DUPLICATE` | |
+| 5 | Returned ref equals `entity/claude` | No second canonical created |
+
+---
+
+### Scenario F: Entity Dedupe - Prevent False Merges
+
+**Goal:** Do not merge different entities with similar tokens.
+
+| Pair | Expected |
+|------|----------|
+| `"Apple (company)"` vs `"apple (fruit)"` | NOT_DUPLICATE |
+| `"Claude (model)"` vs `"Claude Shannon"` | NOT_DUPLICATE |
+| `"Mark (person)"` vs `"Markdown"` | NOT_DUPLICATE |
+
+---
+
+### Scenario G: Entity Creation Always Runs LLM Judge
+
+**Goal:** Enforce "no blind minting".
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Input: `"C L A U D E (model from Anthropic)"` | |
+| 2 | Force embedding shortlist miss | |
+| 3 | System still calls judge | Judge invoked |
+| 4 | Decision governs canonical creation | |
+
+---
+
+### Scenario H: Entity Dedupe Idempotency
+
+**Goal:** Repeated creation attempts stabilize.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Call `get_or_create_entity("Claude")` 10 times | |
+| 2 | Check results | Same canonical ref each time |
+| 3 | Count entities | Exactly one canonical exists |
+
+---
+
+### Scenario I: Entity Dedupe Under Concurrency
+
+**Goal:** No double-mint canonical entity.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Two concurrent `get_or_create_entity("Claude")` | |
+| 2 | Check results | Exactly one canonical created |
+| 3 | Loser returns existing | After retry/conflict handling |
+
+---
+
+### Scenario J: Entity Dedupe Failure Modes
+
+**Goal:** Judge failure doesn't cause silent duplication.
+
+| Case | Expected Behavior |
+|------|-------------------|
+| Judge timeout | Fail safe or unverified entity |
+| Invalid JSON | Fail safe |
+| `UNSURE` decision | Policy-defined (no merge) |
+
+---
+
+### Scenario K: Cognition Increment Happy Path
+
+**Goal:** Atomic new passage + derivation + ref advance.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Ensure `persona` ref exists → P1 | |
+| 2 | `POST /cognition/increment` with `expected_previous_passage_id=P1` | |
+| 3 | Verify P2 created | |
+| 4 | Verify derivation P2 → P1 | |
+| 5 | Verify persona ref now points to P2 | |
+
+---
+
+### Scenario L: Cognition Increment Bootstrap (No Previous)
+
+**Goal:** First state write creates ref.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Ensure `world` ref does not exist | |
+| 2 | Increment world | |
+| 3 | Verify ref created and points to new passage | |
+
+---
+
+### Scenario M: Optimistic Locking Prevents Lost Updates
+
+**Goal:** No silent ref overwrite.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Two workers read persona HEAD P1 | |
+| 2 | Both increment with `expected_previous=P1` | |
+| 3 | | One success, one `409` |
+| 4 | Retry succeeds | |
+| 5 | HEAD reflects serialized progression | |
+
+---
+
+### Scenario N: Idempotency Protects Against Double-Apply
+
+**Goal:** Request retries do not double-write.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Increment with `idempotency_key=K` | |
+| 2 | Repeat same request | |
+| 3 | Check results | Same `new_passage_id` |
+| 4 | Check derivations | No duplicate edges |
+
+---
+
+### Scenario O: Rollback on LLM Failure
+
+**Goal:** Failure doesn't corrupt state.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Force LLM failure | |
+| 2 | Attempt increment | |
+| 3 | Check state | No new passage |
+| 4 | | No derivation |
+| 5 | | Ref unchanged |
+
+---
+
+### Scenario P: Frame-Scoped Search
+
+**Setup:**
+- persona contains "bikes"
+- entity/mark contains "cyclist"
+- Frame A includes only persona
+- Frame B includes both
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Search under Frame A for "cyclist" | Does NOT return entity/mark |
+| 2 | Search under Frame B for "cyclist" | Returns both |
+
+---
+
+### Scenario Q: hooks_enabled Gating
+
+**Goal:** Hooks do not fire when disabled.
+
+| Step | Action | Assertion |
+|------|--------|-----------|
+| 1 | Attach hook to ref update | |
+| 2 | Set `hooks_enabled=false` on frame | |
+| 3 | Increment perception | |
+| 4 | Check hook execution | Not executed |
+
+---
+
+### Scenario R: Cross-Agent Isolation
+
+**Goal:** Security boundaries are real.
+
+| Assertion |
+|-----------|
+| Agent B cannot read agent A's refs |
+| Agent B cannot update agent A's refs |
+
+---
+
+### Scenario S: Performance Smoke - 1,000 Sequential Increments
+
+**Goal:** Stable behavior under repeated updates.
+
+| Assertion |
+|-----------|
+| Operations remain stable |
+| Ref history scales |
+| Search remains functional |
+
+---
+
+### Scenario T: Entity Dedupe Bounded Candidate Selection
+
+**Goal:** Dedupe doesn't degrade into O(N).
+
+| Assertion |
+|-----------|
+| Judge only sees bounded shortlist (top-K + lexical) |
+| Latency stable at scale |
+
+---
+
+## A.5 Exit Criteria (Ship Gate)
+
+KP3 core is approved if:
+
+1. Passages/Refs/Derivations operate correctly
+2. Frames create/fork/activate and behave as closures (frozen supported)
+3. `/cognition/increment` is atomic + optimistic-lock safe + idempotent
+4. Frame-scoped search respects closure (no leakage)
+5. Entity dedupe is LLM-judge gated and concurrency-safe
+6. Failures do not corrupt state or cause uncontrolled duplication
