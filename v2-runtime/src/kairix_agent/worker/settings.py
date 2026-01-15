@@ -18,9 +18,6 @@ from kairix_agent.worker.jobs import (
     summarize_session,
     trigger_insights,
 )
-from kairix_agent.worker.jobs.social_draft import social_draft
-from kairix_agent.worker.jobs.social_evaluate import social_evaluate
-from kairix_agent.worker.jobs.social_explore import social_explore
 from kairix_agent.worker.jobs.step_memory import step_memory_blocks
 from kairix_agent.worker.metrics import init_metrics
 
@@ -45,9 +42,6 @@ JOB_TIMEOUTS = {
     "check_insights_relevance": 60,  # 1 minute max (less than cron interval)
     "trigger_insights": 60,  # 1 minute for on-demand insights
     "step_memory_blocks": 300,  # 5 minutes (3 agents in parallel, each 60s timeout)
-    "social_explore": 180,  # 3 minutes for social exploration per channel
-    "social_evaluate": 120,  # 2 minutes for evaluation LLM call
-    "social_draft": 120,  # 2 minutes for draft LLM call
 }
 
 settings = {
@@ -58,9 +52,6 @@ settings = {
         summarize_session,
         trigger_insights,
         step_memory_blocks,
-        social_explore,
-        social_evaluate,
-        social_draft,
     ],
     "concurrency": 5,
     "cron_jobs": [
@@ -75,11 +66,6 @@ settings = {
             cron="* * * * *",  # Every minute (skips if no message in last INSIGHTS_ACTIVITY_MINUTES)
             # No agents kwarg - job fetches all agents from Letta API
             timeout=JOB_TIMEOUTS["check_insights_relevance"],
-        ),
-        CronJob(
-            social_explore,
-            cron="*/15 * * * *",  # Every 15 minutes - explore all enabled social channels
-            timeout=JOB_TIMEOUTS["social_explore"],
         ),
     ],
 }

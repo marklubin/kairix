@@ -51,7 +51,6 @@ from kairix_agent.server.model import InputChunk, ResponseChunk, ResponseDone, R
 from kairix_agent.server.pipecat import LettaLLMService, PipelineMetricsObserver, UserTurnAggregator
 from kairix_agent.server.pipecat.echo_cancellation import EchoCancellationProcessor
 from kairix_agent.server.voice.pipeline_manager import voice_pipeline_manager
-from kairix_agent.social.router import router as social_router
 from kairix_agent.voices import service as voice_service
 from kairix_agent.voices.router import router as voices_router
 
@@ -91,7 +90,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(voices_router)
-app.include_router(social_router)
 
 
 @app.put("/agents/{agent_id}/echo-settings")

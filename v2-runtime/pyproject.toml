@@ -6,8 +6,6 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.40.0",
     "asyncpg>=0.30.0",
-    "atproto>=0.0.55",
-    "cryptography>=42.0.0",
     "dotenv>=0.9.9",
     "fastapi>=0.115.6,<0.122.0",
     "kairix-common",
@@ -174,13 +172,3 @@ reportUnknownVariableType = false       # Same
 reportUnusedImport = false              # Ruff handles this
 reportUnusedVariable = false            # Ruff handles this
 reportPrivateUsage = "warning"          # Accessing _private is sometimes fine
-
-# =============================================================================
-# PYTEST - Test Configuration
-# =============================================================================
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-markers = [
-    "integration: tests requiring real database (run with ./kx dev)",
-]
