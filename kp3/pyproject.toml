@@ -42,6 +42,10 @@ dev = [
     "ruff>=0.8",
     "pyright>=1.1",
 ]
+eval = [
+    "deepeval>=2.0",
+    "litellm>=1.80.5",
+]
 
 [project.scripts]
 kp3 = "kp3.cli:cli"
@@ -98,4 +102,5 @@ testpaths = ["tests"]
 markers = [
     "docker: marks tests as requiring Docker/Podman (deselect with '-m \"not docker\"')",
     "vllm: marks tests as requiring vLLM/GPU (skipped automatically if unavailable)",
+    "eval: marks tests as LLM evaluation tests (run with 'deepeval test run' or pytest)",
 ]
