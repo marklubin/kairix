@@ -16,6 +16,7 @@ class Base(DeclarativeBase):
 class EventType(str, Enum):
     """Types of background events emitted by worker jobs."""
 
+    # Conversation events
     SESSION_BOUNDARY = "session_boundary"
     SUMMARY_COMPLETE = "summary_complete"
     INSIGHTS_COMPLETE = "insights_complete"
@@ -23,6 +24,15 @@ class EventType(str, Enum):
     PERSONA_STEP_COMPLETE = "persona_step_complete"
     HUMAN_STEP_COMPLETE = "human_step_complete"
     WORLD_STEP_COMPLETE = "world_step_complete"
+
+    # Social agent events
+    SOCIAL_EXPLORE_COMPLETE = "social_explore_complete"   # Timeline/mention fetch done
+    SOCIAL_DRAFT_CREATED = "social_draft_created"         # New draft in approval queue
+    SOCIAL_ENGAGEMENT_SENT = "social_engagement_sent"     # Approved post/reply sent
+    SOCIAL_MENTION_RECEIVED = "social_mention_received"   # Agent was mentioned
+    SOCIAL_SESSION_COMPLETE = "social_session_complete"   # Social session summarized
+    SOCIAL_WAKE = "social_wake"                           # Trigger fired, agent waking
+    SOCIAL_TRIGGER_FIRED = "social_trigger_fired"         # Custom trigger matched
 
 
 class AgentEvent(Base):
