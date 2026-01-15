@@ -77,3 +77,83 @@ WORLD_STEP_CONFIG = BlockManagerConfig(
         include_input_in_metadata=False,
     ),
 )
+
+# =============================================================================
+# Social Agent Configurations
+# =============================================================================
+# These configs power the social agents feature - evaluation, drafting,
+# episodic memory, and entity model management.
+
+# Evaluate a social post for engagement worthiness
+# Returns structured decision (engage/skip) with rationale
+SOCIAL_EVALUATE_CONFIG = BlockManagerConfig(
+    name="social_evaluate",
+    prompt_name="social_evaluate",  # Loaded from KP3 at runtime
+    target_block=None,  # No block update - just returns decision
+    max_tokens=1024,
+    temperature=0.3,  # Low temperature for consistent decisions
+    timeout=30.0,
+    tools=[SEARCH_KP3_TOOL],  # Can search for entity models, past interactions
+    kp3_storage=None,  # Don't store evaluations
+)
+
+# Draft a response to a social post
+# Output goes to approval queue, not a memory block
+SOCIAL_DRAFT_CONFIG = BlockManagerConfig(
+    name="social_draft",
+    prompt_name="social_draft",  # Loaded from KP3 at runtime
+    target_block=None,  # No block update - draft goes to approval queue
+    max_tokens=2048,
+    temperature=0.7,  # Normal creativity for natural responses
+    timeout=60.0,
+    tools=[SEARCH_KP3_TOOL],  # Can search for entity models, context
+    kp3_storage=None,  # Don't store drafts (they go to approval queue)
+)
+
+# Summarize a social interaction episode
+# Creates concise summary for episodic memory
+SOCIAL_EPISODE_SUMMARIZE_CONFIG = BlockManagerConfig(
+    name="social_episode_summarize",
+    prompt_name="social_episode_summarize",  # Loaded from KP3 at runtime
+    target_block=None,  # No block update - stores to KP3 directly
+    max_tokens=1024,
+    temperature=0.5,
+    timeout=30.0,
+    tools=[],  # No tools needed for summarization
+    kp3_storage=KP3StorageConfig(
+        passage_type="social_episode_summary",
+        include_input_in_metadata=False,
+    ),
+)
+
+# Reflect on a social interaction's significance
+# May update social_persona block if something meaningful was learned
+SOCIAL_REFLECT_CONFIG = BlockManagerConfig(
+    name="social_reflect",
+    prompt_name="social_reflect",  # Loaded from KP3 at runtime
+    target_block="social_persona",  # May update social persona
+    max_tokens=2048,
+    temperature=0.7,
+    timeout=60.0,
+    tools=[SEARCH_KP3_TOOL],  # Can search for relevant history
+    kp3_storage=KP3StorageConfig(
+        passage_type="social_reflection",
+        include_input_in_metadata=False,
+    ),
+)
+
+# Update or create an entity model after interaction
+# Stores mental model of people/agents interacted with
+ENTITY_MODEL_UPDATE_CONFIG = BlockManagerConfig(
+    name="entity_model_update",
+    prompt_name="entity_model_update",  # Loaded from KP3 at runtime
+    target_block=None,  # No block update - stores to KP3 directly
+    max_tokens=2048,
+    temperature=0.7,
+    timeout=60.0,
+    tools=[SEARCH_KP3_TOOL],  # Can search for existing entity model
+    kp3_storage=KP3StorageConfig(
+        passage_type="entity_model",
+        include_input_in_metadata=False,
+    ),
+)

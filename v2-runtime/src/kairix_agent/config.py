@@ -46,3 +46,7 @@ class Config(Enum):
 
     # KP3 service configuration
     KP3_URL = os.getenv("KP3_URL", "http://localhost:8080")
+
+    # Social agents configuration
+    # Generate key: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    CREDENTIAL_ENCRYPTION_KEY = os.getenv("CREDENTIAL_ENCRYPTION_KEY", "")

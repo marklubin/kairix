@@ -34,7 +34,7 @@ class BlockManagerConfig:
 
     name: str  # e.g., "summarizer", "insights"
     prompt_name: str  # KP3 ExtractionPrompt name (loaded at runtime)
-    target_block: str  # Block label to update (e.g., "last_session_summary")
+    target_block: str | None  # Block label to update (None = no block update)
     model: str | None = None  # LLM model to use (defaults to Config.LLM_MODEL)
     max_tokens: int = 4096
     temperature: float = 0.7
@@ -126,8 +126,10 @@ class BlockManagerAgent:
             "BlockManagerAgent %s generated %d chars", self.config.name, len(result)
         )
 
-        # Skip block update if agent determined no update needed
-        if should_skip_block_update(result):
+        # Skip block update if no target block configured or agent determined no update
+        if self.config.target_block is None:
+            logger.info("No target block configured, skipping block update")
+        elif should_skip_block_update(result):
             logger.info("Agent determined no update needed, skipping block update")
         else:
             # Update the target block on the conversational agent
