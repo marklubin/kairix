@@ -11,7 +11,7 @@ from kairix_common.kp3_client import (
     SearchResponse,
 )
 
-from kp3.db.engine import async_session
+from kp3.db import engine as db_engine
 from kp3.processors.embedding import generate_embedding
 from kp3.services.passages import create_passage
 from kp3.services.prompts import get_active_prompt
@@ -43,7 +43,7 @@ async def search(
 
     Requires X-Agent-ID header. Only returns passages for that specific agent.
     """
-    async with async_session() as session:
+    async with db_engine.async_session() as session:
         results = await search_passages(session, query, mode=mode, limit=limit, agent_id=x_agent_id)
 
     return SearchResponse(
@@ -88,7 +88,7 @@ async def create_new_passage(
         except Exception:
             logger.exception("Failed to generate embedding, continuing without")
 
-    async with async_session() as session:
+    async with db_engine.async_session() as session:
         passage = await create_passage(
             session,
             content=payload.content,
@@ -114,7 +114,7 @@ async def get_prompt_by_name(name: str) -> PromptResponse:
 
     Returns the currently active version of the named prompt.
     """
-    async with async_session() as session:
+    async with db_engine.async_session() as session:
         prompt = await get_active_prompt(session, name)
 
     if not prompt:
