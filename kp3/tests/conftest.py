@@ -11,6 +11,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from kp3.db.models import Base, Passage
 
@@ -97,7 +98,7 @@ def database_url(postgres_container: Any) -> str:
     return url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def _set_env(database_url: str) -> Generator[None, None, None]:
     """Set environment variables for the test database."""
     old_url = os.environ.get("KP3_DATABASE_URL")
@@ -112,7 +113,8 @@ def _set_env(database_url: str) -> Generator[None, None, None]:
 @pytest.fixture
 async def db_engine(database_url: str) -> AsyncGenerator[Any, None]:
     """Create async engine for test database."""
-    engine = create_async_engine(database_url, echo=False)
+    # Use NullPool to avoid connection pool issues with different event loops
+    engine = create_async_engine(database_url, echo=False, poolclass=NullPool)
 
     # Create tables and enable pgvector extension
     async with engine.begin() as conn:
@@ -200,9 +202,8 @@ async def test_client(db_engine: Any, _set_env: None) -> AsyncGenerator[AsyncCli
     from kp3.db import engine as engine_module
     from kp3.query_service.main import app
 
-    original_engine = engine_module.engine
-    original_session = engine_module.async_session
-
+    # Replace the engine with our test engine
+    # The db_engine already uses NullPool to avoid connection issues
     engine_module.engine = db_engine
     engine_module.async_session = async_sessionmaker(
         db_engine, class_=AsyncSession, expire_on_commit=False
@@ -211,7 +212,3 @@ async def test_client(db_engine: Any, _set_env: None) -> AsyncGenerator[AsyncCli
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
-
-    # Restore original engine
-    engine_module.engine = original_engine
-    engine_module.async_session = original_session

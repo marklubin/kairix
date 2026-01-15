@@ -7,6 +7,7 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from kp3.query_service.cognitive_router import router as cognitive_router
 from kp3.query_service.mcp import mcp
 from kp3.query_service.router import router
 
@@ -24,6 +25,7 @@ app = FastAPI(
 
 # Include REST routes
 app.include_router(router)
+app.include_router(cognitive_router)
 
 # Mount MCP server at /mcp (SSE transport for HTTP clients)
 app.mount("/mcp", mcp.http_app(transport="sse"))

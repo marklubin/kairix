@@ -145,8 +145,8 @@ class PassageDerivation(Base):
     source_passage_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("passages.id"), nullable=False
     )
-    processing_run_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("processing_runs.id"), nullable=False
+    processing_run_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("processing_runs.id"), nullable=True
     )
     source_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
@@ -160,7 +160,7 @@ class PassageDerivation(Base):
     source_passage: Mapped[Passage] = relationship(
         "Passage", foreign_keys=[source_passage_id], back_populates="derives"
     )
-    processing_run: Mapped["ProcessingRun"] = relationship(
+    processing_run: Mapped["ProcessingRun | None"] = relationship(
         "ProcessingRun", back_populates="derivations"
     )
 
