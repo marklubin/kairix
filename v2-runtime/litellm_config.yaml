@@ -1,0 +1,53 @@
+# =============================================================================
+# LiteLLM Proxy Configuration
+# =============================================================================
+# Routes all LLM calls through a unified proxy with observability.
+# Sends traces to Langfuse (self-hosted) and OpenObserve (OTLP).
+
+model_list:
+  # ---------------------------------------------------------------------------
+  # OpenAI Models (for Letta's main agent)
+  # ---------------------------------------------------------------------------
+  - model_name: "gpt-5.2"
+    litellm_params:
+      model: "openai/gpt-5.2"
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  - model_name: "gpt-4o"
+    litellm_params:
+      model: "openai/gpt-4o"
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  - model_name: "gpt-4o-mini"
+    litellm_params:
+      model: "openai/gpt-4o-mini"
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  # ---------------------------------------------------------------------------
+  # Local vLLM Backend (Qwen2.5-7B-AWQ)
+  # ---------------------------------------------------------------------------
+  - model_name: "openai/Qwen/Qwen2.5-7B-Instruct-AWQ"
+    litellm_params:
+      model: "openai/Qwen/Qwen2.5-7B-Instruct-AWQ"
+      api_base: "http://vllm:8000/v1"
+      api_key: "not-needed"
+
+  - model_name: "qwen-local"
+    litellm_params:
+      model: "openai/Qwen/Qwen2.5-7B-Instruct-AWQ"
+      api_base: "http://vllm:8000/v1"
+      api_key: "not-needed"
+
+  # ---------------------------------------------------------------------------
+  # DeepSeek Passthrough (for BlockManagerAgent)
+  # ---------------------------------------------------------------------------
+  - model_name: "deepseek-chat"
+    litellm_params:
+      model: "deepseek/deepseek-chat"
+      api_key: "os.environ/DEEPSEEK_API_KEY"
+
+litellm_settings:
+  success_callback: ["langfuse", "otel"]
+  failure_callback: ["langfuse", "otel"]
+  set_verbose: false
+  drop_params: true

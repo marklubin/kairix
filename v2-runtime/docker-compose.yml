@@ -69,9 +69,12 @@ services:
       - .env
     environment:
       - LETTA_DEBUG=False
-      - VLLM_API_BASE=http://vllm:8000
+      # Route vLLM calls through LiteLLM proxy
+      - VLLM_API_BASE=http://litellm:4000
+      # Route OpenAI calls through LiteLLM proxy (for gpt-5.2 etc)
+      - OPENAI_API_BASE=http://litellm:4000/v1
     depends_on:
-      vllm:
+      litellm:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -108,8 +111,70 @@ services:
     networks:
       - kairix-net
 
+  langfuse:
+    image: langfuse/langfuse:latest
+    container_name: langfuse
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://kairix:${POSTGRES_PASSWORD:-kairix}@kairix-postgres:5432/langfuse
+      - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET:-changeme-secret-32chars-min}
+      - NEXTAUTH_URL=http://localhost:3000
+      - SALT=${LANGFUSE_SALT:-changeme-salt-value}
+      - TELEMETRY_ENABLED=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/public/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - kairix-net
+
   # NOTE: Fluent Bit runs on host, not in container (see kx logs:setup)
   # This is required because Podman logs to user journald which containers can't access
+
+  # ===========================================================================
+  # LiteLLM Proxy (unified LLM observability)
+  # ===========================================================================
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    ports:
+      - "4000:4000"
+    environment:
+      # Langfuse (self-hosted)
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=http://langfuse:3000
+      # OpenTelemetry -> OpenObserve
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5081
+      - OTEL_SERVICE_NAME=litellm-proxy
+      # API keys for passthrough
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${LLM_API_KEY:-}
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    depends_on:
+      vllm:
+        condition: service_healthy
+      langfuse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - kairix-net
 
   # ===========================================================================
   # MCP Gateway & Proxies
@@ -304,6 +369,8 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5081
       - OTEL_EXPORTER_OTLP_USER=admin@kairix.local
       - OTEL_EXPORTER_OTLP_PASSWORD=kairix123
+      # Route DeepSeek/LLM calls through LiteLLM proxy
+      - LLM_BASE_URL=http://litellm:4000/v1
     depends_on:
       postgres:
         condition: service_healthy
@@ -311,6 +378,8 @@ services:
         condition: service_healthy
       letta:
         condition: service_started
+      litellm:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "cat /proc/1/cmdline | tr '\\0' ' ' | grep -q saq"]
       interval: 30s
