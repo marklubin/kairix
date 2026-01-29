@@ -1,0 +1,54 @@
+# =============================================================================
+# KP3 Standalone Deployment
+# =============================================================================
+# Complete stack with PostgreSQL + pgvector for standalone deployment.
+#
+# Usage:
+#   docker compose -f compose.standalone.yml up -d
+#   docker compose -f compose.standalone.yml logs -f kp3-service
+#
+# =============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: kp3
+      POSTGRES_PASSWORD: kp3
+      POSTGRES_DB: kp3
+    volumes:
+      - kp3-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kp3 -d kp3"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  kp3-service:
+    build:
+      context: ..
+      dockerfile: kp3/Dockerfile
+    image: kp3:latest
+    ports:
+      - "8080:8080"
+    environment:
+      KP3_DATABASE_URL: postgresql+asyncpg://kp3:kp3@postgres:5432/kp3
+      KP3_OPENAI_API_KEY: ${KP3_OPENAI_API_KEY}
+      KP3_OPENAI_EMBEDDING_MODEL: ${KP3_OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
+      KP3_OPENAI_EMBEDDING_DIM: ${KP3_OPENAI_EMBEDDING_DIM:-1024}
+      KP3_RRF_WEIGHT_FTS: ${KP3_RRF_WEIGHT_FTS:-1.0}
+      KP3_RRF_WEIGHT_SEMANTIC: ${KP3_RRF_WEIGHT_SEMANTIC:-1.0}
+      KP3_RRF_WEIGHT_RECENCY: ${KP3_RRF_WEIGHT_RECENCY:-0.5}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  kp3-pgdata:
