@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     LETTA_SYNC_CONFIG_PATH: str = ""
     LETTA_BASE_URL: str = "http://localhost:8283"
 
+    # Hybrid search RRF weights
+    rrf_weight_fts: float = 1.0
+    rrf_weight_semantic: float = 1.0
+    rrf_weight_recency: float = 0.5
+
 
 _settings: Settings | None = None
 

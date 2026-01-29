@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from kp3.config import get_settings
 from kp3.processors.embedding import generate_embedding
 
 # Search mode type - single source of truth
@@ -144,7 +145,14 @@ async def _search_hybrid(
     limit: int,
     agent_id: str,
 ) -> list[PassageSearchResult]:
-    """Hybrid search combining FTS and semantic with Reciprocal Rank Fusion."""
+    """Hybrid search combining FTS, semantic, and recency with Reciprocal Rank Fusion.
+
+    RRF weights are configurable via environment variables:
+    - KP3_RRF_WEIGHT_FTS (default: 1.0)
+    - KP3_RRF_WEIGHT_SEMANTIC (default: 1.0)
+    - KP3_RRF_WEIGHT_RECENCY (default: 0.5)
+    """
+    settings = get_settings()
     query_embedding = await generate_embedding(query)
     sql = text("""
         WITH query_vec AS (
@@ -166,13 +174,21 @@ async def _search_hybrid(
             WHERE p.embedding_qwen3 IS NOT NULL
               AND p.passage_type = ANY(:searchable_types)
               AND p.agent_id = :agent_id
+        ),
+        recency AS (
+            SELECT id, row_number() OVER (ORDER BY created_at DESC) as rank
+            FROM passages
+            WHERE passage_type = ANY(:searchable_types)
+              AND agent_id = :agent_id
         )
         SELECT p.id, p.content, p.passage_type,
-               COALESCE(1.0 / (60 + fts.rank), 0) +
-               COALESCE(1.0 / (60 + semantic.rank), 0) as score
+               :w_fts * COALESCE(1.0 / (60 + fts.rank), 0) +
+               :w_semantic * COALESCE(1.0 / (60 + semantic.rank), 0) +
+               :w_recency * COALESCE(1.0 / (60 + recency.rank), 0) as score
         FROM passages p
         LEFT JOIN fts ON p.id = fts.id
         LEFT JOIN semantic ON p.id = semantic.id
+        LEFT JOIN recency ON p.id = recency.id
         WHERE (fts.id IS NOT NULL OR semantic.id IS NOT NULL)
           AND p.passage_type = ANY(:searchable_types)
           AND p.agent_id = :agent_id
@@ -185,6 +201,9 @@ async def _search_hybrid(
         "limit": limit,
         "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
         "agent_id": agent_id,
+        "w_fts": settings.rrf_weight_fts,
+        "w_semantic": settings.rrf_weight_semantic,
+        "w_recency": settings.rrf_weight_recency,
     }
     result = await session.execute(sql, params)
     rows = result.fetchall()
