@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["passages"])
 
-# Passage types that should be auto-embedded for semantic search
-AUTO_EMBED_PASSAGE_TYPES = {"session_summary", "memory_shard"}
-
 
 @router.get("/passages/search", response_model=SearchResponse)
 async def search(
@@ -69,24 +66,22 @@ async def create_new_passage(
 ) -> PassageCreateResponse:
     """Create a new passage.
 
-    The passage will be automatically embedded for semantic search if the
-    passage_type is in AUTO_EMBED_PASSAGE_TYPES (session_summary, memory_shard).
+    All passages are automatically embedded for semantic search.
     Duplicate content (by SHA256 hash) will be rejected.
 
     Requires X-Agent-ID header to scope passage to an agent.
     """
-    # Auto-generate embedding for searchable passage types
-    embedding: list[float] | None = None
-    if payload.passage_type in AUTO_EMBED_PASSAGE_TYPES:
-        try:
-            embedding = await generate_embedding(payload.content)
-            logger.info(
-                "Auto-generated embedding for %s passage (%d dims)",
-                payload.passage_type,
-                len(embedding),
-            )
-        except Exception:
-            logger.exception("Failed to generate embedding, continuing without")
+    # Generate embedding (required for all passages)
+    try:
+        embedding = await generate_embedding(payload.content)
+        logger.info(
+            "Generated embedding for %s passage (%d dims)",
+            payload.passage_type,
+            len(embedding),
+        )
+    except Exception as e:
+        logger.exception("Failed to generate embedding")
+        raise HTTPException(status_code=502, detail=f"Embedding generation failed: {e}") from e
 
     async with async_session() as session:
         passage = await create_passage(

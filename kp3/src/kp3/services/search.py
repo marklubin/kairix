@@ -13,9 +13,6 @@ from kp3.processors.embedding import generate_embedding
 # Search mode type - single source of truth
 SearchMode = Literal["fts", "semantic", "hybrid"]
 
-# Passage types that are searchable (opt-in)
-SEARCHABLE_PASSAGE_TYPES = {"memory_shard", "session_summary"}
-
 
 class PassageSearchResult(BaseModel):
     """A single passage search result."""
@@ -72,7 +69,6 @@ async def _search_fts(
                ts_rank(content_tsv, websearch_to_tsquery('english', :query)) as score
         FROM passages
         WHERE content_tsv @@ websearch_to_tsquery('english', :query)
-          AND passage_type = ANY(:searchable_types)
           AND agent_id = :agent_id
         ORDER BY score DESC
         LIMIT :limit
@@ -80,7 +76,6 @@ async def _search_fts(
     params: dict[str, object] = {
         "query": query,
         "limit": limit,
-        "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
         "agent_id": agent_id,
     }
     result = await session.execute(sql, params)
@@ -114,7 +109,6 @@ async def _search_semantic(
                    1 - (p.embedding_qwen3 <=> q.vec) as score
             FROM passages p, query_vec q
             WHERE p.embedding_qwen3 IS NOT NULL
-              AND p.passage_type = ANY(:searchable_types)
               AND p.agent_id = :agent_id
         )
         SELECT * FROM scored ORDER BY score DESC LIMIT :limit
@@ -122,7 +116,6 @@ async def _search_semantic(
     params: dict[str, object] = {
         "embedding": str(query_embedding),
         "limit": limit,
-        "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
         "agent_id": agent_id,
     }
     result = await session.execute(sql, params)
@@ -165,21 +158,18 @@ async def _search_hybrid(
                    ) as rank
             FROM passages
             WHERE content_tsv @@ websearch_to_tsquery('english', :query)
-              AND passage_type = ANY(:searchable_types)
               AND agent_id = :agent_id
         ),
         semantic AS (
             SELECT p.id, row_number() OVER (ORDER BY p.embedding_qwen3 <=> q.vec) as rank
             FROM passages p, query_vec q
             WHERE p.embedding_qwen3 IS NOT NULL
-              AND p.passage_type = ANY(:searchable_types)
               AND p.agent_id = :agent_id
         ),
         recency AS (
             SELECT id, row_number() OVER (ORDER BY created_at DESC) as rank
             FROM passages
-            WHERE passage_type = ANY(:searchable_types)
-              AND agent_id = :agent_id
+            WHERE agent_id = :agent_id
         )
         SELECT p.id, p.content, p.passage_type,
                :w_fts * COALESCE(1.0 / (60 + fts.rank), 0) +
@@ -190,7 +180,6 @@ async def _search_hybrid(
         LEFT JOIN semantic ON p.id = semantic.id
         LEFT JOIN recency ON p.id = recency.id
         WHERE (fts.id IS NOT NULL OR semantic.id IS NOT NULL)
-          AND p.passage_type = ANY(:searchable_types)
           AND p.agent_id = :agent_id
         ORDER BY score DESC
         LIMIT :limit
@@ -199,7 +188,6 @@ async def _search_hybrid(
         "query": query,
         "embedding": str(query_embedding),
         "limit": limit,
-        "searchable_types": list(SEARCHABLE_PASSAGE_TYPES),
         "agent_id": agent_id,
         "w_fts": settings.rrf_weight_fts,
         "w_semantic": settings.rrf_weight_semantic,

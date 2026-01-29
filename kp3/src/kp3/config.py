@@ -16,11 +16,10 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://kp3:kp3@localhost:5432/kp3"
 
-    # vLLM embeddings (in-process with GPU)
-    vllm_embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"  # 600M params, ~1.5GB VRAM
-    vllm_embedding_dim: int = 1024  # MRL truncation from native 2560
-    vllm_gpu_memory_utilization: float = 0.3
-    vllm_enforce_eager: bool = True
+    # OpenAI embeddings
+    openai_api_key: str = ""
+    openai_embedding_model: str = "text-embedding-3-large"
+    openai_embedding_dim: int = 1024  # text-embedding-3-large supports 256-3072
 
     # Anthropic (for LLM processing)
     anthropic_api_key: str = ""
