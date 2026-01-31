@@ -53,8 +53,8 @@ async def test_embedding_processor_generates_embedding(
 
     assert result.action == "update"
     assert result.passage_id == passage.id
-    assert "embedding_qwen3" in result.updates
-    assert len(result.updates["embedding_qwen3"]) == 1024
+    assert "embedding_openai" in result.updates
+    assert len(result.updates["embedding_openai"]) == 1024
 
     mock_generate_embedding.assert_called_once_with("Test content for embedding")
 
@@ -69,7 +69,7 @@ async def test_embedding_processor_skips_existing(
         content="Already embedded",
         passage_type="raw",
     )
-    passage.embedding_qwen3 = [0.5] * 1024
+    passage.embedding_openai = [0.5] * 1024
     await session.commit()
 
     processor = EmbeddingProcessor()
@@ -97,7 +97,7 @@ async def test_embedding_processor_force_regenerate(
         content="Re-embed me",
         passage_type="raw",
     )
-    passage.embedding_qwen3 = [0.5] * 1024
+    passage.embedding_openai = [0.5] * 1024
     await session.commit()
 
     processor = EmbeddingProcessor()
@@ -134,29 +134,33 @@ async def test_embedding_processor_empty_group(
     mock_generate_embedding.assert_not_called()
 
 
-async def test_embedding_batch_generation(mock_vllm: MagicMock):
+async def test_embedding_batch_generation():
     """Test batch embedding generation."""
     from kp3.processors import embedding
 
-    outputs = []
-    for i in range(3):
-        output = MagicMock()
-        output.outputs.embedding = [0.1 * (i + 1)] * 1024
-        outputs.append(output)
-    mock_vllm.embed.return_value = outputs
+    # Mock the OpenAI client response
+    mock_response = MagicMock()
+    mock_response.data = [
+        MagicMock(index=0, embedding=[0.1] * 1024),
+        MagicMock(index=1, embedding=[0.2] * 1024),
+        MagicMock(index=2, embedding=[0.3] * 1024),
+    ]
 
-    with patch.object(embedding, "_vllm_instance", mock_vllm):
+    with patch.object(embedding, "_get_openai_client") as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.embeddings.create = AsyncMock(return_value=mock_response)
+        mock_get_client.return_value = mock_client
+
         result = await embedding.generate_embeddings_batch(["text1", "text2", "text3"])
 
     assert len(result) == 3
-    mock_vllm.embed.assert_called_once_with(["text1", "text2", "text3"])
+    mock_client.embeddings.create.assert_called_once()
 
 
-async def test_embedding_batch_empty_list(mock_vllm: MagicMock):
+async def test_embedding_batch_empty_list():
     """Test batch embedding with empty list."""
     from kp3.processors import embedding
 
     result = await embedding.generate_embeddings_batch([])
 
     assert result == []
-    mock_vllm.embed.assert_not_called()

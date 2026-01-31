@@ -1,6 +1,6 @@
-"""Pydantic models for query service API - re-exported from kairix-common."""
+"""Pydantic models for query service API."""
 
-from kairix_common.kp3_client import (
+from kp3.schemas.api import (
     PassageCreate,
     PassageCreateResponse,
     PassageResult,

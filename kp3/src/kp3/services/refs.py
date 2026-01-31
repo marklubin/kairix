@@ -178,30 +178,23 @@ async def _execute_db_hooks(session: AsyncSession, ref_name: str, passage: Passa
 
 
 async def _execute_hook_action(hook: PassageRefHook, passage: Passage) -> None:
-    """Execute a single hook action based on its type."""
-    if hook.action_type == "letta_agent_block_update":
-        await _execute_letta_hook(hook.config, passage)
-    else:
-        logger.warning("Unknown hook action type: %s", hook.action_type)
+    """Execute a single hook action based on its type.
 
+    Hook types can be extended by adding new action_type handlers here.
+    Currently supported:
+        - "webhook": POST to a URL with passage content (future)
+        - Custom types can be added as needed
 
-async def _execute_letta_hook(config: dict[str, Any], passage: Passage) -> None:
-    """Execute a Letta agent block update hook.
-
-    Config should contain:
-        - agent_id: Letta agent ID
-        - block_label: Block label (human, persona, world)
+    Note: The previous "letta_agent_block_update" type has been removed.
+    For external integrations, use the REST API or implement a custom hook.
     """
-    # Import here to avoid circular dependency and allow lazy loading
-    from kp3.hooks.letta_sync import update_letta_block
-
-    agent_id = config.get("agent_id")
-    block_label = config.get("block_label")
-
-    if not agent_id or not block_label:
-        raise ValueError("Invalid Letta hook config: missing agent_id or block_label")
-
-    await update_letta_block(agent_id, block_label, passage.content)
+    # Log unknown hook types - they are silently skipped
+    # This allows forward compatibility with new hook types
+    logger.warning(
+        "Hook action type '%s' is not implemented. "
+        "Configure external integrations via the REST API instead.",
+        hook.action_type,
+    )
 
 
 async def list_refs(
@@ -310,7 +303,7 @@ async def create_ref_hook(
     Args:
         session: Database session
         ref_name: Ref name to attach hook to
-        action_type: Hook action type (e.g., "letta_agent_block_update")
+        action_type: Hook action type (e.g., "webhook")
         config: Action-specific configuration
         enabled: Whether hook is enabled (default True)
 

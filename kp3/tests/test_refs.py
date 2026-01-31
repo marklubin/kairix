@@ -185,13 +185,13 @@ async def test_create_ref_hook(db_session: AsyncSession) -> None:
     hook = await create_ref_hook(
         db_session,
         ref_name="world/human/HEAD",
-        action_type="letta_agent_block_update",
+        action_type="webhook",
         config={"agent_id": "test-agent", "block_label": "human"},
     )
     await db_session.commit()
 
     assert hook.ref_name == "world/human/HEAD"
-    assert hook.action_type == "letta_agent_block_update"
+    assert hook.action_type == "webhook"
     assert hook.config == {"agent_id": "test-agent", "block_label": "human"}
     assert hook.enabled is True
 
@@ -201,7 +201,7 @@ async def test_list_ref_hooks(db_session: AsyncSession) -> None:
     await create_ref_hook(
         db_session,
         ref_name="world/persona/HEAD",
-        action_type="letta_agent_block_update",
+        action_type="webhook",
         config={"agent_id": "agent-1", "block_label": "persona"},
     )
     await create_ref_hook(
@@ -216,7 +216,7 @@ async def test_list_ref_hooks(db_session: AsyncSession) -> None:
     assert len(hooks) == 2
 
     action_types = {h.action_type for h in hooks}
-    assert action_types == {"letta_agent_block_update", "custom_action"}
+    assert action_types == {"webhook", "custom_action"}
 
 
 async def test_disabled_hooks_not_listed(db_session: AsyncSession) -> None:

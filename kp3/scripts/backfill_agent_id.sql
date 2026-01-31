@@ -1,5 +1,5 @@
 -- Backfill agent_id for existing passages
--- Run this on salinas after deploying the migration
+-- Run this after deploying the g2b3c4d5e678_add_agent_id_to_passages migration
 
 -- First, check if there's agent_id in metadata we can backfill from
 SELECT COUNT(*) as passages_with_agent_in_metadata
@@ -13,9 +13,7 @@ WHERE agent_id IS NULL
   AND metadata->>'agent_id' IS NOT NULL;
 
 -- Option 2: Set all existing passages to a specific agent (single-agent setup)
--- Replace 'agent-xxxxxxxx' with the actual corindel agent ID from:
---   ./kx psql -c "SELECT id FROM letta.agents WHERE name = 'Corindel';"
--- or from v2-runtime's letta API
+-- Replace 'agent-xxxxxxxx' with your actual agent ID
 
 -- UPDATE passages
 -- SET agent_id = 'agent-xxxxxxxx'

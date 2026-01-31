@@ -30,7 +30,7 @@ For each concept:
     └── New? → Create node with initial understanding
                Discover edges to existing concepts
     ↓
-Blocks are VIEWS projected from the graph (for Letta agent consumption)
+Blocks are VIEWS projected from the graph (for agent consumption)
 ```
 
 ### Why This Works

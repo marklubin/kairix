@@ -18,7 +18,7 @@ class TestSearchService:
     ) -> None:
         """Test that FTS search returns passages matching the query."""
         results = await search_passages(
-            db_session, "programming language", mode="fts", limit=5
+            db_session, "programming language", mode="fts", limit=5, agent_id="test-agent"
         )
 
         assert len(results) >= 1
@@ -32,7 +32,7 @@ class TestSearchService:
     ) -> None:
         """Test that FTS search returns empty list for non-matching query."""
         results = await search_passages(
-            db_session, "xyznonexistent123", mode="fts", limit=5
+            db_session, "xyznonexistent123", mode="fts", limit=5, agent_id="test-agent"
         )
 
         assert len(results) == 0
@@ -43,7 +43,9 @@ class TestSearchService:
     ) -> None:
         """Test that FTS search respects the limit parameter."""
         # Search for a common term that should match multiple passages
-        results = await search_passages(db_session, "Python", mode="fts", limit=1)
+        results = await search_passages(
+            db_session, "Python", mode="fts", limit=1, agent_id="test-agent"
+        )
 
         assert len(results) <= 1
 
@@ -53,7 +55,7 @@ class TestSearchService:
     ) -> None:
         """Test that search results have all expected fields."""
         results = await search_passages(
-            db_session, "PostgreSQL", mode="fts", limit=1
+            db_session, "PostgreSQL", mode="fts", limit=1, agent_id="test-agent"
         )
 
         assert len(results) == 1

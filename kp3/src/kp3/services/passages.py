@@ -26,7 +26,7 @@ async def create_passage(
     metadata: dict[str, Any] | None = None,
     source_system: str | None = None,
     source_external_id: str | None = None,
-    embedding_qwen3: list[float] | None = None,
+    embedding_openai: list[float] | None = None,
     agent_id: str | None = None,
 ) -> Passage:
     """Create a new passage.
@@ -40,7 +40,7 @@ async def create_passage(
         metadata: Optional metadata dict
         source_system: Optional source system identifier
         source_external_id: Optional external ID from source system
-        embedding_qwen3: Optional pre-computed embedding vector
+        embedding_openai: Optional pre-computed embedding vector
         agent_id: Optional agent ID to scope this passage to a specific agent
     """
     content_hash = compute_content_hash(content)
@@ -54,7 +54,7 @@ async def create_passage(
         metadata_=metadata or {},
         source_system=source_system,
         source_external_id=source_external_id,
-        embedding_qwen3=embedding_qwen3,
+        embedding_openai=embedding_openai,
         agent_id=agent_id,
     )
 
@@ -126,7 +126,7 @@ async def archive_passage(
         metadata_=passage.metadata_,
         source_system=passage.source_system,
         source_external_id=passage.source_external_id,
-        embedding_qwen3=passage.embedding_qwen3,
+        embedding_openai=passage.embedding_openai,
         created_at=passage.created_at,
     )
 

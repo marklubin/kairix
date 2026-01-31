@@ -100,13 +100,22 @@ def database_url(postgres_container: Any) -> str:
 @pytest.fixture(scope="session")
 def _set_env(database_url: str) -> Generator[None, None, None]:
     """Set environment variables for the test database."""
+    import kp3.config
+
     old_url = os.environ.get("KP3_DATABASE_URL")
     os.environ["KP3_DATABASE_URL"] = database_url
+
+    # Clear cached settings so they're reloaded with the new database URL
+    kp3.config._settings = None
+
     yield
     if old_url is not None:
         os.environ["KP3_DATABASE_URL"] = old_url
     else:
         os.environ.pop("KP3_DATABASE_URL", None)
+
+    # Clear cache again for cleanup
+    kp3.config._settings = None
 
 
 @pytest.fixture
@@ -158,26 +167,31 @@ async def sample_passages(db_session: AsyncSession) -> list[Passage]:
             content="Python is a high-level programming language known for its readability.",
             content_hash="hash1",
             passage_type="wiki",
+            agent_id="test-agent",
         ),
         Passage(
             content="Machine learning uses neural networks to learn from data.",
             content_hash="hash2",
             passage_type="wiki",
+            agent_id="test-agent",
         ),
         Passage(
             content="PostgreSQL is a powerful open-source relational database system.",
             content_hash="hash3",
             passage_type="docs",
+            agent_id="test-agent",
         ),
         Passage(
             content="FastAPI is a modern web framework for building APIs with Python.",
             content_hash="hash4",
             passage_type="docs",
+            agent_id="test-agent",
         ),
         Passage(
             content="Vector databases enable semantic search using embeddings.",
             content_hash="hash5",
             passage_type="wiki",
+            agent_id="test-agent",
         ),
     ]
 
@@ -200,9 +214,8 @@ async def test_client(db_engine: Any, _set_env: None) -> AsyncGenerator[AsyncCli
     from kp3.db import engine as engine_module
     from kp3.query_service.main import app
 
-    original_engine = engine_module.engine
-    original_session = engine_module.async_session
-
+    # Use db_engine which is created in the correct event loop for this test
+    # Don't save/restore original engine since it's created with wrong URL at import time
     engine_module.engine = db_engine
     engine_module.async_session = async_sessionmaker(
         db_engine, class_=AsyncSession, expire_on_commit=False
@@ -212,6 +225,7 @@ async def test_client(db_engine: Any, _set_env: None) -> AsyncGenerator[AsyncCli
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
-    # Restore original engine
-    engine_module.engine = original_engine
-    engine_module.async_session = original_session
+    # db_engine cleanup is handled by its own fixture
+    # Set engine to None to avoid stale connection issues
+    engine_module.engine = None
+    engine_module.async_session = None

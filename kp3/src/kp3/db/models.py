@@ -60,8 +60,8 @@ class Passage(Base):
     # Agent scoping - passages belong to a specific agent
     agent_id: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
 
-    # Embeddings (1024-dim, truncated from qwen3-embedding:4b)
-    embedding_qwen3: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
+    # Embeddings (OpenAI text-embedding-3-large, 1024-dim)
+    embedding_openai: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -78,16 +78,21 @@ class Passage(Base):
         foreign_keys="PassageDerivation.source_passage_id",
         back_populates="source_passage",
     )
+    tags: Mapped[list["Tag"]] = relationship(
+        "Tag",
+        secondary="passage_tags",
+        back_populates="passages",
+    )
 
     __table_args__ = (
         Index("idx_passages_type", "passage_type"),
         Index("idx_passages_period", "period_start", "period_end"),
         Index("idx_passages_tsv", "content_tsv", postgresql_using="gin"),
         Index(
-            "idx_passages_embedding",
-            "embedding_qwen3",
+            "idx_passages_embedding_openai",
+            "embedding_openai",
             postgresql_using="ivfflat",
-            postgresql_ops={"embedding_qwen3": "vector_cosine_ops"},
+            postgresql_ops={"embedding_openai": "vector_cosine_ops"},
         ),
     )
 
@@ -117,7 +122,7 @@ class PassageArchive(Base):
     metadata_: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSONB, nullable=True)
     source_system: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source_external_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    embedding_qwen3: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
+    embedding_openai: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     # Relationships
@@ -278,9 +283,7 @@ class PassageRefHook(Base):
         PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
     ref_name: Mapped[str] = mapped_column(Text, nullable=False)
-    action_type: Mapped[str] = mapped_column(
-        Text, nullable=False
-    )  # e.g., "letta_agent_block_update"
+    action_type: Mapped[str] = mapped_column(Text, nullable=False)  # e.g., "webhook"
     config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
@@ -336,7 +339,7 @@ class WorldModelProject(Base):
     id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
-    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Letta agent ID
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Agent ID for segmentation
     canonical_key: Mapped[str] = mapped_column(Text, nullable=False)  # Normalized for dedup
     name: Mapped[str] = mapped_column(Text, nullable=False)  # Original display name
     status: Mapped[str] = mapped_column(Text, nullable=False)
@@ -367,7 +370,7 @@ class WorldModelEntity(Base):
     id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
-    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Letta agent ID
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Agent ID for segmentation
     canonical_key: Mapped[str] = mapped_column(Text, nullable=False)  # Normalized for dedup
     name: Mapped[str] = mapped_column(Text, nullable=False)  # Original display name
     relevance: Mapped[str] = mapped_column(Text, nullable=False)
@@ -397,7 +400,7 @@ class WorldModelTheme(Base):
     id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
-    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Letta agent ID
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)  # Agent ID for segmentation
     canonical_key: Mapped[str] = mapped_column(Text, nullable=False)  # Normalized for dedup
     name: Mapped[str] = mapped_column(Text, nullable=False)  # Original display name
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -479,4 +482,117 @@ class WorldModelBranch(Base):
     __table_args__ = (
         UniqueConstraint("ref_prefix", "branch_name", name="uq_world_model_branches_prefix_name"),
         Index("idx_world_model_branches_prefix", "ref_prefix"),
+    )
+
+
+# =============================================================================
+# Tags
+# =============================================================================
+# Tags enable flexible categorization of passages with FTS and semantic search.
+
+
+class Tag(Base):
+    """A tag that can be attached to passages."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)
+    canonical_key: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    name_tsv: Mapped[Any] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "to_tsvector('english', name || ' ' || coalesce(description, ''))",
+            persisted=True,
+        ),
+        nullable=True,
+    )
+    embedding_openai: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
+    passage_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    passages: Mapped[list["Passage"]] = relationship(
+        "Passage",
+        secondary="passage_tags",
+        back_populates="tags",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("agent_id", "canonical_key", name="uq_tags_agent_canonical_key"),
+        Index("idx_tags_agent_id", "agent_id"),
+        Index("idx_tags_name_tsv", "name_tsv", postgresql_using="gin"),
+        Index(
+            "idx_tags_embedding_openai",
+            "embedding_openai",
+            postgresql_using="ivfflat",
+            postgresql_ops={"embedding_openai": "vector_cosine_ops"},
+        ),
+    )
+
+
+class PassageTag(Base):
+    """Junction table linking passages to tags."""
+
+    __tablename__ = "passage_tags"
+
+    passage_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("passages.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("idx_passage_tags_passage_id", "passage_id"),
+        Index("idx_passage_tags_tag_id", "tag_id"),
+    )
+
+
+# =============================================================================
+# Memory Scopes
+# =============================================================================
+# Scopes define dynamic search closures using refs and literal passage IDs.
+# Scope definitions are stored as passages (type="scope_definition").
+
+
+class MemoryScope(Base):
+    """A memory scope defining a closure of passages for search.
+
+    Scopes use refs infrastructure for versioning and history.
+    The actual scope definition (refs + passage IDs) is stored as a passage
+    with type="scope_definition", and the head_ref points to the current version.
+    """
+
+    __tablename__ = "memory_scopes"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    agent_id: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    head_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("agent_id", "name", name="uq_memory_scopes_agent_name"),
+        Index("idx_memory_scopes_agent_id", "agent_id"),
     )

@@ -1,17 +1,22 @@
 # =============================================================================
-# KP3 Standalone Deployment
+# KP3 - Knowledge Processing Pipeline
 # =============================================================================
-# Complete stack with PostgreSQL + pgvector for standalone deployment.
+# Complete stack with PostgreSQL + pgvector.
 #
-# Usage:
-#   docker compose -f compose.standalone.yml up -d
-#   docker compose -f compose.standalone.yml logs -f kp3-service
+# Quick Start:
+#   1. Copy .env.example to .env and set your API keys
+#   2. docker compose up -d
+#   3. docker compose exec kp3-service uv run alembic upgrade head
+#   4. docker compose logs -f kp3-service
+#
+# CLI Usage:
+#   docker compose exec kp3-service uv run kp3 --help
 #
 # =============================================================================
 
 services:
   postgres:
-    image: docker.io/pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg16
     ports:
       - "5432:5432"
     environment:
@@ -29,16 +34,29 @@ services:
 
   kp3-service:
     build:
-      context: ..
-      dockerfile: kp3/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     image: kp3:latest
     ports:
       - "8080:8080"
     environment:
+      # Database (required)
       KP3_DATABASE_URL: postgresql+asyncpg://kp3:kp3@postgres:5432/kp3
+
+      # OpenAI embeddings (required for semantic search)
       KP3_OPENAI_API_KEY: ${KP3_OPENAI_API_KEY}
       KP3_OPENAI_EMBEDDING_MODEL: ${KP3_OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
       KP3_OPENAI_EMBEDDING_DIM: ${KP3_OPENAI_EMBEDDING_DIM:-1024}
+
+      # DeepSeek for world model extraction (optional)
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+
+      # Anthropic for LLM processing (optional)
+      KP3_ANTHROPIC_API_KEY: ${KP3_ANTHROPIC_API_KEY:-}
+
+      # Hybrid search RRF weights
       KP3_RRF_WEIGHT_FTS: ${KP3_RRF_WEIGHT_FTS:-1.0}
       KP3_RRF_WEIGHT_SEMANTIC: ${KP3_RRF_WEIGHT_SEMANTIC:-1.0}
       KP3_RRF_WEIGHT_RECENCY: ${KP3_RRF_WEIGHT_RECENCY:-0.5}
@@ -51,6 +69,21 @@ services:
       timeout: 5s
       retries: 3
     restart: unless-stopped
+
+  # Optional: Run migrations on startup
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kp3:latest
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      KP3_DATABASE_URL: postgresql+asyncpg://kp3:kp3@postgres:5432/kp3
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - init
 
 volumes:
   kp3-pgdata:

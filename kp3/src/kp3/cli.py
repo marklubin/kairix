@@ -324,79 +324,32 @@ def passage_ls(passage_type: str | None, limit: int) -> None:
     asyncio.run(_list())
 
 
-def _resolve_agent_name(name: str, letta_url: str) -> str:
-    """Resolve agent name to ID using Letta API (case-insensitive exact match)."""
-    import httpx
-
-    try:
-        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
-            response = client.get(f"{letta_url}/v1/agents/")
-            response.raise_for_status()
-            agents = response.json()
-    except httpx.RequestError as e:
-        raise click.ClickException(f"Error connecting to Letta: {e}") from e
-    except httpx.HTTPStatusError as e:
-        raise click.ClickException(f"Letta API error: {e.response.status_code}") from e
-
-    # Case-insensitive exact match
-    name_lower = name.lower()
-    for agent in agents:
-        if agent.get("name", "").lower() == name_lower:
-            return agent["id"]
-
-    # No match found - show available agents
-    available = [a.get("name", "unnamed") for a in agents]
-    raise click.ClickException(
-        f"Agent '{name}' not found. Available agents: {', '.join(available)}"
-    )
-
-
 @passage.command("search")
 @click.argument("query")
 @click.option("--mode", "-m", default="hybrid", type=click.Choice(["fts", "semantic", "hybrid"]))
 @click.option("--limit", "-n", default=5, help="Max results to show")
-@click.option("--agent", "-a", default=None, help="Agent ID to scope search")
-@click.option("--agent-name", "-A", default=None, help="Agent name (case-insensitive)")
+@click.option("--agent", "-a", required=True, help="Agent ID to scope search")
 @click.option(
     "--service-url",
     envvar="KP3_SERVICE_URL",
-    default="http://kp3-service:8080",
-    help="KP3 service URL (uses vLLM for embeddings)",
-)
-@click.option(
-    "--letta-url",
-    envvar="LETTA_BASE_URL",
-    default="http://letta:8283",
-    help="Letta API URL (for agent name resolution)",
+    default="http://localhost:8080",
+    help="KP3 service URL",
 )
 def passage_search(
     query: str,
     mode: str,
     limit: int,
-    agent: str | None,
-    agent_name: str | None,
+    agent: str,
     service_url: str,
-    letta_url: str,
 ) -> None:
     """Search passages using FTS, semantic, or hybrid search.
 
-    Calls the kp3-service HTTP API which has GPU access for embeddings.
-    Requires either --agent (ID) or --agent-name (name lookup via Letta).
+    Calls the kp3-service HTTP API for embedding generation and search.
+    Requires --agent to scope the search to a specific agent.
     """
     import httpx
 
     console = Console()
-
-    # Validate: exactly one of agent or agent_name must be provided
-    if agent and agent_name:
-        raise click.ClickException("Specify either --agent or --agent-name, not both")
-    if not agent and not agent_name:
-        raise click.ClickException("Either --agent or --agent-name is required")
-
-    # Resolve agent name to ID if needed
-    if agent_name:
-        agent = _resolve_agent_name(agent_name, letta_url)
-        console.print(f"[dim]Resolved '{agent_name}' → {agent}[/dim]\n")
 
     try:
         with httpx.Client(timeout=120.0) as client:
@@ -744,7 +697,7 @@ def refs_hooks(ref_name: str | None) -> None:
 def refs_add_hook(ref_name: str, action_type: str, config_json: str) -> None:
     """Add a hook to a ref.
 
-    ACTION_TYPE should be e.g., "letta_agent_block_update".
+    ACTION_TYPE is the hook type identifier (e.g., "webhook").
     CONFIG_JSON should be a JSON object with action-specific config.
     """
     try:
@@ -774,7 +727,7 @@ def refs_set(ref_name: str, passage_id: str, no_hooks: bool) -> None:
     """Set a ref to point to a passage.
 
     Updates the ref to point to the specified passage and fires any
-    configured hooks (e.g., Letta block sync).
+    configured hooks (e.g., webhooks).
 
     Example:
         kp3 refs set corindel/world/HEAD abc123-def456-...
@@ -887,7 +840,7 @@ def world_model_backfill(
 @click.option("--branch", "-b", default="HEAD", help="Ref branch name")
 @click.option("--ref-prefix", "-p", default="world", help="Ref prefix (e.g., 'corindel')")
 @click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
-@click.option("--agent-id", "-a", default="", help="Letta agent ID for shadow table sync")
+@click.option("--agent-id", "-a", default="", help="Agent ID for shadow table sync")
 def world_model_step(
     passage_id: str, branch: str, ref_prefix: str, model: str, agent_id: str
 ) -> None:
@@ -970,7 +923,7 @@ def world_model_step(
     "--ref-prefix", "-p", default="world", help="Ref prefix (e.g., 'corindel')"
 )
 @click.option("--model", "-m", default="deepseek-chat", help="LLM model to use")
-@click.option("--agent-id", "-a", default="", help="Letta agent ID for shadow table sync")
+@click.option("--agent-id", "-a", default="", help="Agent ID for shadow table sync")
 @click.option("--dry-run", is_flag=True, help="Show what would be processed without executing")
 @click.pass_context
 def world_model_fold(

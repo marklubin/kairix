@@ -51,7 +51,7 @@ async def backfill_world_models(
         persona_ref=f"world/persona/{branch}",
         world_ref=f"world/world/{branch}",
         update_refs=not dry_run,
-        fire_hooks=False,  # Don't fire Letta hooks during backfill
+        fire_hooks=False,  # Don't fire hooks during backfill
     )
 
     # Query passages in temporal order

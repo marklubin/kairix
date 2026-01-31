@@ -44,7 +44,7 @@ class EmbeddingProcessor(Processor[EmbeddingConfig]):
 
         passage = group.passages[0]
 
-        if passage.embedding_qwen3 is not None and not config.force:
+        if passage.embedding_openai is not None and not config.force:
             return ProcessorResult(action="pass")
 
         embedding = await generate_embedding(passage.content)
@@ -52,7 +52,7 @@ class EmbeddingProcessor(Processor[EmbeddingConfig]):
         return ProcessorResult(
             action="update",
             passage_id=passage.id,
-            updates={"embedding_qwen3": embedding},
+            updates={"embedding_openai": embedding},
         )
 
     @classmethod

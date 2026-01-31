@@ -30,9 +30,9 @@ class Settings(BaseSettings):
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
     DEEPSEEK_MODEL: str = "deepseek-chat"
 
-    # Letta integration
-    LETTA_SYNC_CONFIG_PATH: str = ""
-    LETTA_BASE_URL: str = "http://localhost:8283"
+    # Query service
+    query_host: str = "0.0.0.0"  # noqa: S104 - intentional bind to all interfaces
+    query_port: int = 8080
 
     # Hybrid search RRF weights
     rrf_weight_fts: float = 1.0

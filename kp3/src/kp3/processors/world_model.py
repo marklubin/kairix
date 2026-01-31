@@ -833,7 +833,7 @@ async def _sync_to_shadow_tables(
     Args:
         session: Database session
         world: WorldBlock with entities to sync
-        agent_id: Letta agent ID for segmentation
+        agent_id: Agent ID for segmentation
         processing_time: Current processing timestamp
     """
     logger.info(

@@ -127,9 +127,8 @@ class TestE2EPipeline:
         # Step 2: Run embedding processor on imported passages
         mock_embedding = [0.1] * 1024
 
-        with patch.object(
-            EmbeddingProcessor,
-            "_generate_embedding",
+        with patch(
+            "kp3.processors.embedding.generate_embedding",
             new_callable=AsyncMock,
             return_value=mock_embedding,
         ):
@@ -161,7 +160,7 @@ class TestE2EPipeline:
         result = await session.execute(
             select(Passage).where(
                 Passage.passage_type == "memory_shard",
-                Passage.embedding_qwen3.isnot(None),
+                Passage.embedding_openai.isnot(None),
             )
         )
         embedded_passages = list(result.scalars().all())
@@ -199,9 +198,8 @@ class TestE2EPipeline:
         # Step 2: Run embedding processor
         mock_embedding = [0.1] * 1024
 
-        with patch.object(
-            EmbeddingProcessor,
-            "_generate_embedding",
+        with patch(
+            "kp3.processors.embedding.generate_embedding",
             new_callable=AsyncMock,
             return_value=mock_embedding,
         ):

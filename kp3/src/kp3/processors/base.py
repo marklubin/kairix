@@ -32,7 +32,7 @@ class ProcessorResult:
 
     # For "update" action
     passage_id: UUID | None = None
-    updates: dict | None = None  # fields to update (content, metadata, embedding_qwen3, etc.)
+    updates: dict | None = None  # fields to update (content, metadata, embedding_openai, etc.)
 
 
 @dataclass
