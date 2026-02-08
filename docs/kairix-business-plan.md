@@ -4,12 +4,14 @@
 
 ---
 
-**CONFIDENTIAL BUSINESS PLAN**
+**Business Plan — Work Sample**
 
 Prepared by: Mark Lubin
 Former Senior SDE, Amazon (10 years) | Distributed Systems | Payments Infrastructure | AWS
 
 January 2026
+
+> **Note:** This document is a work sample demonstrating strategic analysis, market research synthesis, and business planning. It is not an active business plan under execution.
 
 ---
 
