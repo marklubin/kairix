@@ -315,25 +315,27 @@ async def voice_endpoint(
         ),
     )
 
-    # Select TTS provider based on environment
-    tts_provider = os.getenv("TTS_PROVIDER", "cartesia").lower()
+    # Select TTS provider based on voice configuration from database
+    # The voice.provider field determines which TTS service to use
+    tts_provider = db_voice.provider.lower()
     if tts_provider == "kokoro":
         kokoro_url = os.getenv("KOKORO_URL", "http://host.containers.internal:8880/v1")
-        kokoro_voice = os.getenv("KOKORO_VOICE", "af_heart")
         kokoro_speed = float(os.getenv("KOKORO_SPEED", "1.2"))
         tts = KokoroTTSService(
             base_url=kokoro_url,
-            voice=kokoro_voice,
+            voice=voice_id,  # Use provider_voice_id from database
             sample_rate=24000,  # Kokoro native rate
             speed=kokoro_speed,
         )
-        logger.info("Using Kokoro TTS: %s voice=%s speed=%s", kokoro_url, kokoro_voice, kokoro_speed)
+        logger.info("Using Kokoro TTS: %s voice=%s speed=%s", kokoro_url, voice_id, kokoro_speed)
     else:
+        # Default to Cartesia
         tts = CartesiaTTSService(
             api_key=cartesia_api_key,
             voice_id=voice_id,
             sample_rate=22050,  # Match KMP app playback rate
         )
+        logger.info("Using Cartesia TTS: voice=%s", voice_id)
     user_turn_aggregator = UserTurnAggregator()
 
     # Create SAQ queue for background jobs
